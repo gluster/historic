@@ -1,3 +1,7 @@
+2006-05-22  Anand Babu  <ab@zresearch.com>
+
+	* Migrated Gluster to GNU Arch from CVS.
+
 2006-05-21  Anand V. Avati <avati@zresearch.com>
 
 	* external/torque.mk, extensions/torque-pkg.gex: added torque
