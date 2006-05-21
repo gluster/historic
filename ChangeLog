@@ -1,4 +1,9 @@
+********** ChangeLog DISCONTINUED, Use "tla changelog" instead. **********
+
+
 2006-05-22  Anand Babu  <ab@zresearch.com>
+
+	* ChangeLog: Discontinued.
 
 	* Migrated Gluster to GNU Arch from CVS.
 
