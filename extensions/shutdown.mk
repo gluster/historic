@@ -1,0 +1,1 @@
+shutdown.gex: EXTENSION=shutdown

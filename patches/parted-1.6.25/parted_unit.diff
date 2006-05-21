@@ -1,0 +1,32 @@
+diff -pru parted-1.6.25_orig/libparted/unit.c parted-1.6.25/libparted/unit.c
+--- parted-1.6.25_orig/libparted/unit.c	2005-11-02 16:49:49.000000000 +0530
++++ parted-1.6.25/libparted/unit.c	2006-04-19 00:10:19.000000000 +0530
+@@ -190,11 +190,18 @@ ped_unit_format_custom (PedDevice* dev, 
+ 			unit = PED_UNIT_KILOBYTE;
+ 	}
+ 
+-	snprintf (buf, 100, "%lld%s",
++	if (strcmp (ped_unit_get_name (unit), "%") == 0) {
++	    snprintf (buf, 100, "%0.2f%%", 
++		          (float) sector * PED_SECTOR_SIZE /
++			  ped_unit_get_size (dev, unit));
++             
++        } else {
++	    snprintf (buf, 100, "%lld%s",
+ 		  ped_div_round_to_nearest (
+ 			  sector * PED_SECTOR_SIZE,
+ 			  ped_unit_get_size (dev, unit)),
+ 		  ped_unit_get_name (unit));
++	}
+ 	return ped_strdup (buf);
+ }
+ 
+@@ -256,6 +263,8 @@ is_chs (const char* str)
+ 
+ 	for (i = 0; str[i]; i++)
+ 		punct_count += ispunct (str[i]) != 0;
++	if (str[i-1] == '%')
++	        return 0;
+ 	return punct_count == 2;
+ }
+ 

@@ -1,0 +1,3 @@
+import GConf;
+
+GConf.AssertSanity();

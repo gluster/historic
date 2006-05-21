@@ -1,0 +1,75 @@
+#!/bin/sh
+
+_init()
+{
+    export PATH=/bin:/usr/bin:/sbin:/usr/sbin;
+    export RAMFS=/ramfs;
+    echo "   -= Gluster Stage-2 (Initial ramdisk) =-";
+}
+
+mount_proc()
+{
+    echo " * Mounting /proc";
+    mkdir -p /proc;
+    mount -t proc none /proc;
+}
+
+umount_proc()
+{
+    umount /proc;
+}
+
+prepare_new_root()
+{
+    echo " * Creating new / (ramfs) as ${RAMFS}";
+    echo 0x0100 > /proc/sys/kernel/real-root-dev;
+    
+    mkdir -p ${RAMFS};
+
+    mount -t ramfs none ${RAMFS};
+    mkdir ${RAMFS}/initrd;
+
+    echo -n " * Preparing ${RAMFS} for usage ... ";
+
+    cp -a lib bin dev sbin etc usr var ${RAMFS};
+    if [ -d /lib64 ] ; then
+	ln -s lib ${RAMFS}/lib64;
+	cp -a /lib64/* ${RAMFS}/lib64/;
+    fi
+    if [ -d ${RAMFS}/usr/lib64 ]; then
+	mv ${RAMFS}/usr/lib64/* ${RAMFS}/usr/lib;
+	rm -rf ${RAMFS}/usr/lib64;
+	ln -s lib ${RAMFS}/usr/lib64
+    fi
+#    for tgz in /extract/*
+#    do
+#       tar -C ${RAMFS} -xzf ${tgz};
+#    done
+
+    chmod 755 ${RAMFS}
+    umask 0022
+    mkdir ${RAMFS}/tftpboot;
+    mkdir ${RAMFS}/proc;
+    mkdir ${RAMFS}/sys;
+
+    echo "done.";
+}
+
+do_pivot_root()
+{
+    echo " * pivot_root to ${RAMFS}";
+    umount_proc;
+    cd ${RAMFS};
+    ${RAMFS}/sbin/pivot_root . initrd;
+    echo " * Kick-starting /sbin/init ... ";
+    exit 0;
+}
+
+main()
+{
+    mount_proc;
+    prepare_new_root;
+    do_pivot_root;
+}
+
+_init && main "$@";

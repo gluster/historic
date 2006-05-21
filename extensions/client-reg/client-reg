@@ -1,0 +1,148 @@
+#!/usr/bin/python
+
+from Gluster.GFrontEnd import dialog
+from Gluster import GIP, GIPv4
+import os, sys, sre, string, ConfigParser
+
+clientinfo = "/var/gluster/clientinfo"
+
+cfg = ConfigParser.ConfigParser ()
+cfg.read (clientinfo)
+
+d = dialog.Dialog ();
+
+cluster_config = {
+    'startip': ['192.168.1.1',
+                 'Starting IP of the cluster (master node IP)'],
+    'totalnodes': ['64',
+                   'total number of nodes in the cluster (including master node)'],
+    'netmask' : ['255.255.255.0',
+                    'Subnet mask of the cluster'],
+    'hostname': [ 'node',
+                  'hostname prefix for all nodes. e.g if the hostname prefix is `box\', then nodes will be named `box1\' `box2\' etc' ],
+    'domain': [ 'gluster.org',
+                'DNS domain name of the cluster' ],
+    'bootp': [ 'yes',
+               'should BOOTP be turned on?' ],
+    'interface': [ 'eth0', 'client side interface' ]
+    }
+
+
+def sync ():
+    fp = open (clientinfo, "w")
+    cfg.write (fp)
+    fp.close ()
+
+def ask_and_set (var):
+    (ret, input) = d.inputbox (cluster_config[var][1],
+                               init=cfg.get ('global', var))
+    if ret != 0:
+        return
+    cfg.set ('global', var, input)
+    sync ()
+    return
+
+
+oldip = False
+oldiface = False
+
+if not cfg.has_section ('global'):
+    cfg.add_section ('global')
+    for member in cluster_config.keys ():
+        cfg.set ('global', member, cluster_config[member][0])
+    sync ()
+else:
+    oldip = cfg.get ('global', 'startip')
+    oldiface = cfg.get ('global', 'interface')
+
+while True:
+    (ret, choice) = d.menu ("configure cluster details",
+                        choices=map (lambda x: (x, cfg.get ('global', x)),
+                                     ['interface',
+                                      'startip',
+                                      'netmask',
+                                      'totalnodes',
+                                      'hostname',
+                                      'domain']),
+                            cancel="done",
+                            extra_button=True,
+                            ok_label="edit",
+                            extra_label="back")
+
+    if ret == 4:
+        sys.exit (1)
+        break
+    
+    if ret != 0:
+        break
+            
+    if choice == 'startip':
+        ask_and_set ('startip')
+
+    if choice == 'domain':
+        ask_and_set ('domain')
+
+    if choice == 'hostname':
+        ask_and_set ('hostname')
+
+    if choice == 'netmask':
+        ask_and_set ('netmask')
+
+    if choice == 'totalnodes':
+        ask_and_set ('totalnodes')
+        
+    if choice == 'bootp':
+        no = d.yesno ("want bootp?")
+        if no:
+            cfg.set ('global', 'bootp', 'no')
+        else:
+            cfg.set ('global', 'bootp', 'yes')
+        sync ()
+        
+    if choice == 'interface':
+        (ret, iface) = d.menu (cluster_config['interface'][1],
+                               choices=map (lambda x: (x, GIP.get_iface_status (x)),
+                                            GIP.get_ifaces_list ()),
+                               default_item=cfg.get ('global', 'interface'))
+        if ret != 0:
+            continue
+        cfg.set ('global', 'interface', iface)
+        sync ()
+
+ipobj = GIPv4.IPv4 (cfg.get ('global', 'startip'),
+                    cfg.get ('global', 'netmask'))
+
+offset = int (ipobj.hostpart) - 1
+master_node = cfg.get ('global', 'startip')
+os.system ("ifconfig %s %s netmask %s" %
+           (cfg.get ('global', 'interface'),
+            cfg.get ('global', 'startip'),
+            cfg.get ('global', 'netmask')))
+
+hosts_file = file ('/tftpboot/hosts', "w")
+hosts_file.write ("\n127.0.0.1\tlocalhost.localdomain\tlocalhost\n\n")
+hostname = cfg.get ('global', 'hostname')
+domain = cfg.get ('global', 'domain')
+for index in range (string.atoi (cfg.get ('global', 'totalnodes'))):
+    i_idx = index + 1
+    i_ip = ipobj[i_idx + offset].getStrings ()[0]
+    hosts_file.write ("%s\t%s%d.%s\t%s%d\n" % (i_ip,
+                                               hostname,
+                                               i_idx,
+                                               domain,
+                                               hostname,
+                                               i_idx))
+hosts_file.write ('%s\tmaster-node.%s\tmaster-node\n' % (master_node,
+                                                       domain))
+hosts_file.close ()
+os.system ("cp /tftpboot/hosts /etc/hosts")
+rsa_key = file ('/etc/ssh/ssh_host_rsa_key.pub').readline ()
+known_hosts_fd = file ('/.ssh/known_hosts', "w")
+known_hosts_fd.write ('%s* %s' % (hostname, rsa_key))
+known_hosts_fd.write ('%s* %s' % ('master-node', rsa_key))
+known_hosts_fd.write ('%s*.%s %s' % (hostname, domain, rsa_key))
+known_hosts_fd.write ('%s*.%s %s' % ('master-node', domain, rsa_key))
+known_hosts_fd.close ()
+os.system ('tar -C /etc/ssh -cf /tftpboot/etc-ssh.tar .')
+os.system ('tar -C /.ssh -cf /tftpboot/dot-ssh.tar .')
+

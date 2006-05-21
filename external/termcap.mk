@@ -1,0 +1,6 @@
+
+
+termcap.%: PACKAGE_NAME=termcap-1.3.1
+termcap.%: LIVE_BUILD_CMD=make all $(LIVE_BUILD_ENV)
+termcap.%: LIVE_INSTALL_CMD=$(DEFAULT_LIVE_INSTALL_CMD) $(LIVE_BUILD_ENV)
+#termcap.%: PACKAGE_CONFIGURE_CMD=$(DEFAULT_PACKAGE_CONFIGURE_CMD) --enable-install-termcap

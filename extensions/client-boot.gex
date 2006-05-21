@@ -1,0 +1,5 @@
+package-name: Client-BOOT
+package-description: Kernel and ramdisk/initrd for client boot (in /tftpboot)
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: client-boot.tgz
+package-exec: ./runme

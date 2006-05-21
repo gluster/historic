@@ -1,0 +1,12 @@
+#!/bin/sh
+
+chroot=$1
+profiles_dir=$chroot/tmp/gluster-tmp/hw-profiles
+mpich_hosts=$chroot/opt/gluster/etc/mpich.hosts
+
+cd $profiles_dir
+
+(for node in *; do
+    num=$(grep cpu $node | wc -l)
+    echo $node:$num
+done) > $mpich_hosts

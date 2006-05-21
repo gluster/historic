@@ -1,0 +1,219 @@
+diff -pruN dhcp-helper-0.2/dhcp-helper.c dhcp-helper-0.2_late/dhcp-helper.c
+--- dhcp-helper-0.2/dhcp-helper.c	2004-11-30 17:41:19.000000000 +0530
++++ dhcp-helper-0.2_late/dhcp-helper.c	2006-02-07 23:16:00.000000000 +0530
+@@ -46,10 +46,16 @@
+ #define BOOTREQUEST      1
+ #define BOOTREPLY        2
+ 
++#define GLUSTER_HACK
++
+ struct namelist {
+   char name[IF_NAMESIZE];
+   struct in_addr addr;
+   struct namelist *next;
++#ifdef GLUSTER_HACK
++  unsigned short port;
++  int sock;
++#endif
+ };
+ 
+ struct interface {
+@@ -107,13 +113,25 @@ int main(int argc, char **argv)
+ 	case 's': case 'b': case 'i': case 'e':
+ 	  {
+ 	    struct namelist *new = malloc(sizeof(struct namelist));
++#ifdef GLUSTER_HACK
++	    char * port = NULL;
++#endif
+ 	    
+ 	    if (!new)
+ 	      {
+ 		fprintf(stderr, "dhcp-helper: cannot get memory\n");
+ 		exit(1);
+ 	      }
+-	    
++#ifdef GLUSTER_HACK    
++	    port = strchr (optarg, ':');
++	    if (port) {
++	      * (port) = '\0';
++	      port ++;
++	      new->port = atoi (port);
++	    } else {
++	      new->port = DHCP_SERVER_PORT;
++	    }
++#endif
+ 	    strncpy(new->name, optarg, IF_NAMESIZE);
+ 	    strncpy(ifr.ifr_name, optarg, IF_NAMESIZE);
+ 	    new->addr.s_addr = 0;
+@@ -128,6 +146,45 @@ int main(int argc, char **argv)
+ 		    exit(1);
+ 		  }
+ 		new->addr = *((struct in_addr *)e->h_addr);
++#ifdef GLUSTER_HACK
++		new->sock = socket (PF_INET, SOCK_DGRAM, 0);
++		opt = 1;
++		if ((flags = fcntl(new->sock, F_GETFL, 0)) == -1) {
++		  perror ("fcntl()");
++		  exit (1);
++		}
++		if (fcntl (new->sock, F_SETFL, flags | O_NONBLOCK) == -1) {
++		  perror ("fcntl()");
++		  exit (1);
++		}
++		if (setsockopt (new->sock, SOL_IP, IP_PKTINFO, &opt, 
++				sizeof(opt)) == -1) {
++		  perror ("setsockopt()");
++		  exit (1);
++		}
++		if (setsockopt (new->sock, SOL_SOCKET, SO_BROADCAST, &opt, 
++				sizeof(opt)) == -1) {
++		  perror ("setsockopt()");
++		  exit (1);
++		}
++		{
++		  struct sockaddr_in sin_tmp;
++
++		  sin_tmp.sin_family = PF_INET;
++		  sin_tmp.sin_port = htons (new->port+1);
++		  sin_tmp.sin_addr.s_addr = INADDR_ANY;
++
++		  if (bind (new->sock, (struct sockaddr *)&sin_tmp,
++			    sizeof (sin_tmp)) == -1) {
++		    perror ("bind()");
++		    exit (1);
++		  }
++		  if (debug)
++		    printf ("bound %d to %d for %s\n",
++			    new->sock, new->port+1, inet_ntoa (new->addr));
++		}
++
++#endif
+ 	      } 
+ 	    else if (strlen(optarg) > IF_NAMESIZE)
+ 	      {
+@@ -286,9 +343,15 @@ int main(int argc, char **argv)
+       
+       umask(0);
+ 
++#ifdef GLUSTER_HACK
++      close (0);
++      close (1);
++      close (2);
++#else /* GLUSTER_HACK */
+       for (i=0; i<64; i++)        
+ 	if (i != rawfd && i != fd)
+ 	  close(i);
++#endif /* GLUSTER_HACK */
+ 
+       setgroups(0, &dummy);
+ 
+@@ -310,16 +373,50 @@ int main(int argc, char **argv)
+       struct cmsghdr align; /* this ensures alignment */
+       char control[CMSG_SPACE(sizeof(struct in_pktinfo))];
+     } control_u;
++#ifdef GLUSTER_HACK
++    struct namelist *g_tmp;
++    int maxfd = -1;
++    int readfd;
++#endif
+     
+     FD_ZERO(&rset);
+     FD_SET(fd, &rset);
+ 
++#ifdef GLUSTER_HACK
++    maxfd = fd;
++    for (g_tmp = servers; g_tmp; g_tmp = g_tmp->next) {
++      FD_SET (g_tmp->sock, &rset);
++      if (g_tmp->sock > maxfd)
++	maxfd = g_tmp->sock;
++    }
++#endif
++
++    if (debug)
++      printf ("going to select()\n");
++#ifdef GLUSTER_HACK
++    if (select(maxfd+1, &rset, NULL, NULL, NULL) == -1)
++#else
+     if (select(fd+1, &rset, NULL, NULL, NULL) == -1)
++#endif /* GLUSTER_HACK */
+       continue;
+ 
++#ifdef GLUSTER_HACK
++    for (readfd = 0; readfd <= maxfd ; readfd ++) {
++      if (debug)
++	printf ("checking poll on %d\n", readfd);
++      if (FD_ISSET (readfd, &rset)) {
++	if (debug)
++	  printf ("data on %d\n", readfd);
++#endif /* GLUSTER_HACK */
++
+     /* read size of waiting packet and expand buffer if necessary */
++#ifdef GLUSTER_HACK
++	if (ioctl(readfd, SIOCINQ, &size) != -1 &&
++	    (size + sizeof(struct ip) + sizeof(struct udphdr)) > buf_size)
++#else
+     if (ioctl(fd, SIOCINQ, &size) != -1 &&
+ 	(size + sizeof(struct ip) + sizeof(struct udphdr)) > buf_size)
++#endif
+       {
+ 	struct udp_dhcp_packet *newbuf = malloc(size + sizeof(struct ip) + sizeof(struct udphdr));
+ 	if (!newbuf)
+@@ -341,8 +438,13 @@ int main(int argc, char **argv)
+     msg.msg_iovlen = 1;
+     iov[0].iov_base = (char *)&rawpacket->data;
+     iov[0].iov_len = buf_size - (sizeof(struct ip) + sizeof(struct udphdr));
+-    
++#ifdef GLUSTER_HACK
++    sz = recvmsg(readfd, &msg, 0);
++    if (debug)
++      printf ("read pkg %d bytes\n", sz);
++#else
+     sz = recvmsg(fd, &msg, 0);
++#endif
+ 
+     if (sz < (sizeof(*header) - sizeof(header->options)) || 
+ 	msg.msg_controllen < sizeof(struct cmsghdr))
+@@ -426,10 +528,16 @@ int main(int argc, char **argv)
+ 		saddr.sin_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
+ 	      }
+ 	    else
+-	      saddr.sin_addr = tmp->addr;
+-	    
+-	    saddr.sin_port = htons(DHCP_SERVER_PORT);
++	      saddr.sin_addr = tmp->addr;	    
++
++#ifdef GLUSTER_HACK
++	    saddr.sin_port = htons(tmp->port);
++	    sendto(tmp->sock, &rawpacket->data, sz, 0, (struct sockaddr *)&saddr, sizeof(saddr));
++#else /* GLUSTER_HACK */
++	    saddr.sin_port = htons (DHCP_SERVER_PORT);
+ 	    sendto(fd, &rawpacket->data, sz, 0, (struct sockaddr *)&saddr, sizeof(saddr));
++#endif /* GLUSTER_HACK */
++
+ 	  }
+ 
+ 	/* build address->interface index table for returning answers */
+@@ -493,7 +601,11 @@ int main(int argc, char **argv)
+ 	      }
+ 	    
+ 	    rawpacket->ip.ip_p = IPPROTO_UDP;
++#ifdef GLUSTER_HACK
++	    rawpacket->ip.ip_src.s_addr = iface->addr.s_addr;
++#else /* GLUSTER_HACK */
+ 	    rawpacket->ip.ip_src.s_addr = iface_addr.s_addr;
++#endif /* GLUSTER_HACK */
+ 	    rawpacket->ip.ip_len = htons(sizeof(struct ip) + 
+ 					 sizeof(struct udphdr) +
+ 					 sz) ;
+@@ -531,6 +643,11 @@ int main(int argc, char **argv)
+ 		   0, (struct sockaddr *)&dest, sizeof(dest));
+ 	  }
+       }
++#ifdef GLUSTER_HACK
++	    
++	    }
++      }
++#endif
+   }
+ 
+ }

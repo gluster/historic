@@ -1,0 +1,21 @@
+diff -pru guile-1.8.0/configure.in guile-1.8.0-h/configure.in
+--- guile-1.8.0/configure.in	2006-02-12 18:59:08.000000000 +0530
++++ guile-1.8.0-h/configure.in	2006-03-14 15:01:35.569771128 +0530
+@@ -53,7 +53,7 @@ AC_CONFIG_SUBDIRS(guile-readline)
+ 
+ dnl Some more checks for Win32
+ AC_CYGWIN
+-AC_MINGW32
++# AC_MINGW32
+ AC_LIBTOOL_WIN32_DLL
+ 
+ AC_PROG_INSTALL
+@@ -834,7 +834,7 @@ dnl restart (in case a different runtime
+ dnl behaviour for some reason: e.g., different versions of linux seem
+ dnl to behave differently.)
+ 
+-AC_SYS_RESTARTABLE_SYSCALLS
++# AC_SYS_RESTARTABLE_SYSCALLS
+ 
+ if test "$enable_regex" = yes; then
+    if test "$ac_cv_header_regex_h" = yes ||

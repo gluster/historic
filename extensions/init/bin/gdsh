@@ -1,0 +1,62 @@
+#!/usr/bin/python
+
+# gdsh: Gluster Distributed Shell
+# Author: Vikas Gorur <vikas@80x25.org>
+# Date: Sat Jan 21 23:33:34 IST 2006
+
+try:
+    import getopt, os, sys
+    from Gluster import gmap
+except ImportError, msg:
+    print "gdsh: Import error:", msg
+    sys.exit (1)
+
+def rexec (host, cmd):
+    ret = os.system ("ssh %s '%s'" % (host, cmd))
+    return ret
+
+def usage ():
+    print """Usage: gdsh [-d n] command [hosts_file]
+
+    -d, --degree n       set degree of parallelism to n
+"""    
+def main ():
+    try:
+        opt, args = getopt.gnu_getopt (sys.argv[1:], "d:",
+                                       ["degree="])
+    except getopt.GetoptError, (msg, opt):
+        print msg
+        usage ()
+        sys.exit (1)
+
+    if len (args) < 1:
+        usage ()
+        sys.exit (1)
+
+    quiet = False
+    degree = 1
+    
+    for (o, val) in opt:
+        if o == "-d" or o == "--degree":
+            degree = int (val)
+
+    try:
+        if len (args) == 1:
+            fp = sys.stdin
+        else:
+            fp = file (args[1], 'r')
+    except IOError, (errno, msg):
+        print "gdsh: Could not open hosts file:", msg
+        sys.exit (2)
+
+    try:
+        hosts = fp.readlines ()
+    except IOError, (errno, msg):
+        print "gdsh: Could not read list of hosts:", msg
+        sys.exit (2)
+        
+    hosts = map (lambda s: s[:-1], hosts)
+    rets = gmap.gmap (lambda host: rexec (host, args[0]),
+                      hosts, degree)
+    
+main ()

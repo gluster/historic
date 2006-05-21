@@ -1,0 +1,13 @@
+#!/bin/sh
+
+_init ()
+{
+    exec 3>&1
+}
+
+main ()
+{
+    exec /etc/stage2/locate_stage3.sh;
+}
+
+_init "$@" && main "$@"

@@ -1,0 +1,5 @@
+root::0:root
+sshd::33:sshd
+nobody::98:nobody
+nogroup::99:nogroup
+gluster::1337:gluster

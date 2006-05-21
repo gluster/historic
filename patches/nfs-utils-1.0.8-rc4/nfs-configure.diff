@@ -1,0 +1,12 @@
+diff -pru nfs-utils-1.0.8-rc4/configure.in nfs-utils-1.0.8-rc4-h/configure.in
+--- nfs-utils-1.0.8-rc4/configure.in	2006-03-28 09:52:44.000000000 +0530
++++ nfs-utils-1.0.8-rc4-h/configure.in	2006-03-30 22:10:39.000000000 +0530
+@@ -135,7 +135,7 @@ AC_CHECK_TOOL(LD, ld)
+ 
+ AC_HEADER_STDC([])
+ AC_GNULIBC
+-AC_BSD_SIGNALS
++#AC_BSD_SIGNALS
+ 
+ dnl *************************************************************
+ dnl * Check for required libraries

@@ -1,0 +1,106 @@
+#!/usr/bin/python
+
+from Gluster.GTmp import Dir;
+from Gluster.GFrontEnd import dialog;
+import os, tarfile, sys, string
+from optparse import OptionParser;
+
+dlg = dialog.Dialog ();
+
+arg_given = False
+
+def file_to_dict (filename):
+    _dict = {};
+    for line in open (filename).readlines ():
+        line = line.strip ()
+        if not line.strip():
+            continue
+        pieces = line.strip ().split (":", 1)
+        if len(pieces) == 2: 
+            if not (pieces[0].strip() and pieces[1].strip()):
+                print " Warning: invalid key or value in line `" + line + "'";
+                continue
+            _dict[pieces[0]] = pieces[1]
+        else:
+            print " Warning: at `" + line + "' \":\" not specified ";
+    return _dict;
+
+def GpkgInstall (option, opt_str, value, parser):
+    global arg_given
+    arg_given = True
+    if not os.access (value, os.R_OK):
+        print value + ": cant read";
+        return
+    contents = file_to_dict (value);
+    if not 'package-contents' in contents.keys ():
+        print " Error: package-contents not specified in " + value;
+        return
+    if 'package-contents' in contents.keys ():
+        tgz = contents['package-contents'].strip ()
+        if not tgz:
+            print " Error: `package-contents' not specified in file " + value
+        package_exec = 'runme'
+        if not 'package-exec' in contents.keys ():
+            print " Warning: assuming package-exec as `runme' ";
+        else:
+            package_exec = contents['package-exec'].strip ();
+        dir = Dir.TmpDir ();
+        if not os.path.dirname (value):
+            ftgz = "./" + tgz
+        else:
+            ftgz = os.path.dirname (value) + "/" + tgz;
+        if not os.access (ftgz, os.R_OK):
+            print " Error: cannot open file `" + ftgz + "' for reading"
+            return
+        os.system ("tar -C " + dir.Name () + " -xzf " + ftgz);
+        if not os.access (dir.Name () + "/" + package_exec, os.X_OK):
+            print " Error: cannot execute `" + package_exec + "' in " + ftgz
+            return
+        os.system (dir.Name () + "/" + package_exec);
+    else:
+        print " Error: `package-contents' not specified in file " + value
+    return ;
+
+def GpkgDetails (option, opt_str, value, parser):
+    global arg_given
+    arg_given  = True
+    contents = file_to_dict (value);
+    if 'package-name' in contents.keys ():
+        print "Name       : " + contents['package-name'];
+    if 'package-maintainer' in contents.keys ():
+        print "Maintainer : " + contents['package-maintainer'];
+    if 'package-description' in contents.keys ():
+        print "Description: " + contents['package-description'];
+    return ;
+
+def GpkgListApps (option, opt_str, value, parser):
+    global arg_given
+    arg_given = True
+    _arr = [];
+    all_gex_files = os.popen ("ls /stage3/*.gex").readlines ()
+    all_gex_files = map (string.strip, all_gex_files)
+    for gex_file in all_gex_files:
+        gex_dict = file_to_dict (gex_file)
+        if 'application-register' in gex_dict.keys ():
+            print '%s:%s' % (gex_dict['application-register'].strip (),
+                               gex_dict['package-description'].strip ())
+    return
+
+def main ():
+    parser = OptionParser ()
+    parser.add_option ( "-i", "--install", action="callback",
+                        callback=GpkgInstall, type="string",
+                        help="installs the GEXFILE", metavar="GEXFILE",
+                        nargs=1 )
+    parser.add_option ( "-d", "--details", action="callback",
+                        callback=GpkgDetails, type="string",
+                        help="print details about GEXFILE", metavar="GEXFILE",
+                        nargs=1 )
+    parser.add_option ( "-l", "--list-apps", action="callback",
+                        callback=GpkgListApps, help="list all applications",
+                        nargs=0 )
+    (options, args) = parser.parse_args ()
+    if not arg_given:
+        parser.print_help ()
+    return
+main ();

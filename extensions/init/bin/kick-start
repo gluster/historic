@@ -1,0 +1,62 @@
+#!/usr/bin/python
+
+from Gluster.GFrontEnd import dialog;
+from Gluster import GExtension
+from Gluster.GTmp import Dir
+from Gluster.gpartdump import *
+import os, sys;
+
+d = dialog.Dialog ();
+
+def get_stage3_gexs ():
+    fd = os.popen ("gex --list-apps", "r");
+    return fd.readlines ();
+
+def load_app ():
+    gexs = [];
+    for gex in  get_stage3_gexs ():
+        gexs.append ((gex.strip ().split (":",1)[0], gex.strip ().split (":",1)[1]) );
+        
+    if len (gexs) == 0:
+        d.msgbox ("no applications to load");
+        return
+
+    (ret, theone) = d.menu ("Select application", choices=gexs, title='[ GDesktop ]',nocancel=True);
+    if ret != 0:
+        return
+    d.infobox ("Preparing to start " + theone)
+    os.system ("gex --install /stage3/" +  theone + ".gex")
+    return
+
+def load_initial_app ():
+    teh_app = None
+    cmdline=file ('/proc/cmdline').readline ().strip ()
+    cmd_pieces = cmdline.split ()
+    for piece in cmd_pieces:
+        sub_pieces = piece.split ('=')
+        if len (piece.split ('=')) > 1:
+            if sub_pieces[0] == 'gluster_app':
+                teh_app = sub_pieces[1]
+
+    if not teh_app:
+        return
+    if not os.access ('/stage3/%s.gex' % teh_app, os.R_OK):
+        d.infobox ("%s: no such application/extension available")
+        return
+    
+    if teh_app:
+        d.infobox ("Autoloading %s" % teh_app)
+        os.system ("gex --install /stage3/%s.gex" % teh_app)
+    return
+
+def main ():
+
+    load_initial_app ()
+    while True:
+        load_app ()
+
+main ()
+    
+
+
+

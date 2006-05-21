@@ -1,0 +1,179 @@
+#!/usr/bin/python
+
+import os, string, sys, getopt
+from Gluster.GFrontEnd import dialog
+from Gluster.GTmp import Dir
+from Gluster import gmap
+from Gluster.gpartdump import *
+
+dlg = dialog.Dialog ()
+
+_parts = {}
+
+#
+# Usage:
+# step1 - gprobe > orig.spec
+# step2 - gpart-sel -i orig.spec -o xfer.spec
+# step3 - gpart-sel --send -i xfer.spec -c commands_file
+#
+
+def uniq (list):
+    set = {}
+    map (set.__setitem__, list, [])
+    return set.keys ()
+
+def sel_parts (_parts):
+    sel_os = []
+    i = 0
+    idx_to_part = {}
+    for _part in _parts:
+        if _parts[_part]['OS'] != '':
+            if _parts[_part]['FS'] != '':
+                i = i + 1
+                sel_os.append ((str (i),_parts[_part]['DESC'],"on"))
+                idx_to_part[i] = _part
+
+    for _part in _parts:
+        if _part in idx_to_part.values ():
+            continue
+        found = False
+        for os_part in idx_to_part.values ():
+            if _part in _parts[os_part]['FSTAB'].keys ():
+                found = True
+                break
+        if found:
+            continue
+        if _parts[_part]['FS'] != '':
+            i = i + 1
+            sel_os.append ((str (i),
+                            "%s ( %s | %s )" % (_part,
+                                                  _parts[_part]['FS'],
+                                                  _parts[_part]['SIZE']),
+                            "on"))
+            idx_to_part[i] = _part
+    
+    if i == 0:
+        return (0, None)
+
+    if len (sel_os) > 1:
+        (ret, sel_ids) = dlg.checklist ('select OSes to replicate',
+                                        title='[ Select OS ]',
+                                        choices=sel_os,
+                                        ok_label=' Select ',
+                                        cancel=' Back ')
+        if ret != 0:
+            return (1, None)
+    else:
+        sel_ids = map (lambda (x, y, z): x, sel_os)
+
+    sel_parts = map (idx_to_part.get, map (string.atoi, sel_ids))
+    new_parts = []
+    for sel_part in sel_parts:
+        if _parts[sel_part]['OS'] == '':
+            new_parts.append (sel_part)
+            continue
+        fstab_list = []
+        for f in _parts[sel_part]['FSTAB'].keys ():
+            if f in _parts.keys () and _parts[f]['FS'] != '':
+                fstab_list.append ((f, _parts[sel_part]['FSTAB'][f], "on"))
+        if len (fstab_list) == 0:
+            continue
+        (ret,
+         small_parts) = dlg.checklist ('\n%s\n\n' % _parts[sel_part]['DESC'],
+                                       title='[ Select Partitions ]',
+                                       choices=fstab_list,
+                                       ok_label=' Select ')
+        if ret != 0:
+            continue
+        # this is for the sake of merging partitions in destination
+        for del_part in _parts[sel_part]['FSTAB'].keys ():
+            if not del_part in small_parts:
+                _parts[sel_part]['FSTAB'].pop (del_part)
+        new_parts += small_parts
+
+    if new_parts == []:
+        return (1, [])
+    return (0,uniq (sel_parts + new_parts))
+
+def main ():
+    global port_base
+    global xfer_cmd
+    global _parts
+    spec_fd = sys.stdin
+    cfd = sys.stdout
+    max_fd = sys.stdout
+    commands_fd = sys.stdout
+    try:
+        (opt, args) = getopt.getopt (sys.argv[1:], "i:o:c:m:",
+                                     ["input=",
+                                      "output=",
+                                      "commands=",
+                                      "maxbytes="])
+
+    except getopt.GetoptError, (msg, opt):
+        print msg
+        sys.exit (1)
+
+    for (o,val) in opt:
+        if o == '-c' or o == '--commands':
+            try:
+                commands_fd = file (val, "w")
+            except:
+                sys.exit (1)
+
+        if o == '-o' or o == '--output':
+            try:
+                cfd = file (val, "w")
+            except:
+                sys.exit (1)
+        if o == '-i' or o == '--input':
+            try:
+                spec_fd = file (val)
+            except:
+                sys.exit (1)
+        if o == '-m' or o == '--maxbytes':
+            try:
+                max_fd = file (val, "w")
+            except:
+                sys.exit (1)
+
+    _parts = gdump_partlist (read_gdump (spec_fd))
+
+    (ret, parts_selected) = sel_parts (_parts)
+    if ret != 0:
+        sys.exit (1)
+    if not parts_selected:
+        dlg.msgbox ("no partitions available for replication")
+        return 0
+
+
+    for part in parts_selected:
+        _parts[part]['XFER'] = 'Y'
+    write_dump (cfd, partlist_gdump (_parts))
+
+
+    partlist = _parts
+    parts = partlist.keys ()
+    parts.sort ()
+    parts = filter ((lambda x:
+                     partlist[x]['XFER'] == 'Y' and partlist[x]['FS'] != 'linux-swap'),
+                    parts)
+
+    bytes = 0
+    for part in parts:
+        (need_umount, mp) = get_mpoint (part)
+        if not mp:
+            dlg.msgbox ('could not mount %s' % part)
+            sys.exit (1)
+        umount_cmd = ''
+        if need_umount:
+            umount_cmd = '; umount %s' % mp
+        bytes += (int(os.popen ("df -k %s | tail -n -1 | awk '{print $3}'" % mp).readline ().strip ()) * 1000)
+        tar_cmd = "/usr/bin/tar --format=posix -C %s -c . 2>/dev/null %s\n" % (mp, umount_cmd)
+        commands_fd.write ('%s' % tar_cmd)
+
+    max_fd.write ('%d\n' % bytes)
+    commands_fd.close ()
+
+main ()
+

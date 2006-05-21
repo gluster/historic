@@ -1,0 +1,5 @@
+package-name: Network Utilities
+package-description: iptables
+package-maintainer: Amar Tumballi <amar@zresearch.com>
+package-contents: net-utils.tgz
+package-exec: ./runme

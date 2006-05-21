@@ -1,0 +1,431 @@
+#!/usr/bin/python
+
+try:
+    import sys, os, getopt, string
+    from Gluster.gpartdump import *
+    from Gluster.GFrontEnd import dialog
+except ImportError, msg:
+    print "Error: ", msg
+
+dlg = dialog.Dialog ()
+
+def sort_fn (line1):
+    return len (line1.split (":")[2])
+
+def status_check (fd, msg):
+    fd.write ("[ $? == 0 ] || (echo -n %s > /tmp/.status.in && echo -n fail > /tmp/.gping.in)\n" % msg)
+
+def partition_section (buffer):
+    fd = file ('/tmp/gmi/00-partition.sh','w')
+    fd.write ("#!/bin/sh\n")
+    fd.write ("# Partition \n")
+    fd.write ("echo -n success > /tmp/.status.in\n")
+    for line in buffer:
+        fd.write ('%s\n' % line)
+        status_check (fd, 'Failed during partitioning')
+    fd.write ("# End of Partitioning \n\n")
+    fd.close ()
+    
+def mount_section (buffer):    
+    fd = file ('/tmp/gmi/01-mount.sh','w')
+    fd.write ("#!/bin/sh\n")
+    fd.write ("# Mounting\n")
+    fd.write ("echo -n success > /tmp/.status.in\n")
+    fd.write ("sleep 1\n")
+    buffer.sort (key=sort_fn)
+    for line in buffer:
+        array = line.strip ().split (":")
+        if array[2] == 'swap':
+            continue
+        mp = "/tmp/ginstaller/%s%s" % (array[1], array[2])
+        fd.write ("mkdir -p %s\n" % mp)
+        fd.write ("mount %s %s\n" % (array[0], mp))
+        status_check (fd, 'mounting failed')
+    fd.write ("# End of Mounting section\n\n")
+    fd.close ()
+
+def untar_section (tx_buf, cmds_buf):
+    f = file ('/tmp/gmi/02-untar.sh','w')
+    f.write ("#!/bin/sh\n")
+    f.write ("# Untaring the images\n")
+    f.write ("echo -n success > /tmp/.status.in\n")    
+    untar_dict = {}
+    for line in tx_buf:
+        tar = line.strip ().split (':')[0]
+        key = line.strip ().split (':')[1]
+        sub = line.strip ().split (':')[2]
+        if sub == 'swap':
+            continue
+        if not untar_dict.has_key (tar):
+            untar_dict[tar] = {}
+        untar_dict[tar][key] = sub
+    tars = untar_dict.keys ()
+    tars.sort ()
+    f.write ("# Untarring\n")
+    f.write ("for tar in %s; do\n" % string.join (tars))
+    cmds_buf = map (string.strip, cmds_buf)
+    if len (cmds_buf):
+        for (tar, cmd) in map (None, tars, cmds_buf):
+            key = untar_dict[tar].keys ()[0]
+            sub = untar_dict[tar][key]
+            f.write ("\tmkdir -p /tmp/ginstaller/%s%s\n" % (key, sub))
+            fmt = "\t%s | /usr/bin/tar --format=posix -C /tmp/ginstaller/%s%s -x &\n"
+            f.write (fmt % (cmd, key, sub))
+    else:
+        f.write ("echo No partions selected\n")
+    f.write ("done\n")
+    # f.write ("wait\n")
+    f.write ("# End of untarring section \n\n")
+    f.close ()
+
+def fstab_section (tx_buffer, mnt_buffer, _parts):
+    fd = file ('/tmp/gmi/03-fstab.sh','w')
+    fd.write ("#!/bin/sh\n")
+    fd.write ("# fstab \n")
+    fd.write ("echo -n success > /tmp/.status.in\n")
+    # first delete all the entrys in 'tx', later add all in 'mnt'
+    swap_flag = True
+    fstab_prev = ''
+    for line in tx_buffer:
+        array = line.strip ().split (":")
+        chroot = "/tmp/ginstaller/%s" % array[1]
+        fstab = "%s/etc/fstab" % chroot
+        fd.write ("sed -i -e '\#[ \\t]%s[ \\t]#d' %s\n" % (array[2], fstab))
+        # Handle 'swap' partition seperately
+        if fstab != fstab_prev:
+            swap_flag == True
+            fstab_prev = fstab
+        if swap_flag == True:
+            fd.write ("sed -i -e '\#[ \\t]swap[ \\t]#d' %s\n" % fstab)
+            swap_flag = False
+    for line in mnt_buffer:
+        array = line.strip ().split (":")
+        chroot = "/tmp/ginstaller/%s" % array[1]
+        fstab = "%s/etc/fstab" % chroot
+        if array[2] == 'swap':
+            if _parts[array[0]]['LABEL'] == '':
+                fd.write ("echo \"%s none swap defaults 0 0\" >> %s\n" %
+                          (array[0], fstab))
+            else:
+                fd.write ("echo \"LABEL=%s none swap defaults 0 0\" >> %s\n" %
+                          (_parts[array[0]]['LABEL'], fstab))
+        else:
+            if _parts[array[0]]['LABEL'] == '':
+                fd.write ("echo \"%s %s auto defaults 1 1\" >> %s\n" %
+                          (array[0], array[2], fstab))
+            else:
+                fd.write ("echo \"LABEL=%s %s auto defaults 1 1\" >> %s\n" %
+                          (_parts[array[0]]['LABEL'], array[2], fstab))
+    fd.write ("# End of fstab section \n\n")
+    fd.close ()
+
+def grub_convert (key, old_part):
+    return "`grub-convert /tmp/ginstaller/%s %s`" % (key, old_part)
+
+# This function needs to be rewritten (or say reorganised)
+
+def bootloader_section (mnt_buf, tx_buf, partlist, src_partlist, auto):
+    f = file ('/tmp/gmi/04-bootloader.sh','w')
+    f.write ("#!/bin/sh\n")
+    f.write ("# Bootloader options \n")
+    f.write ("echo -n success > /tmp/.status.in\n")
+    bl_dict = {}
+    
+    for part in partlist.keys ():
+        if partlist[part]['TYPE'] == 'disk':
+            (d, p) = get_disk_part (part)
+            bl_dict['%s' % d] = None
+            
+    for line in mnt_buf:
+        pieces = line.strip ().split (':')
+        
+        if pieces[2] != '/':
+            continue
+        if partlist[pieces[0]]['OS'] == '':
+            continue
+        bl_dict['%s' % pieces[0]] = None
+
+    choices_dict = {}
+    for part in src_partlist.keys ():
+        if not 'BLOADER' in src_partlist[part].keys ():
+            continue
+        if len (src_partlist[part]['BLOADER']) == 0:
+            continue
+        if src_partlist[part]['XFER'] == 'N':
+            continue
+        teh_key = None
+        for tx_line in tx_buf:
+            tx_part = tx_line.split (':')[0]
+            tx_key = tx_line.split (':')[1]
+            if tx_part == part:
+                teh_key = tx_key
+                break
+        if not teh_key:
+            continue
+
+        new_part = None
+        for m_line in mnt_buf:
+            m_part = m_line.strip ().split (':')[0]
+            m_key = m_line.strip ().split (':')[1]
+            m_mp = m_line.strip ().split (':')[2]
+            if m_key == tx_key and m_mp == '/':
+                new_part = m_part
+                break
+        for bl in src_partlist[part]['BLOADER'].keys ():
+            choices_dict['%s:%s' % (teh_key, bl)] = None
+
+    # autocomplete `intelligently' what boot loader goes where
+    for bl in choices_dict.keys ():
+        bl_key = bl.split (':')[0]
+        bl_type = bl.split (':')[1]
+        bl_part = None
+
+        for m_line in mnt_buf:
+            m_part = m_line.strip ().split (':')[0]
+            m_key = m_line.strip ().split (':')[1]
+            m_mp = m_line.strip ().split (':')[2]
+            if m_key == bl_key and m_mp == '/':
+                bl_part = m_part
+                break
+        if bl_type == 'grub':
+            (bl_mbr, p) = get_disk_part (bl_part)
+            if not bl_dict[bl_mbr]:
+                bl_dict[bl_mbr] = bl
+                choices_dict[bl] = bl_mbr
+	if bl_type == 'lilo':
+	    (bl_mbr, p) = get_disk_part (bl_part)
+	    if not bl_dict[bl_mbr]:
+	        bl_dict[bl_mbr] = bl
+ 	        choices_dict[bl] = bl_mbr
+        elif len (choices_dict.keys ()) == 1:
+            (bl_mbr, p) = get_disk_part (bl_part)
+            if not bl_dict[bl_mbr]:
+                bl_dict[bl_mbr] = bl
+                choices_dict[bl] = bl_mbr            
+        # add more code here to make more default entries
+
+    while True:
+        choices = []
+        blkeys = bl_dict.keys ()
+        blkeys.sort ()
+        for blkey in blkeys:
+            val = bl_dict[blkey]
+            if not val:
+                val = '*untouched*'
+            choices.append ((blkey, val))
+        ret = 0
+        if auto == '--auto':
+            ret = 1
+        else:
+            (ret, sel) = dlg.menu ('assign bootloaders',
+                                   choices=choices,
+                                   ok_label='change',
+                                   cancel='done',
+                                   defaultno=True)
+        
+        if ret != 0:
+            break
+
+        bl_choices = []
+        for (k,v) in choices_dict.items ():
+            if not v:
+                v = '*unassigned*'
+            bl_choices.append ((k, v))
+
+        def_bl = bl_dict[sel]
+        if not def_bl:
+            def_bl = ''
+        (ret, bl_sel) = dlg.menu ('select bootloader for %s' % sel,
+                                   choices=bl_choices,
+                                  default_item=def_bl)
+
+        if ret != 0:
+            continue
+        old_dest = choices_dict[bl_sel]
+        if old_dest:
+            bl_dict[old_dest] = None
+        choices_dict[bl_sel] = sel
+        bl_dict[sel] = bl_sel
+
+    grub_sed = 'sed -i '
+
+    lilo_sed = 'sed -i '
+
+    for m_line in mnt_buf:
+        m_mp = m_line.split (':')[2]
+        if m_mp != '/':
+            continue
+        new_part = m_line.split (':')[0]
+        teh_key = m_line.split (':')[1]
+        old_part = None
+        for t_line in tx_buf:
+            t_sub = t_line.split (':')[2]
+            if t_sub != '/':
+                continue
+            t_key = t_line.split (':')[1]
+            if t_key != teh_key:
+                continue
+            old_part = t_line.split (':')[0]
+            break
+        lilo_sed_part = " -e 's,=[ \\t]*%s[ \\t]*$,= %s,'" % (old_part, new_part)
+        lilo_sed += lilo_sed_part
+        
+        src_has_slash_boot = False
+        src_part = old_part
+        for s_line in tx_buf:
+            (s_part, s_key, s_sub) = s_line.split (':')
+            if s_sub != '/boot':
+                continue
+            if s_key != teh_key:
+                continue
+            src_has_slash_boot = True
+            src_part = s_part
+            break
+        dst_has_slash_boot = False
+        dst_part = new_part
+        for d_line in mnt_buf:
+            (d_part, d_key, d_sub) = d_line.split (':')
+            if d_sub != '/boot':
+                continue
+            if d_key != teh_key:
+                continue
+            dst_has_slash_boot = True
+            dst_part = d_part
+            break
+        
+        grub_old_part = grub_convert (teh_key, src_part)
+        grub_new_part = grub_convert (teh_key, dst_part)
+        if not src_has_slash_boot:
+            grub_old_part += '/boot'
+        if not dst_has_slash_boot:
+            grub_new_part += '/boot'
+
+        grub_sed += ' -e "s:%s:%s:"' % (grub_old_part, grub_new_part)
+        grub_sed += lilo_sed_part
+        
+    for bl in choices_dict.keys ():
+        bl_type = bl.split (':')[1]
+        bl_key = bl.split (':')[0]
+        bl_dest = choices_dict[bl]
+
+        if not bl_dest:
+            continue
+        
+        if bl_type == 'lilo':
+            f.write ('%s /tmp/ginstaller/%s/etc/lilo.conf\n' % (lilo_sed,
+                                                              bl_key))
+            f.write ("sed -i 's,^\ *boot\ *=\ *.*,boot = %s,' /tmp/ginstaller/%s/etc/lilo.conf\n" % (bl_dest, bl_key))
+            f.write ("chroot /tmp/ginstaller/%s sh -c 'mount /proc ; /sbin/lilo ; umount /proc'\n" % bl_key)
+            status_check (f, 'Bootloader update failed')
+        if bl_type == 'grub':
+            f.write ('%s /tmp/ginstaller/%s/boot/grub/menu.lst\n' % (grub_sed,
+                                                                     bl_key))
+            f.write ('mount --bind /dev /tmp/ginstaller/%s/dev\n' % bl_key)
+            status_check (f, 'Bootloader update failed')
+            f.write ("chroot /tmp/ginstaller/%s sh -c 'grub-install %s'\n" % (bl_key, bl_dest))
+            status_check (f, 'Bootloader update failed')
+            f.write ("umount /tmp/ginstaller/%s/dev\n" % bl_key)
+    f.write ("# End of BootLoader Section\n")
+    f.close ()
+    return
+
+def postinstall_section (mount_buf):
+    f = file ('/tmp/gmi/05-postinstall.sh','w')
+    f.write ("#!/bin/sh\n")
+    f.write ("# Post Install Configuration\n")
+    f.write ("echo -n success > /tmp/.status.in\n")
+    for mp in mount_buf:
+        if mp.strip ().split (":")[2] != '/':
+            continue
+        mnt_key = mp.strip ().split (":")[1]
+        f.write ("customize-net /tmp/ginstaller/%s\n" % mnt_key)
+        status_check (f, 'Network configuration failed')
+        f.write ("for cmd in /usr/share/gluster/extensions/postinstall/*; do\n")
+        f.write ("\tchmod +x $cmd\n")
+        f.write ("\t$cmd /tmp/ginstaller/%s\n" % mnt_key)
+        f.write ("\t[ $? == 0 ] || (echo -n failed during $cmd > /tmp/.status.in && echo -n fail > /tmp/.gping.in)\n")
+        f.write ("done\n")
+    f.write ("# End of postinstallation section \n")
+    f.write ("\n")
+    f.close ()
+    return
+
+def umount_section (buffer):
+    fd = file ('/tmp/gmi/06-umount.sh','w')
+    fd.write ("#!/bin/sh\n")
+    fd.write ("\n# UnMounting\n")
+    fd.write ("echo -n success > /tmp/.status.in\n")
+    buffer.sort (key=sort_fn)
+    unmnt_buff = []
+    for i in range (len (buffer)):
+        unmnt_buff.append (buffer[-(i+1)])
+        
+    for line in unmnt_buff:
+        array = line.strip ().split (":")
+        if array[2] == 'swap':
+            continue
+        mp = "/tmp/ginstaller/%s%s" % (array[1], array[2])
+        fd.write ("umount %s\n" % mp)
+    fd.write ("# End of UnMounting section\n\n")
+    fd.close ()
+
+def main ():
+    auto_arg = ''
+    inp_file = '/tmp/tmpfile.spec'
+    part = '/tmp/part.spec'
+    mnt = '/tmp/mount.spec'
+    tx = '/tmp/xfer.spec'
+    dump = '/tmp/dump.spec'
+    commands_file = '/tmp/commands.spec'
+    
+    (opt, args) = getopt.getopt (sys.argv[1:], "ahvi:o:c:s:",
+                                 ["auto",
+                                  "help",
+                                  "version",
+                                  "input=",
+                                  "output=",
+                                  "commands="])
+    for (o, val) in opt:
+        if o == '-a' or o == '--auto':
+            auto_arg = '--auto'
+        if o == '-i' or o == '--input':
+            inp_file = val
+        if o == '-o' or o == '--output':
+            main_script = val
+        if o == '-c' or o == '--commands':
+            commands_file = val
+        if o == '-h' or o == '--help':
+            return
+        if o == '-v' or o == '--version':
+            return
+
+#    os.system ("gprobe | gpart-sel")
+    os.system ("cat %s | gmountmap %s -d %s -m %s -t %s -c %s" %
+               (inp_file, auto_arg, dump, mnt, tx, part))
+
+    part_buf = file (part, "r").readlines ()
+    part_buf = map (string.strip, part_buf)
+    mnt_buf = file (mnt, "r").readlines ()
+    mnt_buf = map (string.strip, mnt_buf)
+    tx_buf = file (tx, "r").readlines ()
+    tx_buf = map (string.strip, tx_buf)
+    partlist = gdump_partlist (read_gdump (file (dump)))
+    src_partlist = gdump_partlist (read_gdump (file (inp_file)))
+    cmds_buf = file (commands_file).readlines ()
+    cmds_buf = map (string.strip, cmds_buf)
+
+    os.system ("mkdir -p /tmp/gmi")
+    partition_section (part_buf)
+    mount_section (mnt_buf)
+    untar_section (tx_buf, cmds_buf)
+    fstab_section (tx_buf, mnt_buf, partlist)
+    bootloader_section (mnt_buf, tx_buf, partlist, src_partlist, auto_arg)
+    postinstall_section (mnt_buf)
+    umount_section (mnt_buf)
+
+#    os.unlink (part)
+#    os.unlink (mnt)
+#    os.unlink (tx)
+#    os.unlink (dump)
+
+main ()

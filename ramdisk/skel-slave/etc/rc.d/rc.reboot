@@ -1,0 +1,21 @@
+#!/bin/sh
+
+cd /;
+
+echo " Sending SIGTERM to all processes "
+killall5 -15 && sleep 1;
+
+echo " Sending SIGKILL to all processes "
+killall5 -9 && sleep 1;
+
+echo " Umounting all filesystems "
+umount -a -f;
+
+echo " Syncing hardware clock with system time "
+hwclock --systohc; 
+
+echo " Syncing disks "
+sync && sleep 1;
+
+echo " Powering down "
+reboot -hif;

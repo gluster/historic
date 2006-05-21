@@ -1,0 +1,18 @@
+#!/bin/sh
+
+echo " * Downloading and installing Stage-3"
+
+EXTENSIONS="init fs-utils gutils GlusterEP"
+mkdir -p /tmp/s3i
+cd /tmp/s3i
+for ext in $EXTENSIONS; do
+    atftp --get --remote-file stage3/$ext.tgz --local-file $ext.tgz master-node
+    tar -xzf $ext.tgz
+    ./runme --client
+    rm -rf *
+done
+cd /
+rm -rf /tmp/s3i
+
+
+exec GlusterEP --client

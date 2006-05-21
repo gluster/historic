@@ -1,0 +1,5 @@
+package-name: Client-Registration
+package-description: client registartion details
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: client-reg.tgz
+package-exec: ./runme

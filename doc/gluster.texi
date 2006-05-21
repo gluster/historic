@@ -1,0 +1,254 @@
+\input texinfo @c -*-texinfo-*-
+@c %**start of header
+@setfilename gluster.info
+@settitle Gluster
+@footnotestyle separate
+@c %**end of header
+
+@include version.texi
+
+@dircategory Gluster@!
+@direntry
+* gluster: (gluster).           Gluster - what and how?
+@end direntry
+
+@ifinfo
+@noident This file documents Gluster version @value{VERSION}
+Gluster is a GNU/Linux Live distribution, used to run clustering
+applications.
+
+Copyright @copyright{} 2005 Gluster Core Team. http://www.gluster.org/
+Copyright @copyright{} 2005 Z RESEARCH, Inc. http://www.zresearch.com/
+@end ifinfo
+
+@include permissions.texi
+
+@titlepage
+@title Gluster - GNU Clustering Meta Distribution version @value{VERSION}
+@subtitle Introduction , @value{UPDATED}
+@author Harshavardhana @email{harsha@@80x25.org}
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2005 Gluster Core Team
+@sp 2
+This is the first edition of the Gluster documentation.
+@sp 2
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Free Software Foundation.
+@end titlepage
+
+
+@c define introduction index
+@defcodeindex intro
+
+@page
+@contents
+
+@ifinfo
+@node Top, Overview, (dir), (dir)
+@top Gluster@! @value{VERSION}
+
+@noindent This file documents Gluster version @value{VERSION}.
+Gluster is a GNU/Linux Live distribution, used to run clustering
+applications.
+
+@c @noindent Copyright @copyright{} 2005 Gluster Core Team.
+@menu
+* Overview::                    What is gluster?.
+* Arch::                        Gluster Architecture.
+* Extensions::                  Gluster's Key Modularity.
+* Applications::                Special Extensions.
+* IPC::                         Process Communication.
+* Client Boot::                 Booting Mechanism.
+* Build Process::               Gluster Distro Build.
+* Portability::                 Porting Gluster.
+* Concept Index::               
+@end menu
+@end ifinfo
+
+@node Overview, Arch, Top, Top
+@chapter Overview
+Gluster is a GNU/Linux Live distribution, used to run clustering
+applications.
+Gluster is modular system, extended in Python.
+
+Few of the applications Gluster [will] run are:
+@itemsize @bullet
+@item
+GInstaller - GInstaller is an application used to replicate a
+GNU/Linux installation on a cluster.
+
+@item 
+Gluster-SSI/NUMA - SSI - Single System Image.
+....fill more......
+
+@end itemsize
+@cindex What is Gluster?
+
+@node Arch, Extensions, Overview, Top
+@chapter Gluster Architecture
+
+Gluster Runtime has three stages of operation
+
+@itemsize @bullet
+@item
+Stage 1 (Bootstrapping)
+
+This is the bootloader stage, where Gluster's kernel and initrd
+are loaded either from ISO, USB or Network Boot.
+
+The only goal of this stage is to load the kernel and initrd and boot
+the kernel.
+   
+@item
+Stage 2 (Probe for Stage 3)
+
+Gluster being modular, has all its features as extensions. These
+extensions reside in the Gluster CDROM, or, external extensions can
+be used from NFS mount etc.
+
+The goal of Stage 2 is to probe for the location of Stage 3 (extensions)
+and load the 'core' extension, which takes control thereof.
+
+@item
+Stage 3 (Applications and extensions)
+
+Applications, like GInstaller, GlusterSSI are part of Stage-3.
+
+@end itemsize
+@cindex Architecture
+
+
+@node Extensions, Applications, Arch, Top
+@chapter Gluster Modularity
+Extensions are the key of Gluster's modularity. Every feature, package,
+application and operation is built into Gluster as an extension. The
+selection of application to run, itself, is an extension called 'core'.
+
+`core' is a special extension which provides basic extension framework,
+Gluster libraries, and an application loader.
+
+Format of an Extension
+
+An extension to Gluster consist of two files -
+a) A specification file [filename.gex]
+b) A tarball [filename.tgz]
+
+The .gex file has meta information about the extension, like, what kind
+of extension this is (Application, simple package, tool, library), what it
+does, who is the maintainer, what is the .tgz corresponding to this
+extension etc. 
+
+The .tgz has the actual extension contents. During installation of an
+extension, the .tgz is extracted to a temporary directory, and a well
+known executable in it [usually called `runme', but configurable in the
+.gex file] is executed. The `runme' can be a shell script, binary, python
+script, anything which can be executed.
+
+It is upto the `runme' script to do whatever it wants. Usually the things
+it might want to do are -
+
+a)If the extension provides a package, the runme would copy the .so files
+to the system lib repository /usr/lib etc.
+b)Install other extension which it depends on.
+c)If the extension provides tools for Gluster, copy them to 
+/usr/share/gluster/extensions/<name>/<name>
+If another extension needs to use this tool, it should look for it
+in /usr/share/gluster/extensions/<toolname>/<toolname>
+
+So, the extensions `runme' decides the characteristic of an extension,
+and it is totally in the `runme's hands what an extension does, or doesnt.
+
+@cindex Modularity
+
+@node Applications, IPC, Extensions, Top
+@chapter Special Extensions
+
+Applications are special extensions [special in nature, not by format]
+which are `starting points' of operation for the user. For example,
+the GInstaller Application (extension) is a wrapper script which calls
+the Partition tool extension, Format tool extension and Copy tool extension
+in sequence with appropriate context and parameters.
+
+@cindex Special Extensions
+
+@node IPC, Client Boot, Applications, Top
+@chapter Process Communication
+
+Communication between extensions in Gluster is via files. The `sender'
+writes contents to a well known filename, and the `receiver' reads the
+contents of the well known filename. Synchronization and locking are
+upto the sender and receiver. Usually there is no need, as extensions
+are executed in serial.
+
+A good idea is to use the ConfigParser module to perform IPC.
+
+@cindex Process Communication
+
+@node Client Boot, Build Process, IPC, Top
+@chapter Booting Mechanism
+
+Client nodes in Gluster can boot
+.....awaiting...more......
+
+@cindex Boot Mechanism
+
+@node Build Process, Gluster License, Client Boot, Top
+@chapter Build Process
+
+1. Overview - Gluster build process generates a bootable Guster ISO, using which you
+boot the master node.
+2. Third party packages
+3. Native compile and Cross compile
+4. Stage 2 installs and Extension/Stage 3 installs
+5. Adding a new third party package
+6. Adding a new Extension
+
+@cindex Building Gluster
+
+@node Portability, Concept Index, Build Process, Top
+@chapter Portability
+Gluster uses GNU Autoconf as it's building and configuring process,
+so comes with lot many ultra-mega-cool features (POSIX Standards Based).
+Gluster currently runs on x86_32bit platforms eg: (i386,i686) and x86_64bit
+platforms. Testing going on other platforms will be available soon.
+@cindex Portability
+
+@menu
+* Gluster License::
+* Gluster Documentation License::
+@end menu
+
+@node Gluster License, Gluster Documentation License, Portability, Portability
+@section Gluster License
+Gluster is licensed under GNU General Public License v2 or later.
+@include gpl.texi
+
+@node Gluster Documentation License,  , Gluster License, Portability
+@section Gluster Documentation License
+Gluster documentation is licensed under GNU Free Documentation License 
+v1.2 or later.
+@include fdl.texi
+
+@page 
+@node Concept Index,  , Portability, Top
+@unnumbered Concept Index
+
+@printindex cp
+
+@bye
+
+

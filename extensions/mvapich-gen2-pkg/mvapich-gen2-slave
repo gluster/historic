@@ -1,0 +1,9 @@
+#!/bin/sh
+
+chroot=$1
+profiles_dir=$chroot/tmp/gluster-tmp/hw-profiles
+mvapich_hosts=$chroot/opt/gluster/etc/mvapich.hosts
+
+cd $profiles_dir
+
+grep -H cpu= * | cut -f1 -d: > $mvapich_hosts

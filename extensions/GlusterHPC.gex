@@ -1,0 +1,6 @@
+package-name: Gluster HPC
+package-description: Prepares a cluster for HPC
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: GlusterHPC.tgz
+package-exec: ./runme
+application-register: GlusterHPC

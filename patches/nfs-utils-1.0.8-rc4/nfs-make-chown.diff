@@ -1,0 +1,15 @@
+diff -pru nfs-utils-1.0.8-rc4/Makefile.am nfs-utils-1.0.8-rc4_/Makefile.am
+--- nfs-utils-1.0.8-rc4/Makefile.am	2006-03-28 06:23:30.000000000 +0530
++++ nfs-utils-1.0.8-rc4_/Makefile.am	2006-04-12 13:43:54.000000000 +0530
+@@ -46,8 +46,8 @@ install-data-hook:
+ 	touch $(DESTDIR)$(statedir)/rmtab; chmod 644 $(DESTDIR)$(statedir)/rmtab
+ 	mkdir -p $(DESTDIR)$(statedir)/sm $(DESTDIR)$(statedir)/sm.bak
+ 	touch $(DESTDIR)$(statedir)/state
+-	chmod go-rwx $(DESTDIR)$(statedir)/sm $(DESTDIR)$(statedir)/sm.bak $(DESTDIR)$(statedir)/state
+-	chown $(statduser) $(DESTDIR)$(statedir)/sm $(DESTDIR)$(statedir)/sm.bak $(DESTDIR)$(statedir)/state
++	-chmod go-rwx $(DESTDIR)$(statedir)/sm $(DESTDIR)$(statedir)/sm.bak $(DESTDIR)$(statedir)/state
++	-chown $(statduser) $(DESTDIR)$(statedir)/sm $(DESTDIR)$(statedir)/sm.bak $(DESTDIR)$(statedir)/state
+ 
+ uninstall-hook:
+ 	rm $(DESTDIR)$(statedir)/xtab
+Only in nfs-utils-1.0.8-rc4_: Makefile.am~

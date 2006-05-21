@@ -1,0 +1,18 @@
+#!/bin/sh
+
+_init ()
+{
+    return 0
+}
+
+main ()
+{
+    local my_dir="$(dirname $0)";
+    chown -R root.root ${my_dir}/destdir;
+    touch /etc/login.defs;
+    cp -alf "${my_dir}"/destdir/* /;
+    chmod +s /usr/bin/{passwd,chfn,chsh,chage};
+    chmod +s /bin/su
+}
+
+_init "$@" && main "$@";

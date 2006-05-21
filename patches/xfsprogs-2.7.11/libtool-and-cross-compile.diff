@@ -1,0 +1,30 @@
+diff -pru xfsprogs-2.7.11/include/builddefs.in xfsprogs-2.7.11-fixed/include/builddefs.in
+--- xfsprogs-2.7.11/include/builddefs.in	2006-01-17 09:16:48.000000000 +0530
++++ xfsprogs-2.7.11-fixed/include/builddefs.in	2006-02-21 13:07:54.314309552 +0530
+@@ -104,7 +104,7 @@ endif
+ 
+ GCFLAGS = $(OPTIMIZER) $(DEBUG) -funsigned-char -fno-strict-aliasing -Wall \
+ 	  -DVERSION=\"$(PKG_VERSION)\" -DLOCALEDIR=\"$(PKG_LOCALE_DIR)\"  \
+-	  -DPACKAGE=\"$(PKG_NAME)\" -I$(TOPDIR)/include
++	  -DPACKAGE=\"$(PKG_NAME)\" -I$(TOPDIR)/include -I$(DESTDIR_LIVE)/usr/include
+ 
+ # First, Global, Platform, Local CFLAGS
+ CFLAGS += $(FCFLAGS) $(GCFLAGS) $(PCFLAGS) $(LCFLAGS)
+Only in xfsprogs-2.7.11-fixed/include: builddefs.in~
+diff -pru xfsprogs-2.7.11/include/buildmacros xfsprogs-2.7.11-fixed/include/buildmacros
+--- xfsprogs-2.7.11/include/buildmacros	2006-01-17 09:16:48.000000000 +0530
++++ xfsprogs-2.7.11-fixed/include/buildmacros	2006-02-21 13:08:58.902490656 +0530
+@@ -41,10 +41,10 @@ LIBNAME = $(basename $(LTLIBRARY))
+ LTOBJECTS = $(OBJECTS:.o=.lo)
+ LTVERSION = $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
+ 
+-LTLINK = $(LIBTOOL) --mode=link $(CC)
++LTLINK = $(LIBTOOL) --mode=link --tag=CC $(CC) -L$(DESTDIR_LIVE)/usr/lib
+ LTEXEC = $(LIBTOOL) --mode=execute
+ LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
+-LTCOMPILE = $(LIBTOOL) --mode=compile $(CCF)
++LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CCF) -I$(DESTDIR_LIVE)/usr/include
+ 
+ ifeq ($(ENABLE_SHARED),yes)
+ LTLDFLAGS += -rpath $(PKG_LIB_DIR)
+Only in xfsprogs-2.7.11-fixed/include: buildmacros~

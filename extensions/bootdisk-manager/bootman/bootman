@@ -1,0 +1,47 @@
+#!/usr/bin/python
+
+from Gluster.GFrontEnd import dialog;
+from Gluster import GArgs;
+
+import kernel_image;
+import pxe_image;
+import mode;
+
+boot_plug_func_map = {
+    'kernel-image' : [kernel_image.plugme],
+    'pxe-image' : [pxe_image.plugme]
+};
+
+dlg = dialog.Dialog ()
+
+def boot_plugin (name):
+    boot_plug_func_map[name][0] ();
+    return;
+    
+_Reg = {
+  'bootplug' : [ ['--bootplug'] ,
+                  'string',
+                  'ask',
+                  'Which plugin for bootman extension'
+               ]
+};
+
+GArgs._G.AddRawOptConf (_Reg);
+GArgs._G.Process ();
+
+plug = GArgs._G.GetValue ('bootplug');
+if (plug == 'ask'):
+    while (1):
+        (ret, choice) = dlg.menu ("Choose a BootMan plugin", 
+                                  choices=[('kernel-image', 
+                                            'Boot disk with kernel/initrd'),
+                                           ('pxe-image',
+                                            'Boot disk for PXE/Network boot')])
+
+        if ret != 0:
+            break
+
+        boot_plugin (choice);
+
+else:
+    boot_plugin (plug);

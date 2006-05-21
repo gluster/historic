@@ -1,0 +1,12 @@
+diff -pruN openssh-4.2p1/configure openssh-4.2p1-mod/configure
+--- openssh-4.2p1/configure	2005-09-01 14:45:24.000000000 +0530
++++ openssh-4.2p1-mod/configure	2005-09-22 19:04:10.000000000 +0530
+@@ -5651,7 +5651,7 @@ _ACEOF
+ *-*-linux*)
+ 	no_dev_ptmx=1
+ 	check_for_libcrypt_later=1
+-	check_for_openpty_ctty_bug=1
++	check_for_openpty_ctty_bug=
+ 	cat >>confdefs.h <<\_ACEOF
+ #define DONT_TRY_OTHER_AF 1
+ _ACEOF

@@ -1,0 +1,338 @@
+
+Gluster - GNU Clustering Meta distribution
+
+Table of Contents
+==================
+1. What is Gluster
+2. Gluster Architecture
+3. Extensions
+4. Applications
+5. IPC in Gluster
+6. Boot Process
+7. Build process
+
+
+1. What is Gluster
+------------------
+
+    Gluster is a GNU/Linux Live distribution, used to run clustering
+    applications.
+
+    Gluster is modular system, extended in Python.
+
+    Few of the applications Gluster [will] run are:
+
+    1.1 GInstaller -
+      GInstaller is an application used to replicate a GNU/Linux installation
+      on a cluster
+
+    1.2 Gluster-SSI/NUMA
+      SSI - Single System Image.
+
+    [fill more]
+
+2. Gluster Architecture
+-----------------------
+
+   Gluster Runtime has three stages of operation
+
+    2.1 Stage 1 (Bootstrapping)
+
+      This is the bootloader stage, where Gluster's kernel and initrd
+      are loaded either from ISO, USB or Network Boot.
+
+      The only goal of this stage is to load the kernel and initrd and boot
+      the kernel.
+   
+    2.2 Stage 2 (Probe for Stage 3)
+
+      Gluster being modular, has all its features as extensions. These
+      extensions reside in the Gluster CDROM, or, external extensions can
+      be used from NFS mount etc.
+
+      The goal of Stage 2 is to probe for the location of Stage 3 (extensions)
+      and load the 'core' extension, which takes control thereof.
+
+    2.3 Stage 3 (Applications and extensions)
+
+      Applications, like GInstaller, GlusterSSI are part of Stage-3.
+
+3. Extensions
+-------------
+
+     Extensions are the key of Gluster's modularity. Every feature, package,
+     application and operation is built into Gluster as an extension. The
+     selection of application to run, itself, is an extension called 'core'.
+
+     `core' is a special extension which provides basic extension framework,
+     Gluster libraries, and an application loader.
+
+   3.1 Format of an Extension
+
+     An extension to Gluster consist of two files -
+     a) A specification file [filename.gex]
+     b) A tarball [filename.tgz]
+
+     The .gex file has meta information about the extension, like, what kind
+     of extension this is (Application, simple package, tool, library), what it
+     does, who is the maintainer, what is the .tgz corresponding to this
+     extension etc. It is a `:' seperated key-value list in ASCII.
+
+     TODO: write about specific key-value pairs and their meanings
+
+     The .tgz has the actual extension contents. During installation of an
+     extension, the .tgz is extracted to a temporary directory, and a well
+     known executable in it [usually called `runme', but configurable in the
+     .gex file] is executed. The `runme' can be a shell script, binary, python
+     script, anything which can be executed.
+
+     It is upto the `runme' script to do whatever it wants. Usually the things
+     it might want to do are -
+
+     a) If the extension provides a package, the runme would copy the .so files
+        to the system lib repository /usr/lib etc.
+     b) Install other extension which it depends on.
+     c) If the extension provides tools for Gluster, copy them to 
+	/usr/share/gluster/extensions/<name>/<name>
+        If another extension needs to use this tool, it should look for it
+        in /usr/share/gluster/extensions/<toolname>/<toolname>
+
+     So, the extensions `runme' decides the characteristic of an extension,
+     and it is totally in the `runme's hands what an extension does, or doesnt.
+
+4. Applications
+---------------
+
+    Applications are special extensions [special in nature, not by format]
+    which are `starting points' of operation for the user. For example,
+    the GInstaller Application (extension) is a wrapper script which calls
+    the Partition tool extension, Format tool extension and Copy tool extension
+    in sequence with appropriate context and parameters.
+
+5. IPC in Gluster
+-----------------
+
+    Communication between extensions in Gluster is via files. The `sender'
+    writes contents to a well known filename, and the `receiver' reads the
+    contents of the well known filename. Synchronization and locking are
+    upto the sender and receiver. Usually there is no need, as extensions
+    are executed in serial.
+
+    A good idea is to use the ConfigParser module to perform IPC.
+
+6. Boot Process
+--------------
+
+   6.1 Master node
+
+     a. Stage1 loads kernel and initrd, and shifts to / ramfs
+     b. Start generate ssh host and auth keys and start sshd
+     c. copy host key as known_hosts, and auth keys to /tftpboot
+     d. Collect MACs from packets coming to non std DHCP port and
+        build dhcpd.conf for both BOOTP and IP Configuration, start
+        dhcpd on standard 67 port for BOOTP and non std port for IP config
+
+  6.2 Client Node
+
+     a. Stage 1 loads kernel and initrd and shifts to / ramfs
+     b. In an infinite loop keep attempting for DHCP configuration on
+        non std port, [this is packets which master node collects mac's
+  	from and build dhcpd.conf]
+     c. Get ssh's pre-initialized known_hosts, and auth keys and start
+        local sshd
+        [At this point onwards, any node can ssh to any other node in the
+         cluster without answering 'yes' to host key verif or entering
+         password]
+
+
+7. Build Process
+----------------
+
+   7.1 Overview
+
+      Gluster build process generates a bootable Guster ISO, using which you
+      boot the master node.
+
+      Makefiles usage in Gluster has a kind of Object Oriented design.
+      The build process has two abstract classes w.r.t external packages -
+
+      a. native compile class [e.g: make mkisofs.native]
+      b. cross compile class [e.g: make python.cross]
+
+      Each of the two abstract `classes' are to be `inherited' by an
+      application by means of filling in the `abstract' variables. The
+      variables build up the context details about how to build the package. 
+
+      An external package build is viewed as a series of four steps
+
+      i.    prepare
+      ii.   configure
+      iii.  build/compile
+      iv.   install
+
+      Based on that, the variables which play a role are
+
+      * Package name [the `stem', used to refer <name>.tar.gz
+      * Environment variables, and command line for preparing a package
+        for cross compiling, and native compiling
+      * Environment variables, and command line for configuring a package
+        for cross compiling, and native compiling
+      * Environment variables, and command line for building a package
+        for cross compiling, and native compiling
+      * Environement variables, and command line which installs package
+        relative to the top directory "$1", for cross and native compile
+
+      Package name variable is a MUST. If the package is strictly adherent
+      to the GNU Autotools, specifying package name alone is enough. Rest
+      of the variables pick a default value if not specified. The default 
+      values are written with GNU Autotools in mind. If a package is not
+      gnu autotools conformant, then some of the variables will have to be
+      overriden, by inspecting the build process of the package. It is best
+      to look at other example packages.
+
+      A Gluster extension is based on another abstract class:
+
+      c. extension class [e.g: make core.gex]
+
+      Two more abstract classes are derived from the `cross compile' abstract
+      class
+
+      d. stage-2 class [e.g: make grep.stage2]
+         This will internally first do a grep.cross, and install grep to 
+         destdir_stage2
+      d. stage-3 class [e.g: make python.stage3]
+         This class is inherited from two classes - `cross compile class' and
+         belongs to an `extension class'.
+
+      To inherit an abstract class into a package object, the package details
+      have to be filled in. In Makefile syntax, this is done by 
+
+   7.2 External packages
+
+      External packages are taken in the form of their release tarballs. 
+      Changes to them, if any (fixes to cross compile/install neatly etc) are
+      in the form of diff patches against the release tarball.
+
+      Release tarballs dont change with time, thus are kept outside version
+      controlled environment. The autogen.sh script will wget them from
+      ZRESEARCH ftp server. If you already have the tarballs previously,
+      you can comment the wget line in autogen.sh, and specify the directory
+      to the `configure' script as --with-tarballs-dir=DIR.
+
+      Patches to these tarballs, if any, are stored under the directory 
+      patches/<name>/*.diff where <name> matches <name>.tar.{gz,bz2} [also,
+      name.tar.{gz,bz2} when extracted, creates a directory called <name>
+      into which the patches are applied.
+
+      It is the `patch files' which are version controlled, and they are
+      applied against the extracted tarball during build.
+
+   7.3 Toolchain - Reason, Usage
+
+     7.3.1 Reason
+       
+      Gluster is a Live distro built completely from sources. It uses chosen
+      versions of external packages which are compiled during the build.
+
+      Gluster being Live, needs its own C library, ELF interpreter and other
+      bare essentials as well, and not just external packages and extensions.
+
+      Re-using the build machine's libc.so and ld.so by copying them into
+      the live initrd gives rise to a lot of `unknown possibilities'.
+      The libc and compiler of host machine may not be compatible with our
+      chosen external packages or extensions.
+      Gluster build system will have to support cases and changes for the 
+      detected libc/compiler of the build system. This incurs unnecessary
+      maintainence.
+
+      By using our own toolchain, we have complete `control' over what goes
+      in and wipes off a lot of `unkown possibilities'. It also gives a lot
+      of freedom and power over the build process.
+
+    7.3.2 Usage
+
+      To use a toolchain to build Gluster,
+      a. Download and extract the toolchain to a directory
+      b. add to your $PATH the toolchain's bin/ directory
+      c. to the `configure' script of gluster source, pass 
+         --host=<toolchain-prefix> ensuring <toolchain-prefix>-{gcc,ld} etc
+         are in the $PATH
+
+   7.4 Native compile and Cross compile
+
+     Terms:
+      Native compile - Use build machine's compiler [gcc]
+      Cross compile - Use Gluster's toolchain [<toolchain-prefix>-gcc]
+
+     Native compile
+
+      Certain tools are needed to be run on the build machine which aid the
+      build process, like mkisofs, genext2fs.
+
+      The makefile target of these will be in the form of `name.native'
+
+     Cross compile
+
+      This is how everything going into Gluster Live is built.
+
+   7.5 Stage 2 installs, Extension/Stage 3 installs, and dependencies
+
+
+   7.6 Adding a new third party package
+
+      Here are general steps how to add an external package into gluster.
+      Specific cases may need some extra attention or less.
+
+      * Decide whether the package to be added is in Stage-2 or inside a
+        Stage-3 extension.
+
+      * Decide a make identifier for the package. Generally the package name
+        in lower case without the version component is fine. E.g for
+        Python-2.4.1, the make identifier used is `python'.
+
+      * Write the build specification of the package, in a file called
+        <identifier>.mk (e.g python.mk) either inside stage2/ directory or
+        stage3/ directory appropriately.
+
+        Build specification is basically setting target specific variables
+        for the target ``<identifier>.%'' e.g,
+
+          python.%: PACKAGE_NAME=Python-2.4.1
+          python.%: NATIVE_CONFIGURE_CMD=./configure ....
+
+      * Update APPS_STAGE2 or APPS_STAGE3 in deps.mk accordingly.
+
+      * If the package belongs to an extension [extname.gex], then
+        <identifier>.stage3 should be added as a pre-requisite to
+        extname.gex: in extensions/extname.mk. e.g,
+
+        in stage3/core.mk
+
+        core.gex: python.stage3
+
+   7.7 Adding a new Extension
+
+      [Refer Section 3 for an introduction about extensions]
+
+      Here are general steps to add a new extension to Gluster.
+
+      * Decide upon an extension name for the extension, and write
+        extensions/<extension-name>.gex file. This is the extension meta
+        information as specified in Section 3.
+
+      * In extensions/<extension-name>.mk, specify the extension name and
+        other external stage3 package pre-requisites. e.g:
+
+        contents of gpartdump.mk:
+
+          gpartdump.gex: EXTENSION=gpartdump
+          gpartdump.gex: disktype.stage3
+
+      * Write the `runme' in extensions/<extension-name>/runme assuming that
+        the runme is run with a directory `destdir' next to it in the Gluster
+        Live environment, which has the tree which has to be copied out to /.
+
+      * Write extensions/<extension-name>/Makefile.am and add all extension
+        related files into it. Keep in mind that extensions should be installed
+        to $(datadir)/gluster/extensions/<extension-name> directory, and the
+        primary script should be having <extension-name> as its filename.

@@ -1,0 +1,28 @@
+#!/usr/bin/python
+
+from Gluster.gpartdump import *
+import sys
+
+def main ():
+    key = sys.argv[1]
+    old_part = sys.argv[2]
+    (old_disc, p) = get_disk_part (old_part)
+    mapfd = file ('%s/boot/grub/device.map' % key)
+    all_maps = map (string.strip, mapfd.readlines ())
+    grub_disc = None
+    for a_map in all_maps:
+        pieces = a_map.split ()
+        if pieces[0][0] == '#':
+            continue
+        if pieces[1] == old_disc:
+            grub_disc = pieces[0].strip ('()')
+            break
+    if not grub_disc:
+        print old_part
+    else:
+        if p:
+            print '(%s,%d)' % (grub_disc, p - 1)
+        else:
+            print '(%s)' % grub_disc
+                                                                                    
+main ()

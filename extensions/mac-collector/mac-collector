@@ -1,0 +1,400 @@
+#!/usr/bin/python
+
+from Gluster.GFrontEnd import dialog
+from Gluster import GExtension
+import os, sys, ConfigParser, string
+
+hex_digits = ['1','2','3','4','5','6','7','8','9','0',
+              'a','b','c','d','e','f','A','B','C','D','E','F']
+dhcpd_port = 6767
+clientinfo = "/var/gluster/clientinfo"
+d = dialog.Dialog ()
+reg = ConfigParser.ConfigParser ()
+reg.read (clientinfo)
+
+if not reg.has_section ('global'):
+    GExtension.run ('client-reg')
+
+    reg = ConfigParser.ConfigParser ()
+    reg.read (clientinfo)
+
+iface = reg.get ('global', 'interface')
+need_bootp = reg.get ('global', 'bootp')
+total_nodes = string.atoi (reg.get ('global', 'totalnodes'))
+hostname_prefix = reg.get ('global', 'hostname')
+
+collect_pcap_expr = "udp and dst port " + repr (dhcpd_port) + " "
+if need_bootp == 'yes':
+    collect_pcap_expr = collect_pcap_expr + "or dst port 67"
+
+node_to_mac = {}
+mac_to_node = {}
+mac_db_filename = '/var/gluster/macs.txt'
+filename = ''
+initial_node = 1
+last_added_node = initial_node
+
+def get_next_index (idx, mac):
+    global last_added_node
+    global total_nodes
+    if idx:
+        while True:
+            (ret, newidx) = d.inputbox ("%s for %s" % (mac, hostname_prefix),
+                                        ok_label="accept",
+                                        cancel="reject mac",
+                                        init=str (idx))
+            if ret != 0:
+                return False
+            try:
+                idx = string.atoi (newidx)
+            except ValueError:
+                d.msgbox ("invalid number `%s'" % newidx)
+                continue
+            if idx > total_nodes:
+                d.msgbox ("%d is greater than node count (%d)" %
+                          (idx, total_nodes))
+                continue
+            if idx in node_to_mac.keys () and node_to_mac[idx] != mac:
+                if d.yesno ("%d already has %s; overwrite entry with %s?" %
+                            (idx, node_to_mac[idx], mac)):
+                    continue
+            last_added_node = idx
+            return idx
+    else:
+        nodes = node_to_mac.keys ()
+        next_node = last_added_node + 1
+        while next_node in nodes and next_node <= total_nodes:
+            next_node += 1
+        if next_node > total_nodes:
+            next_node = initial_node + 1
+            while next_node in nodes and next_node <= last_added_node:
+                next_node += 1
+            if next_node == last_added_node:
+                d.msgbox ("pool is filled, cant add more nodes")
+                return False
+        while True:
+            (ret, newidx) = d.inputbox ("%s -> %s" % (mac, hostname_prefix),
+                                        ok_label="accept",
+                                        cancel="reject mac",
+                                        init=str (next_node))
+            if ret != 0:
+                return False
+            try:
+                idx = string.atoi (newidx)
+            except ValueError:
+                d.msgbox ("invalid number `%s'" % newidx)
+                continue
+            if idx > total_nodes:
+                d.msgbox ("%d is greater than node count (%d)" %
+                          (idx,total_nodes))
+                continue
+            if idx in node_to_mac.keys () and node_to_mac[idx] != mac:
+                if d.yesno ("%d already has %s; overwrite entry with %s?" %
+                            (idx, node_to_mac[idx], mac)):
+                    continue
+            last_added_node = idx
+            return idx
+
+def sync_macs (to_file):
+    try:
+        fd = open (to_file, "w")
+    except:
+        d.msgbox ('could not open mac database for writing')
+        return False
+    nodes = node_to_mac.keys ()
+    nodes.sort ()
+    if len (nodes) > 0:
+        for node in nodes:
+            fd.write ("%d %s\n" % (node, node_to_mac[node]))
+    fd.close ()
+    return True
+
+def read_macs_from_file (filename):
+    file_db = {}
+    if os.system ("[ -f %s ] 2>/dev/null" % filename) != 0:
+        d.msgbox ("could not open/create mac database file")
+        sys.exit (1)
+    hnd = os.popen ("awk '{printf \"%%s %%s\\n\",$1,$2}' %s | grep -v '^[ \t]*$'" % filename,
+                    "r", 1)
+    while True:
+        line = hnd.readline ().strip ()
+        if not line:
+            break
+        index = False
+        
+        if len (line.split (' ')) == 2:
+            mac = line.split (' ')[1]
+            try:
+                index = string.atoi (line.split (' ')[0])
+            except ValueError:
+                d.msgbox ("file in invalid format")
+                return None
+        else:
+            mac = line.split (' ')[0]
+        file_db[mac] = index
+    return file_db
+
+def read_macs_from_iface (iface):
+    new = 0
+    os.system ('ln -f /usr/sbin/tcpdump /usr/sbin/mac-probe')
+    try:
+        hnd = os.popen ('mac-probe -nle -i %s %s 2>/dev/null' %
+                        (iface, collect_pcap_expr))
+    except:
+        d.msgbox ('could not start tcpdump for collecting macs')
+        return None
+
+    try:
+        while True:
+            d.infobox ('%d new nodes registered\n\nprobing for fresh macs...\n(Ctrl-C to end)' % new)
+            line = hnd.readline ().strip ()
+            if not line:
+                break
+            mac = string.splitfields (line, ' ')[1]
+            if mac in mac_to_node.keys ():
+                continue
+            idx = get_next_index (None, mac)
+            mac_to_node[mac] = idx
+            if idx:
+                node_to_mac[idx] = mac
+                sync_macs (mac_db_filename)
+                GExtension.run ('bootp-manager', '--auto')
+                new += 1
+            if new == total_nodes - 1:
+                d.msgbox ('%d new macs collected' % new)
+                os.system ('killall -9 mac-probe >/dev/null 2>/dev/null')
+                hnd.close ()
+                break
+    except KeyboardInterrupt:
+        "nothing"
+
+    return
+
+def add_macs ():
+    global filename
+    while True:
+        (ret, method) = d.menu ('Select method to register new nodes',
+                                choices=[('network',
+                                          'probe for new nodes from network'),
+                                         ('file',
+                                          'import macs from text file')],
+                                cancel='back',
+                                ok_label='ok')
+
+        if ret != 0:
+            break
+
+        if method == 'network':
+            d.msgbox ("Please turn on the client nodes one by one.\n\nMAC addresses are collected from the dhcp request performed by client nodes. If you have disabled bootp, or if the client nodes do not support native bootp boot, then create appropriate bootdisks from the `side shell' [type alt-f2 to enter the side shell]")
+            read_macs_from_iface (iface)
+            continue
+
+        if method == 'file':
+            (ret, filename) =  d.inputbox ('enter filename')
+            if ret != 0:
+                continue
+            if not os.access (filename, os.R_OK):
+                d.msgbox ('cant open %s for reading' % filename)
+                continue
+            new_macs = read_macs_from_file (filename)
+            if new_macs:
+                (total, new) = merge_macs (new_macs)
+                sync_macs (mac_db_filename)
+                GExtension.run ('bootp-manager', '--auto')
+                d.msgbox ('imported %d macs (%d new)' % (total, new))
+            continue
+    return
+
+def edit_macs ():
+    while True:
+        (ret, ans) = d.menu ('edit mac registry',
+                             choices=[('set', 'manually set a mac address'),
+                                      ('del', 'delete a node mac entry')])
+        if ret != 0:
+            break
+        if ans == 'set':
+            while True:
+                (ret, node) = d.inputbox ('entry node number')
+                if ret != 0:
+                    break
+                try:
+                    node = string.atoi (node)
+                except ValueError:
+                    d.msgbox ('input not a number %s' % node)
+                    continue
+                if node in node_to_mac.keys ():
+                    if d.yesno ('%d node already exists with mac %s; overwrite?' % (node, node_to_mac[node])):
+                        continue
+                (ret, mac) = d.inputbox ('enter mac address')
+                if ret != 0:
+                    break
+
+                if mac in node_to_mac.values ():
+                    d.msgbox ('%s already used for node %d' %
+                              (mac, mac_to_node[mac]))
+                    continue
+                split_mac = mac.split (':')
+                if len (split_mac) != 6:
+                    d.msgbox ('%s is not a valid mac address' % mac)
+                    continue
+                for i in range (6):
+                    if len (split_mac[i]) != 2:
+                        d.msgbox ('%s is not a valid mac address' % mac)
+                        break
+                    if split_mac[i][0] not in hex_digits or split_mac[i][0] not in hex_digits:
+                        d.msgbox ('%s is not a valid mac address' % mac)
+                        break
+                if i < 5:
+                    continue
+                    
+                mac_to_node[mac] = node
+                node_to_mac[node] = mac
+                sync_macs (mac_db_filename)
+                GExtension.run ('bootp-manager', '--auto')
+                d.msgbox ('set %s to node %d' % (mac, node))
+                break
+        if ans == 'del':
+            while True:
+                (ret, node) = d.inputbox ('entry node number')
+                if ret != 0:
+                    break
+                try:
+                    node = string.atoi (node)
+                except ValueError:
+                    d.msgbox ('input not a number %s' % node)
+                    continue
+                if node in node_to_mac.keys ():
+                    mac = node_to_mac[node]
+                    if d.yesno ('delete node %d (mac %s)?' % (node,mac)):
+                        continue
+                    node_to_mac.pop (node)
+                    mac_to_node.pop (mac)
+                    sync_macs (mac_db_filename)
+                    GExtension.run ('bootp-manager', '--auto')
+                    d.msgbox ('deleted')
+                else:
+                    d.msgbox ('node %d not present' % node)
+                break
+    return
+
+
+def merge_macs (new_macs):
+    global mac_to_node
+    global node_to_mac
+    total = 0
+    new = 0
+
+    for mac,idx in new_macs.iteritems ():
+        if mac in mac_to_node.keys ():
+            if (idx or mac_to_node[mac]) and idx == mac_to_node[mac]:
+                last_added_node = idx
+                total += 1
+                continue
+            if not mac_to_node[mac]:
+                idx = get_next_index (idx, mac)
+                if not idx:
+                    mac_to_node[mac] = None
+                    continue
+                node_to_mac[idx] = mac
+                mac_to_node[mac] = idx
+                last_added_node = idx
+                total += 1
+                new += 1
+            else:
+                ans = not d.yesno ("mac address %s already exists, re-accept? (old entry will be removed)" % mac)
+                if ans:
+                    idx = get_next_index (idx, mac)
+                    if not idx:
+                        d.msgbox ("old mac address entry of %s not removed" % mac)
+                        continue
+                    else:
+                        node_to_mac.pop (mac_to_node[mac])
+                        node_to_mac[idx] = mac
+                        mac_to_node[mac] = idx
+                        last_added_node = idx
+                        total += 1
+        else:
+            if not idx:
+                idx = get_next_index (idx, mac)
+            if idx in node_to_mac.keys () and node_to_mac[idx] != mac:
+                if not d.yesno ("%d already has %s; overwrite entry with %s?" %
+                            (idx, node_to_mac[idx], mac)):
+                    continue
+                else:
+                    idx = get_next_index (idx, mac)
+                    if not idx:
+                        continue
+            mac_to_node[mac] = idx
+            if idx:
+                node_to_mac[idx] = mac
+                last_added_node = idx
+                total += 1
+                new += 1
+    return (total, new)
+
+def main ():
+    global mac_to_node
+    global node_to_mac
+    if os.access (mac_db_filename, os.R_OK):
+        initial_macs = read_macs_from_file (mac_db_filename)
+        merge_macs (initial_macs)
+    
+    while True:
+        sync_macs (mac_db_filename)
+        (ret, ans) = d.menu ("Node registry (%d macs currently)" % len (mac_to_node),
+                             choices=[('add',
+                                       'add node entries'),
+                                      ('edit',
+                                       'edit node registry'),
+                                      ('view',
+                                       'view node registry entries'),
+                                      ('flush',
+                                       'flush current registry')
+                                      ],
+                             cancel='done',
+                             extra_button=True,
+                             extra_label='back',
+                             ok_label=' ok ')
+        if ret == 4:
+            sys.exit (1)
+            break
+        
+        if ret != 0:
+            break
+
+        if ans == 'add':
+            add_macs ()
+            continue
+
+        if ans == 'edit':
+            edit_macs ()
+            continue
+
+        if ans == 'view':
+            hname = reg.get ('global', 'hostname')
+            iface = reg.get ('global', 'interface')
+            os.system ("echo %s1 $(ifconfig %s | sed -n 1p | awk '{print $5}') > /tmp/macview.txt" % (hname, iface))
+            os.system ('cat %s | sed s,^,%s, >> /tmp/macview.txt' % (mac_db_filename, hname))
+            d.textbox ('/tmp/macview.txt', title='[ Node registry ]',
+                       width=50)
+
+        if ans == 'flush':
+            bkp_index = 0
+            while os.access ('/var/gluster/oldmacs.%d' % bkp_index, os.R_OK):
+                bkp_index += 1
+            bkp_file = '/var/gluster/oldmacs.%d' % bkp_index
+            while True:
+                (ret, bkp_file) = d.inputbox ('enter backup filename of current registry', init=bkp_file)
+                if ret != 0:
+                    break
+                if not sync_macs (bkp_file):
+                    continue
+                mac_to_node = {}
+                node_to_mac = {}
+                last_added_node = initial_node
+                d.msgbox ('old registry backed up at %s' % bkp_file)
+                break
+            continue
+    return 0
+
+main ()

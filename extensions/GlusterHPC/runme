@@ -1,0 +1,23 @@
+#!/bin/sh
+
+_init ()
+{
+   EXTENSIONS="client-reg mac-collector bootp-manager bootdisk-manager client-boot gutils fs-utils auth"
+}
+
+main ()
+{
+    local my_dir="$(dirname $0)";
+    cp -alf "${my_dir}"/destdir/* /;
+
+    for ext in $EXTENSIONS
+    do
+      gex --install /stage3/$ext.gex;
+    done
+
+    exec GlusterHPC "$@";
+}
+
+_init "$@" && main "$@";
+
+

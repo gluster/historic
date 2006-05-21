@@ -1,0 +1,77 @@
+#!/usr/bin/python
+
+import os, string, getopt, sys
+from Gluster.GTmp import Dir
+from Gluster.gpartdump import *
+
+def mount_partitions (os_part, num):
+    os_name = os_part['OS']
+    mnt_pt = []
+    for part in os_part['FSTAB'].keys ():
+        if os_part['FSTAB'][part] == 'none' or \
+               os_part['FSTAB'][part] == 'swap':
+            continue
+        mnt_pt.append ("%s:/tmp/ginstaller/%s%d%s" %
+                       (part, os_name, num, os_part['FSTAB'][part]))
+    mnt_pt.sort (key=len)
+
+    for part in mnt_pt:
+        mp = part.split (':')[1]
+        dev = part.split  (':')[0]
+        os.system ("mkdir -p %s" % mp)
+        os.system ("mount %s %s" % (dev, mp))
+        continue
+
+    return
+
+
+def main ():
+    os_key = 'all'
+    inp_file = None
+    part_num = 1
+    show_option = False
+    
+    (opt, args) = getopt.getopt (sys.argv[1:], "i:k:o",
+                                 [("input=",
+                                   "key=",
+                                   "option=")])
+    for (o, val) in opt:
+        if o == '-i' or o == '--input':
+            inp_file = file (val, 'r')
+        if o == '-k' or o == '--key':
+            os_key = val
+        if o == '-o' or o == '--option':
+            show_option = True
+
+    if os_key == 'all' and len (args) == 1:
+        os_key = args[0]
+
+    if inp_file == None:
+        inp_file = os.popen ("gprobe")
+    
+    partlist = gdump_partlist (read_gdump (inp_file))
+    parts = partlist.keys ()
+    parts.sort ()
+
+    if show_option == True:
+        for _part in parts:
+            if partlist[_part]['OS'] == '':
+                continue
+            print "%s%d" % (partlist[_part]['OS'], part_num)
+            part_num += 1
+        return
+    
+    for _part in parts:
+        if partlist[_part]['OS'] == '':
+            continue
+        if os_key != 'all':
+            if os_key != "%s%d" % (partlist[_part]['OS'], part_num):
+                continue
+        if len (partlist[_part]['FSTAB']) == 0:
+            continue
+        mount_partitions (partlist[_part], part_num)
+        part_num += 1
+    
+    return
+
+main ()

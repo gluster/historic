@@ -1,0 +1,24 @@
+diff -pruN busybox-1.00-orig/archival/gzip.c busybox-1.00-fix/archival/gzip.c
+--- busybox-1.00-orig/archival/gzip.c	2004-04-14 23:21:08.000000000 +0530
++++ busybox-1.00-fix/archival/gzip.c	2005-07-08 19:27:09.000000000 +0530
+@@ -2162,7 +2162,7 @@ static void send_tree(ct_data * tree, in
+  * Construct the Huffman tree for the bit lengths and return the index in
+  * bl_order of the last bit length code to send.
+  */
+-static const int build_bl_tree()
++static int build_bl_tree()
+ {
+ 	int max_blindex;	/* index of last bit length code of non zero freq */
+ 
+diff -pruN busybox-1.00-orig/networking/inetd.c busybox-1.00-fix/networking/inetd.c
+--- busybox-1.00-orig/networking/inetd.c	2004-06-22 14:10:54.000000000 +0530
++++ busybox-1.00-fix/networking/inetd.c	2005-07-08 19:37:23.000000000 +0530
+@@ -560,7 +560,7 @@ static void config(int signum)
+ 		if (sep != 0) {
+ 			int i;
+ 
+-#define SWAP(type, a, b) {type c=(type)a; (type)a=(type)b; (type)b=(type)c;}
++#define SWAP(type, a, b) {type c=(type)a; a=(type)b; b=(type)c;}
+ 
+ 			sigprocmask(SIG_BLOCK, &emptymask, &oldmask);
+ 			/*

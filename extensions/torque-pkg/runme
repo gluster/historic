@@ -1,0 +1,35 @@
+#!/bin/sh
+
+_init ()
+{
+    pkg_name="torque"
+    os_base="/tmp/ginstaller";
+    prefix="/opt/gluster";
+    return 0
+}
+
+main ()
+{
+    local my_dir="$(dirname $0)";
+    for key in $(gmount -o); do
+	for tgz in ${my_dir}/*.tgz; do
+	    # install on master node
+	    cat $tgz | tar -C /tmp/ginstaller/$key -xz;
+	    # install on ALL slave nodes
+	    cat $tgz | gcsh tar -C /tmp/ginstaller/$key -xz;
+	done
+	# overriding stuff on master node
+	tar -C ${my_dir}/destdir -c . | tar -C /tmp/ginstaller/$key -x
+	# overriding stuff on slave nodes
+	tar -C ${my_dir}/destdir -c . | gcsh tar -C /tmp/ginstaller/$key -x
+
+	# setup on master node
+	$os_base/$key/$prefix/setup/$pkg_name-master $os_base/$key
+	STDIN=/dev/null gcsh $os_base/$key/$prefix/setup/$pkg_name-slave $os_base/$key
+	
+    done
+}
+
+_init "$@" && main "$@";
+
+

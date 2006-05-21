@@ -1,0 +1,66 @@
+#!/bin/sh
+
+echo "   -= Gluster Stage-2 (continue from /sbin/init) =-"
+
+echo " * Sanitizing environment "
+rm -f /bin/sh
+#cp /usr/bin/bash /bin/bash
+ln -s bash /bin/sh
+cd /
+mkdir -p /var/gluster-state
+ln -s /var/gluster-state /var/gluster
+depmod -a
+mkdir -p /var/tmp/session
+chown -R root / 2>/dev/null
+mkdir -p /tmp
+mkdir -p /mnt
+cp -f /usr/bin/dialog /usr/bin/dialog.bin
+cat > /usr/bin/dialog <<EOF
+#!/bin/sh
+/usr/bin/dialog.bin --backtitle 'Gluster v1.0 (bulde)                        Copyright (c) 2006 Z RESEARCH Inc.' --aspect 32 "\$@"
+EOF
+killall -9 udevd
+
+echo " * Mounting /proc"
+mkdir -p /proc
+mount -v -t proc none /proc
+
+echo " * Initializing /sys"
+mkdir -p /sys
+mount -v -t sysfs sysfs /sys
+
+echo " * Unmounting old /initrd"
+killall -9 udevd >/dev/null 2>&1
+umount /initrd
+
+echo " * Starting udev"
+/sbin/udevstart
+ln -snf /proc/self/fd /dev/fd
+ln -snf /proc/self/fd/0 /dev/stdin
+ln -snf /proc/self/fd/1 /dev/stdout
+ln -snf /proc/self/fd/2 /dev/stderr
+mkdir -p /dev/pts
+mkdir -p /dev/shm
+
+echo " * Hostname -> localhost"
+hostname localhost
+
+echo " * loopback interface lo"
+ip link set up dev lo
+#ip address add 127.0.0.1/8 brd + dev lo
+
+echo " * Starting Hotplug"
+for RC in /etc/hotplug/*.rc
+do
+  echo -n " ${RC}"
+  ${RC} start >/dev/null 2>&1
+done
+echo " done."
+
+echo " * Loading kernel modules ..."
+/etc/rc.d/rc.modules
+
+echo " * Disabling console blanking ..."
+setterm -blank 0
+
+exec /etc/rc.d/rc.slave

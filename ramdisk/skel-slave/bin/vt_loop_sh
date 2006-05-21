@@ -1,0 +1,6 @@
+while [ 1 -eq 1 ]; do
+  echo -n "Press [RETURN] to enter shell ($(tty)) "
+  read x
+  /bin/bash --login
+  clear
+done

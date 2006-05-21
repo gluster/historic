@@ -1,0 +1,41 @@
+diff -pruN mpich2-1.0.3/Makefile.in mpich2-1.0.3-fixed/Makefile.in
+--- mpich2-1.0.3/Makefile.in	2005-11-24 00:15:48.000000000 +0530
++++ mpich2-1.0.3-fixed/Makefile.in	2006-05-15 03:45:37.000000000 +0530
+@@ -429,10 +429,10 @@ install-local:
+ 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
+ 	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich.@SHLIB_EXT@ \
+ 			${libdir}/libtvmpich.@SHLIB_EXT@ ; fi
+-	if test ! -d ${exec_prefix}/examples ; then \
+-	    $(MKDIR_P) ${exec_prefix}/examples ; \
++	if test ! -d $(DESTDIR)/${exec_prefix}/examples ; then \
++	    $(MKDIR_P) $(DESTDIR)/${exec_prefix}/examples ; \
+ 	fi
+-	$(INSTALL_PROGRAM) examples/cpi ${exec_prefix}/examples/cpi
++	$(INSTALL_PROGRAM) examples/cpi $(DESTDIR)/${exec_prefix}/examples/cpi
+ 
+ install-devdocs:
+ 	(cd doc && $(MAKE) install-devdocs)
+diff -pruN mpich2-1.0.3/src/mpe2/sbin/mpeinstall.in mpich2-1.0.3-fixed/src/mpe2/sbin/mpeinstall.in
+--- mpich2-1.0.3/src/mpe2/sbin/mpeinstall.in	2005-10-11 07:01:47.000000000 +0530
++++ mpich2-1.0.3-fixed/src/mpe2/sbin/mpeinstall.in	2006-05-12 21:43:42.000000000 +0530
+@@ -457,7 +457,7 @@ if [ -n "$etcbuild_dir" ] ; then
+          CopyDirRecurP $etcbuild_dir $sysconfdir $MODE
+          cd $etcbuild_dir && \
+          for file in *.conf ; do \
+-             FixInstallFile $file $DESTDIR$sysconfdir/$file ; \
++             FixInstallFile $file $sysconfdir/$file ; \
+          done
+     fi
+ fi
+diff -pruN mpich2-1.0.3/src/pm/mpd/Makefile.in mpich2-1.0.3-fixed/src/pm/mpd/Makefile.in
+--- mpich2-1.0.3/src/pm/mpd/Makefile.in	2005-10-25 00:38:40.000000000 +0530
++++ mpich2-1.0.3-fixed/src/pm/mpd/Makefile.in	2006-05-12 21:16:28.000000000 +0530
+@@ -119,7 +119,7 @@ install: all
+ 	@echo "copying python files/links into " $(DESTDIR)${bindir}
+ 	-@for cmd in ${PYTHON_SOURCE} ; do \
+ 	    sed -e 's#/usr/bin/env python.*#/usr/bin/env ${PYTHON}#' ${srcdir}/$$cmd.py > $(DESTDIR)${bindir}/temp$$cmd.py ; \
+-	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py $(DESTDIR)${bindir}/$$cmd.py; \
++	    ${INSTALL} -m 755 $(DESTDIR)/${bindir}/temp$$cmd.py $(DESTDIR)${bindir}/$$cmd.py; \
+ 	    ( rm -f $(DESTDIR)${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
+ 	done
+ 	-@cd $(DESTDIR)${bindir} && rm -f mpd

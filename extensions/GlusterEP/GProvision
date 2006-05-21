@@ -1,0 +1,119 @@
+#!/usr/bin/python
+
+from Gluster.GFrontEnd import dialog
+from Gluster.gpartdump import *
+from Gluster import GExtension
+import os, string, sys, getopt
+
+dlg = dialog.Dialog ()
+#my_ip = file ('/etc/my-ip').readline ().strip ()
+my_ip = os.popen ("ifconfig -a | sed -n -e 's/.*HWaddr //p' | head -n -1").readline ().strip () + os.popen ("sed -n -e 's/user//p' /.ssh/config").readline ().strip ()
+
+port_base = 13370
+cookie = None
+
+def source_config ():
+    global cookie
+    os.system ('ssh master-node mkdir -p /var/tmp/%s' % my_ip)
+    os.system ('ssh -t master-node gimage-sel -o /var/tmp/%s/cookie' % my_ip)
+    cookie = os.popen ('ssh master-node cat /var/tmp/%s/cookie' % my_ip).readline ().strip ()
+    if not cookie:
+        return None
+    spec_fd = os.popen ('ssh master-node cat system-images/%s/provision.spec'
+                        % cookie)
+    partlist = gdump_partlist (read_gdump (spec_fd))
+    spec_fd.close ()
+
+    return partlist
+
+def source_action (partlist):
+    global cookie
+    parts = partlist.keys ()
+    parts = filter ((lambda x:
+                     partlist[x]['FS'] != 'linux-swap' and partlist[x]['XFER'] == 'Y'),
+                    parts)
+    parts.sort ()
+    no_parts = len (parts)
+    dst_cmds_fd = file ('/tmp/gprov.gstream.dst.cmds', 'w')
+    src_cmds_fd = file ('/tmp/gprov.gstream.src.cmds', 'w')
+    for i in range (no_parts):
+        dst_cmds_fd.write ("gzip -d - | /usr/bin/nc -c localhost %d\n" % (port_base + i))
+        src_cmds_fd.write ("ssh master-node 'cat system-images/%s/%s.tgz'\n" %
+                           (cookie, parts[i].split ('/')[-1]))
+    dst_cmds_fd.close ()
+    src_cmds_fd.close ()
+
+    aprox_max_size = os.popen ("ssh master-node 'du -b system-images/%s | cut -f1 -d\" \"'" % cookie).readline ().strip ()
+
+    os.system ("gstream -t 'GusterEP Provisioning' -f -i /tmp/gprov.gstream.src.cmds -o /tmp/gprov.gstream.dst.cmds -m %s" % aprox_max_size)
+    
+    return
+
+def dest_config (partlist):
+    spec_fd = file ('/tmp/provision.spec', "w")
+    write_dump (spec_fd, partlist_gdump (partlist))
+    spec_fd.flush ()
+    spec_fd.close ()
+
+    parts = partlist.keys ()
+    parts = filter ((lambda x:
+                     partlist[x]['FS'] != 'linux-swap' and partlist[x]['XFER'] == 'Y'),
+                    parts)
+    parts.sort ()
+    no_parts = len (parts)
+    cmd_for_dest = file ('/tmp/gprov.dest.cmds', "w")
+    for i in range (no_parts):
+        cmd_for_dest.write ('/usr/bin/nc -l -p %d\n' % (port_base + i))
+    cmd_for_dest.flush ()
+    cmd_for_dest.close ()
+
+
+    if dlg.yesno ("Automatic mode will create partitions as directed by the stored image. In 'manual mode' you can construct a new partition scheme.\n\n                      *** CRITICAL WARNING ***\nIf you choose [Auto] mode, your harddrive will be WIPED CLEAN and you will LOSE DATA.\n",
+                  title='[ Partition Assignment ]',
+                  yes_label='Auto',
+                  no_label='Manual'):
+        os.system ('gmeta-installer -i /tmp/provision.spec -c /tmp/gprov.dest.cmds')
+    else:
+        os.system ('gmeta-installer --auto -i /tmp/provision.spec -c /tmp/gprov.dest.cmds')
+    return
+
+def gprov_action (spec):
+    # TODO: Give a hook to user inbetween
+    os.system ("chmod +x /tmp/gmi/*")
+    dlg.infobox ("Partitioning and preparing filesystems.")
+    os.system ("/tmp/gmi/00* 2>/var/log/proglog")
+    if os.system ("grep success /tmp/.status.in >/dev/null 2>&1"):
+        dlg.msgbox ("Partition failed")
+        return
+    dlg.infobox ("Mounting partitions.")
+    os.system ("/tmp/gmi/01* 2>>/var/log/proglog")
+    dlg.infobox ("Preparing client nodes for image transfer.")
+    os.system ("/tmp/gmi/02* 2>>/var/log/proglog")
+    source_action (spec)
+    if os.system ("grep success /tmp/.status.in >/dev/null 2>&1"):
+        dlg.msgbox ("Provisioning failed")
+        return
+    dlg.infobox ("Updating '/etc/fstab'")    
+    os.system ("/tmp/gmi/03* 2>>/var/log/proglog")
+    dlg.infobox ("Installing boot manager.")
+    os.system ("/tmp/gmi/04* 2>>/var/log/proglog")
+    if os.system ("grep success /tmp/.status.in >/dev/null 2>&1"):
+        dlg.msgbox ("Boot-loader update failed")
+        return
+    dlg.infobox ("Performing postinstall.")
+    os.system ("/tmp/gmi/05*")
+    dlg.infobox ("Unmounting partitions.")
+    os.system ("/tmp/gmi/06* 2>>/var/log/proglog")
+    dlg.msgbox ("Successfully installed the image")
+    return
+
+def main ():
+    spec = source_config ()
+    if not spec:
+        return
+    dest_config (spec)
+    #    dest_action (sh)
+    gprov_action (spec)
+    #    source_action (spec)
+
+main ()

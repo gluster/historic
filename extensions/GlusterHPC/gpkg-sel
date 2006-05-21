@@ -1,0 +1,50 @@
+#!/usr/bin/python
+
+from Gluster.GFrontEnd import dialog
+import os, sys, string, dircache
+
+dlg = dialog.Dialog ()
+
+def file_to_dict (filename):
+    _dict = {};
+    for line in open (filename).readlines ():
+        line = line.strip ()
+        if not line.strip():
+            continue
+        pieces = line.strip ().split (":", 1)
+        if len(pieces) == 2:
+            if not (pieces[0].strip() and pieces[1].strip()):
+                print " Warning: invalid key or value in line `" + line + "'";
+                continue
+            _dict[pieces[0]] = pieces[1]
+        else:
+            print " Warning: at `" + line + "' \":\" not specified ";
+    return _dict;
+
+def main ():
+    host = 'master-node'
+    if len (sys.argv) > 1:
+        host = sys.argv[1]
+    all_files = dircache.opendir ('/stage3')
+    all_gex = filter (lambda name: len (name) > 5 and name[-4:] == '.gex',
+                      all_files)
+    menu_dict = {}
+    for gex in all_gex:
+        gex_file = '/stage3/%s' % gex
+        gex_dict = file_to_dict (gex_file)
+        if 'hpc-register' in gex_dict.keys ():
+            menu_dict[gex_dict['hpc-register'].strip ()] = [gex, gex_dict['package-description'].strip ()]
+
+    choices = map ((lambda (k, v):
+                    (k, v[1], 'on')), menu_dict.items ())
+    (ret, sel_list) = dlg.checklist ('Select HPC applications to install',
+                                     choices=choices)
+    if ret != 0:
+        return
+    for sel_item in sel_list:
+        dlg.infobox ("Installing %s" % menu_dict[sel_item][0])
+        os.system ("gex --install /stage3/%s" % menu_dict[sel_item][0])
+
+    return
+
+main ()

@@ -1,0 +1,12 @@
+diff -pruN udev-050/Makefile udev-050-fixed/Makefile
+--- udev-050/Makefile	2004-12-17 21:53:07.000000000 -0800
++++ udev-050-fixed/Makefile	2005-08-31 12:12:24.951350888 -0700
+@@ -67,7 +67,7 @@ INSTALL_SCRIPT = ${INSTALL_PROGRAM}
+ EXTRAS=
+ 
+ # place to put our device nodes
+-udevdir =	${prefix}/udev
++udevdir =	${prefix}/dev
+ udevdb =	${udevdir}/.udevdb
+ 
+ # Comment out this line to build with something other 

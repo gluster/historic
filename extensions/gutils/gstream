@@ -1,0 +1,100 @@
+#!/usr/bin/python
+
+import os, sys, optparse, string
+
+def churn (fds, fg, pll):
+    this_loop = 0
+    for (infd, outfd) in fds:
+        buf = infd.read (4096)
+        if buf == '':
+                continue
+        this_loop += len (buf)
+        outfd.write (buf)
+    return this_loop
+
+def setup (incmds, outcmds):
+    fds = []
+    for i in range (len (incmds)):
+        infd = os.popen (incmds[i], "r")
+        outfd = os.popen (outcmds[i], "w")
+        fds.append ((infd, outfd))
+    return fds
+
+def main ():
+    parser = optparse.OptionParser ()
+    parser.add_option ('-i', '--infile', action='store',
+                       dest='infile', type='string',
+                       help='FILE with input commands',
+                       metavar='FILE', nargs=1)
+    parser.add_option ('-o', '--outfile', action='store',
+                       dest='outfile', type='string',
+                       metavar='FILE', nargs=1)
+    parser.add_option ('-t', '--title', action='store',
+                       dest='title', type='string',
+                       metavar='TITLE', nargs=1)
+    parser.add_option ('-m', '--maxbytes', action='store',
+                       dest='maxbytes', type='int',
+                       metavar='BYTES', nargs=1)
+    parser.add_option ('-f', '--foreground', action='store_true',
+                       dest='foreground')
+    parser.add_option ('-p', '--parallel', action='store_true',
+                       dest='parallel')
+    
+    (opts, args) = parser.parse_args ()
+
+    if not opts.infile:
+        print '-i/--infile option is a must'
+        sys.exit (1)
+
+    if not opts.outfile:
+        print '-o/--outfile option is a must'
+        sys.exit (1)
+
+    if not os.access (opts.infile, os.R_OK):
+        print 'unable to open %s' % opts.infile
+        sys.exit (1)
+    if not os.access (opts.outfile, os.R_OK):
+        print 'unable to open %s' % opts.outfile
+        sys.exit (1)
+        
+    incmds = file (opts.infile).readlines ()
+    outcmds = file (opts.outfile).readlines ()
+    
+    if len (incmds) != len (outcmds):
+        print 'mismatching command sets'
+        sys.exit (1)
+
+    incmds = map (string.strip, incmds)
+    outcmds = map (string.strip, outcmds)
+    fds = setup (incmds, outcmds)
+    maxbytes = 0
+    helpstr = '(%d streams)' % len (incmds)
+    if opts.maxbytes:
+        maxbytes = int (opts.maxbytes)
+        helpstr = '(%.2f GB)' % (maxbytes / 1000000000.0)
+    total_xfered = 0
+    gaugefd = None
+
+    title='Image transfer'
+    if opts.title:
+        title = opts.title
+    if opts.foreground:
+        gaugefd = os.popen ('dialog --title "[ %s ]" --gauge "Transfer progress %s" 6 50' % (title, helpstr), "w" )
+    old_pc = 0
+    while True:
+        xfered = churn (fds, opts.foreground, opts.parallel)
+        if xfered == 0:
+            break
+        total_xfered += xfered
+        if maxbytes > 0 and gaugefd:
+            new_pc = (total_xfered * 100) / maxbytes
+            if old_pc != new_pc and new_pc <= 100:
+                gaugefd.write ('%d\n' %  new_pc)
+                gaugefd.flush ()
+                old_pc = new_pc
+    gaugefd.write ("100\n")
+    gaugefd.close ()
+    return
+
+main ()
+

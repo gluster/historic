@@ -1,0 +1,5 @@
+#!/bin/sh
+
+export PS1='\h:\w\$ '
+
+exec screen -xRR kick-start-shell /tmp/kick-start

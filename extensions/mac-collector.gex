@@ -1,0 +1,5 @@
+package-name: MAC address collector
+package-description: Collect mac addresses from network, or from file
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: mac-collector.tgz
+package-exec: ./runme

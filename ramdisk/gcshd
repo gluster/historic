@@ -1,0 +1,21 @@
+#!/bin/sh
+
+while :; do
+    sleep 1
+    state=$(cat /tmp/.gping.in 2>/dev/null)
+    if [ "$state" = "die" ]; then
+	exit 0
+    fi
+    if [ "$state" != "slave" ]; then
+	continue
+    fi
+    echo "Started lisenting on port 10000";
+    udp-receiver --nokbd --portbase 10000 2>/dev/null | { 
+	read cmd; 
+	echo "Evaluating $cmd";
+	eval "$cmd";
+    }
+    echo -n "Barrier ... ";
+    udp-receiver --nokbd --portbase 10002 --file /dev/null 2>/dev/null;
+    echo "done."
+done

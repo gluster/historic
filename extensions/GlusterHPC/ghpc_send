@@ -1,0 +1,8 @@
+#!/bin/sh
+
+EXTENSIONS="init fs-utils gutils GlusterHPC"
+
+for ext in $EXTENSIONS; do
+    STDIN=/stage3/$ext.tgz gcsh client-gex
+done
+

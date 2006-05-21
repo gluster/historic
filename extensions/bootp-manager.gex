@@ -1,0 +1,5 @@
+package-name: PXE/BOOTP Manager
+package-description: Configure PXE/BOOTP
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: bootp-manager.tgz
+package-exec: ./runme

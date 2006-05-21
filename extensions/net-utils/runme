@@ -1,0 +1,16 @@
+#!/bin/sh
+
+_init ()
+{
+    return 0
+}
+
+main ()
+{
+    local my_dir="$(dirname $0)";
+    cp -alf "${my_dir}"/destdir/* /;
+}
+
+_init "$@" && main "$@";
+
+

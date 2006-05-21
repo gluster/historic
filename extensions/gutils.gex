@@ -1,0 +1,5 @@
+package-name: Gluster Utilities
+package-description: Utilities provided in gluster to manage clusters
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: gutils.tgz
+package-exec: ./runme

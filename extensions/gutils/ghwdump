@@ -1,0 +1,27 @@
+#!/usr/bin/python
+
+import os, sys
+
+def main ():
+    base_dir = '/var/gluster/hw-profiles'
+    os.system ("mkdir -p %s" % base_dir)
+    os.system ("STDIN=/dev/null gcsh 'ghwprobe > /tmp/.status.in' >/dev/null 2>&1")
+    fd = os.popen ("gping -i /tmp/ghosts/known_hosts")
+    nodes_lines = fd.readlines ()
+    fd.close ()
+    masternode_line = os.popen ("ghwprobe").readline ()
+    for node_line in nodes_lines + ['master-node: %s' % masternode_line]:
+        node_line = node_line.strip ()
+        node_name = node_line.split (':', 1)[0].strip ()
+        node_status = node_line.split (':', 1)[1].strip ()
+        details = node_status.split ()
+        out_fd = file ('%s/%s' % (base_dir, node_name), "w")
+        for detail in details:
+            (key, vals) = detail.split ('=')
+            for val in vals.split (','):
+                out_fd.write ('%s=%s\n' % (key, val))
+        out_fd.close ()
+    return
+
+main ()
+

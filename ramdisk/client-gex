@@ -1,0 +1,15 @@
+#!/bin/sh
+
+#set -x
+
+DIR=/tmp/c-g.$$
+
+mkdir -p $DIR
+
+tar -C $DIR -xz
+
+cd $DIR && ./runme --client
+
+cd /
+
+rm -rf $DIR

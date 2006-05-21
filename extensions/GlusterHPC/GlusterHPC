@@ -1,0 +1,348 @@
+#!/usr/bin/python
+
+import getopt, sys, os, ConfigParser
+from Gluster.gpartdump import *
+from Gluster import GExtension, GIPv4
+from Gluster.GFrontEnd import dialog
+
+dlg = dialog.Dialog ()
+reg = ConfigParser.ConfigParser ()
+port_base = 13370
+number_of_nodes = 0
+clientinfo = '/var/gluster/clientinfo'
+
+def get_hostname (s=''):
+    hname = reg.get ('global', 'hostname')
+    return hname + s
+
+def get_domainname ():
+    return reg.get ('global', 'domain')
+
+def no_hosts ():
+    global number_of_nodes
+    
+    nodes = os.popen ("gping -i /tmp/ghosts/known_hosts").readlines ()
+
+    nodes = map (lambda x: x.strip ().split (':')[0], nodes)
+    number_of_nodes = len (nodes)
+    return (number_of_nodes, nodes)
+    
+def source_config (node):
+    nodes_on = []
+    if os.system ("ssh -t %s 'gprobe | gpart-sel -o /tmp/ghpc.spec -c /tmp/ghpc_tar_cmds -m /tmp/ghpc_approx_max' 2>>/var/log/proglog" % node) != 0:
+        return (1, node)
+
+    while True:
+        num_hosts = 0
+        (num_hosts, nodes_on) = no_hosts ()
+        choices = []
+        if len (nodes_on):
+            choices = map (lambda x: (x, ""), nodes_on)
+        for opt in choices:
+            if opt == (node, ""):
+                choices.remove (opt)
+                num_hosts -= 1
+        if choices == []:
+            choices = [("<no clients>", "")]
+
+        (ret, sel) = dlg.menu ("The following nodes will be imaged...\n\nKeep pressing 'Refresh' till you have all the required nodes here (totally %d nodes listed)\n" % int (num_hosts),
+                               choices=choices,
+                               extra_button=True,
+                               extra_label='Back',
+                               cancel='Refresh',
+                               defaultno=True,
+                               title='[ Active Nodes ]')
+        if ret == 4:
+            return (1, node)
+        if ret != 0:
+            continue        
+        if num_hosts == 0:
+            dlg.msgbox ("No client nodes detected\n",
+                        title="[ Error ]")
+            continue
+        break
+
+    session_hosts = file ('/tmp/session_hosts','w')
+    for client in nodes_on:
+        if client == node:
+            continue
+        session_hosts.write ("%s\n" % client)
+    session_hosts.close ()
+    os.system ('gping -p 1332 -m hibernate %s' % node)
+    os.system ('cp -f /tmp/session_hosts /tmp/ghosts/up_hosts')
+    return (0, node)
+   
+
+def source_action (node):
+    partlist = gdump_partlist (read_gdump (os.popen ("ssh %s 'cat /tmp/ghpc.spec' 2>>/var/log/proglog" % node)))
+    parts = partlist.keys ()
+    parts = filter ((lambda x:
+                     partlist[x]['FS'] != 'linux-swap' and partlist[x]['XFER'] == 'Y'),
+                    parts)
+    no_parts = len (parts)
+    min_clients = os.popen ('gping -p 1332 -i /tmp/session_hosts | grep slave | wc -l').readline ().strip ()
+    cmd_file = os.popen ("ssh %s dd of=/tmp/ghpc_src_cmds 2>>/var/log/proglog" % node, "w")
+    for i in range (no_parts):
+        cmd_file.write ('udp-sender --portbase %d --nokbd --min-clients %s --max-wait 1200 2>/dev/null\n' %
+                    (port_base + 2*i, min_clients))
+    cmd_file.flush ()
+    cmd_file.close ()
+
+    os.system ("ssh -t %s 'gstream -f -i /tmp/ghpc_tar_cmds -o /tmp/ghpc_src_cmds -m `cat /tmp/ghpc_approx_max`'" % node)
+    return
+
+def dest_config (node):
+    # Invoke the 'gcshd' @ slave nodes
+    os.system ("gping -p 1332 -i /tmp/session_hosts -m slave >/dev/null 2>&1")
+    os.system ("sleep 1")
+
+    dlg.infobox ("Installing Gluster extensions to client nodes")
+    # Send all the gex packages to clients
+    os.system ("ghpc_send >>/var/log/proglog 2>&1")
+    
+    # Collect the hardware information about the clients
+    os.system ("ghwdump 2>>/var/log/proglog")
+
+    partlist = gdump_partlist (read_gdump (os.popen ('ssh %s cat /tmp/ghpc.spec 2>>/var/log/proglog' % node)))
+    parts = partlist.keys ()
+    parts = filter ((lambda x:
+                     partlist[x]['FS'] != 'linux-swap' and partlist[x]['XFER'] == 'Y'),
+                    parts)
+    no_parts = len (parts)
+    cmd_file = os.popen ('ssh %s dd of=/tmp/ghpc_dest_cmds 2>>/var/log/proglog' % node, "w")
+    for i in range (no_parts):
+        cmd_file.write ('udp-receiver --nokbd --portbase %d\n' %
+                    (port_base + 2*i))
+    cmd_file.flush ()
+    cmd_file.close ()
+
+    os.system ("ssh %s 'gmeta-installer --auto --input /tmp/ghpc.spec -c /tmp/ghpc_dest_cmds' >>/var/log/proglog 2>&1" % node)
+    return
+
+def hpc_action (node):
+    # TODO: Give a hook to user inbetween
+    if get_hostname ('1') != node:
+        os.system ("rm -rf /tmp/gmi")
+        os.system ("scp -r %s:/tmp/gmi /tmp" % node)
+    os.system ("chmod +x /tmp/gmi/*")
+    os.system ("sed -i 's,^#\\(.\\)/bin/sh,#\\1/usr/bin/gdscript /bin/sh,' /tmp/gmi/* 2>>/var/log/proglog")
+
+    dlg.infobox ("Partitioning and preparing filesystems on client nodes.")
+    if os.system ("/tmp/gmi/00-partition.sh >>/var/log/proglog 2>&1"):
+        dlg.msgbox ("Problems during installation\nExiting\n",
+                    title='[ Error ]')
+        return
+
+    dlg.infobox ("Mounting initialized partitions\n")
+    if os.system ("/tmp/gmi/01-mount.sh >>/var/log/proglog 2>&1"):
+        dlg.msgbox ("Problems during installation\nExiting\n",
+                    title='[ Error ]')
+        return
+
+    dlg.infobox ("Preparing client nodes for image transfer\n")
+    if os.system ("/tmp/gmi/02-untar.sh >>/var/log/proglog 2>&1"):
+        dlg.msgbox ("Problems during installation\nExiting\n",
+                    title='[ Error ]')
+        return
+
+    source_action (node)
+
+    dlg.infobox ("Updating '/etc/fstab' in client nodes\n")    
+    if os.system ("/tmp/gmi/03-fstab.sh >>/var/log/proglog 2>&1"):
+        dlg.msgbox ("Problems during installation\nExiting\n",
+                    title='[ Error ]')
+        return
+
+    dlg.infobox ("Installing boot manager in client nodes\n")
+    if os.system ("/tmp/gmi/04-bootloader.sh >>/var/log/proglog 2>&1"):
+        dlg.msgbox ("Problems during installation\nExiting\n",
+                    title='[ Error ]')
+        return
+
+    if get_hostname ('1') != node:
+        os.system ("gping -m slave -p 1332 %s" % node)
+        os.system ("ssh %s gmount" % node)
+        os.system ("ghosts --update-known-hosts")
+        os.system ("echo %s >> /tmp/session_hosts" % node)
+    else:
+        os.system ("gmount")
+
+    os.system ("gpkg-sel")
+
+    dlg.infobox ("Performing postinstall in client nodes\n")
+    if os.system ("/tmp/gmi/05-postinstall.sh >>/var/log/proglog 2>&1"):
+        dlg.msgbox ("Problems during installation\nExiting\n",
+                    title='[ Error ]')
+        return
+
+    dlg.infobox ("Unmounting partitions\n")
+    if os.system ("/tmp/gmi/06-umount.sh >>/var/log/proglog 2>&1"):
+        dlg.msgbox ("Problems during installation\nExiting\n",
+                    title='[ Error ]')
+        return
+
+    os.system ("gumount")
+    return
+
+def get_node_name (node):
+    sel = None
+    while True:
+        (ret, sel) = dlg.inputbox ("Select the node from which to take image \n('%s' for master node)" % get_hostname ('1'),
+                                   title="[ Image Selector ]",
+                                   ok_label = ' Next ',
+                                   cancel=' Back ',
+                                   init=get_hostname ('1'))
+        if ret != 0:
+            return (ret, get_hostname ('1'))
+        if sel == get_hostname ('1'):
+            break
+        if sel == '':
+            continue
+        if os.system ("ping -q -c 1 -W 1 %s >>/var/log/proglog 2>&1 && ssh %s echo >>/var/log/proglog 2>&1" % (sel, sel)):
+            dlg.msgbox ("Give a valid hostname",
+                        title="[ Error ]")
+            continue
+        break
+    return (ret, sel)
+
+def register_client (node):
+    ret = GExtension.run ('client-reg')
+    reg.read (clientinfo)
+    GExtension.run ('bootp-manager', '--auto 2>>/var/log/proglog')
+    return (ret, '')
+
+def mac_collector (node):
+    ret = GExtension.run ('mac-collector')
+    if ret == 0:
+        os.system ('ghosts --update-known-hosts')
+    return (ret, '')
+
+def display_status ():
+    failed_nodes = []
+    success_nodes = []
+
+    os.system ("gping -i /tmp/session_hosts >/tmp/ghpc_stats")
+
+    nodes = file ('/tmp/ghpc_stats', 'r').readlines ()
+    nodes = map (lambda x:x.split (':'), nodes)
+    for node in nodes:
+        if node[1].strip () != 'success':
+            failed_nodes.append (node[0])
+        else:
+            success_nodes.append (node[0])
+
+    all_nodes = file ('/tmp/session_hosts', 'r').readlines ()
+    report_file = file ('/tmp/ghpc_stats', 'a')
+
+    for node in map (string.strip, all_nodes):
+        if node in map (lambda x: x[0], nodes):
+            continue
+        report_file.write ("%s: Unreachable\n" % node)
+    report_file.close ()
+    
+    if dlg.yesno ("Installation Report : \n" +
+                  "%d nodes successfully installed\n" % len (success_nodes) +
+                  "%d nodes failed\n" % len (failed_nodes),
+                  title='[ Report ]',
+                  yes_label='Ok',
+                  no_label='Detailed Report'):
+        dlg.textbox (filename='/tmp/ghpc_stats')
+
+    return 
+
+def first_time_config ():
+    hostname = get_hostname ()
+    domain = get_domainname ()
+    os.system ("mkdir -p /var/gluster/.ssh /var/gluster/hostkeys")
+    os.system ("ssh-keygen -t dsa -f /var/gluster/.ssh/id_dsa -N \"\"  >>/var/log/proglog 2>&1")
+    os.system ("cp -f /var/gluster/.ssh/id_dsa.pub /var/gluster/.ssh/authorized_keys2")
+    os.system ("ssh-keygen -t rsa -f /var/gluster/hostkeys/ssh_host_rsa_key -N '' >>/var/log/proglog 2>&1")
+    os.system ("ssh-keygen -t dsa -f /var/gluster/hostkeys/ssh_host_dsa_key -N '' >>/var/log/proglog 2>&1")
+    os.system ("ssh-keygen -t rsa1 -f /var/gluster/hostkeys/ssh_host_key -N '' >>/var/log/proglog 2>&1")
+
+    rsa_key = file ('/var/gluster/hostkeys/ssh_host_rsa_key.pub').readline ()
+    known_hosts_fd = file ('/var/gluster/.ssh/known_hosts', "w")
+    known_hosts_fd.write ('%s* %s' % (hostname, rsa_key))
+    known_hosts_fd.write ('%s* %s' % ('master-node', rsa_key))
+    known_hosts_fd.write ('%s*.%s %s' % (hostname, domain, rsa_key))
+    known_hosts_fd.write ('%s*.%s %s' % ('master-node', domain, rsa_key))
+    known_hosts_fd.close ()
+
+    return
+
+def config_source_node (host):
+    # Check if ssh keys are already generated and stored
+    if not os.access ('/var/gluster/.ssh', os.R_OK):
+        first_time_config()
+
+    # Create a hosts file using currently collected macs
+    mnt_pipe = os.popen ("ssh %s 'gmount -o' 2>>/var/log/proglog" % host)
+    mnt_buf = mnt_pipe.readlines ()
+    mnt_pipe.close ()
+    os.system ("ssh %s 'gmount' >>/var/log/proglog 2>&1" % host)
+    for line in mnt_buf:
+        arr = line.strip ()
+        os.system ("ssh %s 'mkdir -p /tmp/ginstaller/%s/root/.ssh' >>/var/log/proglog 2>&1" % (host, arr))
+        os.system ("scp /var/gluster/.ssh/* %s:/tmp/ginstaller/%s/root/.ssh/ >>/var/log/proglog 2>&1" % (host, arr))
+        os.system ("ssh %s 'customize-net /tmp/ginstaller/%s' >>/var/log/proglog 2>&1" % (host, arr))
+        os.system ("scp /etc/hosts %s:/tmp/ginstaller/%s/etc/ >>/var/log/proglog 2>&1" % (host, arr))
+        os.system ("ssh %s mkdir -p /tmp/ginstaller/%s/tmp/gluster-tmp/" % (host, arr))
+        os.system ("scp -r /var/gluster/{clientinfo,macs.txt,hw-profiles} %s:/tmp/ginstaller/%s/tmp/gluster-tmp/ >>/var/log/proglog 2>&1" % (host, arr))
+        os.system ("ssh %s 'mkdir -p /tmp/ginstaller/%s/etc/ssh' >>/var/log/proglog 2>&1" %
+                   (host, arr))
+        os.system ("scp /var/gluster/hostkeys/* %s:/tmp/ginstaller/%s/etc/ssh/ >>/var/log/proglog 2>&1" % (host, arr))
+        # Other master node config related stuff should come here
+    os.system ("ssh %s 'gumount' >>/var/log/proglog 2>&1" % host)
+    return
+
+def main ():
+    global number_of_nodes
+    (opt, args) = getopt.getopt (sys.argv[1:], "c",
+                                 ["client"])
+    for (o, val) in opt:
+        if o == '-c' or o == '--client':
+            return
+
+    os.system ('> /var/log/proglog; killall tail')
+    os.system ('gstate-sel')
+    
+    fn_idx = 0
+    function = [register_client, mac_collector, get_node_name, source_config]
+    hname = ''
+    # The loop is used for 'back' option ;)
+    while True:
+        (ret, hname) = function[fn_idx] (hname)
+        if ret == 0:
+            fn_idx += 1
+        else:
+            if fn_idx != 0:
+                fn_idx -= 1
+            else:
+                if dlg.yesno ('Are you sure of exiting GlusterHPC?'):
+                    continue
+                return 0
+        if fn_idx == 4:
+            break
+
+    # Select source ( * replicate master node, * get layout from source node)
+    # if client is selected, stop 'smt' receiver.
+
+    # 'gpart-sel --auto'
+    # 'gmeta-installer --auto'
+    # append HPC-client script
+    # UDPCAST
+
+    # Config the ssh keys <- Think of better way..
+    # Config the network of master node
+    dlg.infobox ('Configuring master-node')
+    dest_config (hname)
+    config_source_node (hname)
+
+    dlg.infobox ("Preparing %d nodes for installation\n\nThis may take some time ... \nPlease wait" % number_of_nodes)
+
+    hpc_action (hname)
+
+    display_status ()
+    return
+
+main ()

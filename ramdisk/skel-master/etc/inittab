@@ -1,0 +1,23 @@
+
+id:1:initdefault:
+
+si:S:sysinit:/etc/rc.d/rc.sysinit
+
+c1:12:respawn:/sbin/agetty -n -l /bin/main_shell 38400 vc/1 linux
+c2:12:respawn:/sbin/agetty -n -l /bin/side_shell 38400 vc/2 linux
+c3:12:respawn:/sbin/agetty -n -l /bin/proglog_shell 38400 vc/3 linux
+c4:12:respawn:/sbin/agetty -n -l /bin/syslog_shell 38400 vc/4 linux
+c5:12:respawn:/sbin/agetty -n -l /bin/bash_shell 38400 vc/5 linux
+c6:12:respawn:/sbin/agetty -n -l /bin/bash_shell 38400 vc/6 linux
+c7:12:respawn:/sbin/agetty -n -l /bin/bash_shell 38400 vc/7 linux
+c8:12:respawn:/sbin/agetty -n -l /bin/bash_shell 38400 vc/8 linux
+c9:12:respawn:/sbin/agetty -n -l /bin/bash_shell 38400 vc/9 linux
+c10:12:respawn:/sbin/agetty -n -l /bin/bash_shell 38400 vc/10 linux
+c11:12:respawn:/sbin/agetty -n -l /bin/bash_shell 38400 vc/11 linux
+c12:12:respawn:/sbin/agetty -n -l /bin/bash_shell 38400 vc/12 linux
+
+ca::ctrlaltdel:/sbin/reboot
+
+r:6:wait:/etc/rc.d/rc.reboot
+
+h:0:wait:/etc/rc.d/rc.halt

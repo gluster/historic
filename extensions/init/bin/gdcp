@@ -1,0 +1,77 @@
+#!/usr/bin/python
+
+# gdcp: Gluster Distributed Copy
+# Author: Vikas Gorur <vikas@80x25.org>
+# Date: Sun Jan 22 00:44:15 IST 2006
+
+try:
+    import getopt, os, sys
+    from Gluster import gmap
+except ImportError, msg:
+    print "gdcp: Import error:", msg
+    sys.exit (1)
+
+def rcopy (host, path, dest, verbose=False, recurse=False):
+    if verbose: sys.stdout.write ("%s:%s" % (host, path))
+    if recurse:
+        options = "-r"
+    else:
+        options = ""
+
+    if dest == None:
+        dest = path
+        
+    ret = os.system("scp %s %s %s:%s" %
+                    (options, path, host, dest))
+    if verbose: sys.stdout.write (".\n")
+    return ret
+
+def usage ():
+    print """Usage: gdcp [-v] [-r] [-d n] src [dest]
+
+    -v, --verbose        be verbose
+    -r                   copy recursively
+    -d, --degree n       set degree of parallelism to n
+"""    
+def main ():
+        try:
+            opt, args = getopt.gnu_getopt (sys.argv[1:], "rvd:",
+                                           ["verbose", "degree="])
+        except getopt.GetoptError, (msg, opt):
+            print msg
+            usage ()
+            sys.exit (1)
+
+        if len (args) < 1:
+            usage ()
+            sys.exit (1)
+            
+        verbose = False
+        degree = -1
+        recurse = False
+        
+        for (o, val) in opt:
+            if o == "-v" or o == "--verbose":
+                verbose = True
+            elif o == "-d" or o == "--degree":
+                degree = int (val)
+            elif o == "-r":
+                recurse = True
+
+        try:
+            hosts = sys.stdin.readlines ()
+        except IOError, (errno, msg):
+            print "gdcp: Could not read list of hosts:", msg
+            sys.exit (2)
+
+        if len (args) == 1:
+            dest = None
+        else:
+            dest = args[1]
+            
+        hosts = map (lambda s: s[:-1], hosts)
+        rets = gmap.gmap (lambda host: rcopy (host, args[0], dest,
+                                              verbose, recurse),
+                          hosts, degree)
+
+main ()

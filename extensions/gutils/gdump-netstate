@@ -1,0 +1,23 @@
+#!/bin/sh
+
+[ -z "$1" ] || exec 1>$1
+
+hostname=$(hostname)
+ifaces=$(ip l l | grep UP | grep -v NO-CARRIER | cut -f2 -d: | grep -v lo)
+
+echo "#!/bin/sh"
+echo "exec 2>/dev/null"
+echo "hostname $hostname"
+
+for i in $ifaces; do
+    # Reset all the interfaces
+    echo ip addr flush dev $i;
+    echo ip route flush dev $i;
+    echo ip link set down dev $i;
+    [ -f /var/state/dhcp/dhclient.leases ] && grep -q $i /var/state/dhcp/dhclient.leases && echo dhclient $i && continue
+    echo ip link set up dev $i;
+    # Set addresses 
+    ip addr list dev $i | sed -n -e "s/inet //p" | sed -e "s/$i/dev $i/" | sed -e 's/^/ip addr add /'
+    # Set routes
+    ip route list dev $i | sed -e 's/^/ip route add /' | sed -e "s/$/dev $i/"
+done;

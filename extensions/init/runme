@@ -1,0 +1,19 @@
+#!/bin/sh
+
+_init ()
+{
+    return 0
+}
+
+main ()
+{
+    local my_dir="$(dirname $0)";
+    cp -alf "${my_dir}"/destdir/* /;
+    ln -sf /usr/share/gluster/extensions/lib /usr/lib/python2.4/Gluster;
+    gex --install /stage3/gutils.gex
+    gex --install /stage3/fs-utils.gex
+}
+
+_init "$@" && main "$@";
+
+

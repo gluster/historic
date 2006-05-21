@@ -1,0 +1,1168 @@
+2006-05-21  Anand V. Avati <avati@zresearch.com>
+
+	* external/torque.mk, extensions/torque-pkg.gex: added torque
+	as HPC app
+	
+2006-05-20  Anand V. Avati <avati@zresearch.com>
+
+	* ramdisk/skel-{master, slave}/etc/stage2/config_network.sh: make
+	'modify' the default option and not 'accept' .. much more usable
+	this way
+	
+	* auth/gmanage-user: change ownership of keys to the user (created
+	as root) when password is changed
+
+	* GlusterEP: /tftpboot/stage3 is not symlik but mount --bind of
+	/stage3
+	
+2006-05-18  Anand V. Avati <avati@zresearch.com>
+
+	* GlusterHPC: swapped order of dest_config and source_node_config
+	as hw-profiles was getting created after it was trying to get copied
+
+	* kick-start: handle case when no autload is there more correctly
+	
+2006-05-18  Amar S. Tumballi <amar@zresearch.com>
+
+	** Edited the UI in following applications
+	- GlusterEP/{GlusterEP,GProvision,GCapture}
+	- GlusterHPC/GlusterHPC
+	- bootp-manager/bootp-manager
+	- auth/gmanage-user
+	- mac-collector/{collect-macs,mac-collector}
+	- gutils/{gstream,gpart-sel,gstate-sel}
+
+	* extensions/core/Gluster/GFrontEnd/dialog.py: added option for 
+	--yes-label and --no-label
+
+	* ramdisk/skel-master/etc/stage2/config_network.sh: bug fixes
+	
+2006-05-17  Amar S. Tumballi <amar@zresearch.com>
+
+	* auth/gmanage-user: added validation
+	* GlusterEP: added few validation
+	* bootp-manager: added validation
+	
+2006-05-17  Anand. V. Avati <avati@zreearch.com>
+
+	* ramdisk/skel-master/etc/rc.d/rc.sysinit: set hostname to 'mater-node'
+	* ramdisk/skel-master/etc/hosts: preinitialize master-node with
+	127.0.0.1
+
+	* skel-master/etc/stage2/locate_stage3.sh: parse /proc/cmdline
+	for gluster_stage3= specification to load stage3 without dialogs
+
+	* extensions/core/bin/kick-start: parse /proc/cmdline for
+	gluster_app=GlusterHPC etc  specification to load an application 
+	without dialogs
+
+	* extensions/gutils/gstate-sel
+
+	- fix 'skip' issue
+
+	- parse /proc/cmdline for gluster_stage3=hda1 specification for auto
+	loading of state from hardisk
+
+2006-05-16  Amar S. Tumballi <amar@zresearch.com>
+
+	* GlusterHPC: Finetuning, added 'detail report'
+
+	* ramdisk/gcsh: removed verbose mode
+
+	* gutils/customize-net: fixed a bug related to debian network script
+
+	* gutils/ghwdump: bugfix (/tmp/known_hosts -> /tmp/ghosts/known_hosts)
+
+	* extensions/bootp-manager: rewrote the tool, which behaves
+	differently depending on the argument, usefull for reusing
+	in HPC and EP.
+	
+2006-05-16  Anand V. Avati <avati@zresearch.com>
+
+	* extensoins/guitils/ghwdump: probe master node explicitly
+	
+	* extensions/{mvapich-gen2, mpich2, openib}/*-env.sh: scritps
+	to be sourced in OS mode to set environment variables
+	
+	* extensions/GlusterHPC/GlusterHPC: call gpkg-sel after image
+	transfer
+
+	* extensiong/GlusterHPC/gpkg-sel: push HPC packages to all nodes
+	in the cluster
+	
+	* extensions/{mpich2, mvapich-gen2, openib}/runme: override package
+	contents with destdir layout
+	
+	* extensions/mpich2/{mpicc, mpicxx, mpich2version, mpif77, mpif90}:
+	override scripts for mpich2 installation which has correct variables
+	and paths which are screwed because of cross compile
+
+	* extensions/mvapich-gen2/{mpicc, mpicxx, mpireconfig, mpireconfig.dat, mpirun}:
+	override scripts for mpich2 installation which has correct variables
+	and paths which are screwed because of cross compile
+	
+2006-05-15  Anand V. Avati <avati@zresearch.com>
+	
+	* extensions/gutils/gstream: accept title message from command line
+	
+	* external.mk, extensions.mk: cleanup build directories
+	
+	* extensions/shutdown.gex: extension to shutdown master node,
+	registers as application to appear on GDesktop
+	
+	* ramdisk/gcsh: handle case when 0 nodes are up and return with exit
+	code 1
+
+	* ramdisk/gcshd: disable verbose udpcast messages
+	
+	* skel-{master, slave}/etc/rc.d/rc.sysinit: disable console blanking
+	
+	* ramdisk/client-gex: moved from skel-slave/bin
+	
+	* extensions/mvapich-gen2-pkg.gex: mvapich-gen2 HPC bundle
+
+	* extensions/openib-pkg.gex: OpenIB HPC bundle
+
+	* extensions/GlusterHPC/gpkg-sel: tool to select and install
+	HPC bundles to OS image
+	
+2006-05-14  Amar S. Tumballi <amar@zresearch.com>
+
+	* ramdisk/gcsh: probe for slave nodes more correctly and avoid
+	hanging of master node waiting for non-up nodes
+
+	* ramdisk/skel-slave/etc/rc.d/rc.slave: fixed problem with 
+	/etc/hosts update
+
+	* extensions/gutils/{gpart, gmountmap}: bug fixes
+
+	* GlusterEP/GlusterEP: added option of rc.local (net config)
+
+	* extensions/gutils/gmeta-installer: changed /tmp/ghpc -> /tmp/gmi 
+	
+	* Added extensions/gutils/gdump-netstate
+
+	
+2006-05-14  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/mpich2-pkg: template package to test HPC bundling
+
+	* external/mpich2.mk: added CROSS_SIZEOF variables for 32bit
+	
+	* extensions/bootp-manager/tftpboot/pxelinux.cfg/default:
+	do not set default_iface and default_port by default
+
+	* extensions/gutils/gpart: fixed 'label' problem
+	
+2006-05-13  Anand V. Avati <avati@zresearch.com>
+
+	* external/mpich2.mk: HPC package
+
+	* external/mvapich-gen2.mk: HPC package
+
+	* external/ib-*.mk: added .pkg rules
+
+	* external.mk: support for .dist build target for HPC packages
+	
+2006-05-12  Amar S. Tumballi <amar@zresearch.com>
+
+	* gutils/gmeta-installer: 
+	- Removed '--sync' option used to sychronizing
+	- Changed to output different scripts instead of one
+	- quit functions (quit, quit_udp)
+
+	* GlusterHPC/GlusterHPC:
+	- Changed to call different hpc scripts generated by gmeta-installer
+	- Removed loop around 'gping' in display_status
+	- Removed synchronization methods (not necessary anymore)
+	- merged 'dest_action' and 'source_action' into 'hpc_action'
+
+	* GlusterEP/GCapture: Working :p
+	- removed usage of 'nc'
+	- removed 'dest_action'
+	- integrated 'gstreamer' in the code
+	- changed my_ip to MAC Address from IP Address
+	
+	* Removed GlusterHPC/gsync-client
+
+	* Added gutils/ghosts
+
+	
+2006-05-12  Anand V. Avati <avati@zresearch.com>
+
+	Patch by Yohandry Cueto <cueto@ldc.usb.ve> for new extension 
+	debug-tools.gex containing gdb for live mode
+	
+	* ramisk/{gping.c, gpingd.c}, external/gping.mk: 
+	- made gping part of ramdisk and not external anymore
+	- added option in gpingd to die on msg 'die' and gping to
+	get up count on --count
+	- ramdisk/{gcsh, gcshd}: are now blocking
+
+	* GlusterHPC/ghpc_send: remove the ghwprobe via gcsh
+
+	* gutils/ghwdump: call ghwprobe on client nodes via gcsh
+
+	* ramdisk/linuxrc: remove extracting tarballs from /extract/
+
+	* GlusterEP: mkdir /.ssh before scp keys
+
+	* GProvision: working :p
+
+	* GlusterHPC: set /tftpboot symlink to /var/gluster/HPC/tftpboot
+	
+2006-05-11  Amar S. Tumballi <amar@zresearch.com>
+
+	* ramdisk/skel-master/etc/group: added entry for 'gluster'
+
+	* GlusterHPC: 
+	- added code to generate host-keys and configure them for the live mode
+	- added code to get h/w info
+	
+	* GlusterEP: Fine tuning
+
+	Added
+	- external/iptables.mk 
+	- extensions/gutils/ghwprobe
+	- extensions/gutils/ghwdump
+	- extensions/net-utils* 
+	
+2006-05-10  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/auth/runme: fixes for auth to work
+	
+2006-05-09  Anand V. Avati <avati@zresearch.com>
+
+	- moved to new CVS module gluster-beta
+
+	- merged extensions/{ginstaller,gpartdump} into extensions/gutils
+
+	* extensions/auth, external/shadow.mk: support for password/shadow
+	based authentication, used for GlusterEP
+	
+2006-05-07  Amar S. Tumballi <amar@zresearch.com>
+
+	* extensions/gpartdump/gpart: increased 'sleep 3' to 'sleep 10'
+
+	* GlusterEP: 
+	- Added support for user management at the master
+	- Added support for user authentication at client
+
+2006-05-06  Amar S. Tumballi <amar@zresearch.com>
+
+	* GlusterHPC: Tested for all the latest changes
+	
+2006-05-05  Amar S. Tumballi <amar@zresearch.com>
+
+	* extensions/GlusterHPC: changes done to configure ssh keys in 
+	master-node, and then transfer the image.
+
+	* extensions/ginstaller/gmeta-installer: Changes done to change the
+	synchronization added for transfering ssh keys. 
+
+	* Added 
+	- 'gmount' to mount all the partitions in the os /etc/fstab
+	- 'gumount' to umount them
+	
+2006-05-03  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/mac-collector: fixed 'set' mac which was not accepting
+	valid macs
+	
+	* skel-master/etc/rc.d/rc.modules: all modules handled here
+
+	* gpartudmp/gprobe: look for /lib/ld-* instead of /lib/ld* to detect
+	GNU/Linux OS as /usr/lib/ldscripts can fool probing
+
+	* ginstaller/gpart-sel: handle 0 entires in fstab (appeard in the
+	SATA naming bug)
+
+	* deps.mk: added back depenencies of openib and freeipmi, but
+	just kept in comments, same with .gex
+	
+2006-05-02  Anand V. Avati <avati@zresearch.com>
+
+	* stage2/stage2.mk: strip ALL elf binaries
+	* stage2/stage2.mk: remove locales and info pages
+
+	* stage2/kernel-modules.mk: keep modules gzip'd
+
+	* stage2/module-init-tools.mk: modutils for supporting .ko.gz type
+	modules
+
+	
+2006-05-02  Amar S. Tumballi <amar@zresearch.com>
+
+	* gmeta-installer: 
+	- Added support for LABELs in fstab creation
+	- Added '-s' or '--sync' support to give a synchronization command
+
+	* GlusterHPC: Updated for the new changes	
+
+2006-05-01  Amar S. Tumballi <amar@zresearch.com>
+
+	* stage2/skel-master/etc/inittab: Changed the file to output kernel
+	messages and program messages in Alt-f4 and Alt-f3 respectively.
+
+	* extensions/GlusterHPC/GlusterHPC: Lot of bug fixes after testing
+
+	* stage2/skel-*/bin/{smt, smw}: Bug fixes
+
+	* gstream: removed --backtitle
+
+	* gmeta-installer: updated for gping and gsync-client
+
+	* Added 
+	- 'gping' in the build.
+	- 'gsync-client' in the HPC and EP external packages
+
+2006-05-01  Anand V. Avati <avati@zresearch.com>
+
+	* stage2/file.mk: Bug reported by Yohandry Cueto <cueto@ldc.usb.ve>
+	mismatching file version from build system and file.native. fixed.
+
+	* Makefile.am: make clean, now deletes built sdk as well.
+	
+2006-04-28  Anand V. Avati <avati@zresearch.com>
+
+	* GlusterHPC/client-kick-start, GlusterHPC: stage3 packages sent
+	to slave nodes from GlusterHPC, not client-kick-start
+
+	* skel-slave/etc/rc.d/rc.slave - support manual IP configuration
+	after timeout + keystroke
+	
+2006-04-25  Amar S. Tumballi <amar@zresearch.com>
+
+	* Bug fixes after testing HPC.
+	
+2006-04-22  Amar S. Tumballi <amar@zresearch.com>
+
+	Renamed the following:
+	* source-hdd -> gpart-sel
+	* source-tgz -> gimage-sel
+	* dest-tgz   -> gimage-dump
+	* dest-hdd   -> gmeta-installer
+
+	* extensions/GlusterHPC/postinstall.sh: Added to do the postinstall
+	for HPC mode
+
+	* extensions/GlusterHPC/GlusterHPC: SSH key copying, getting info 
+	from client nodes using 'udping' is done.
+
+	* extensions/* : removed 'ssh' from client node considering scaling
+	(used in client scripts)
+	
+2006-04-21  Amar S. Tumballi <amar@zresearch.com>
+
+	* extensions/ginstaller/gstate-sel: small bug fixes
+
+	* stage2/skel-master/etc/rc.d/rc.sysinit: corrected $@ to \$@
+
+	* misc: other small bug fixes
+	
+2006-04-20  Amar S. Tumballi <amar@zresearch.com>
+
+	* stage2/skel-master/bin/side-shell: added mac-collector to the menu
+
+	* extensions/ginstaller/dest-hdd: added umount_section to umount the 
+	mounted partitions
+
+	* extensions/GlusterHPC/GlusterHPC: changes to get the status update 
+	of the nodes properly
+	
+2006-04-19  Anand V. Avati <avati@zresearch.com>
+
+	Behalf of Amar S. Tumballi - added patches/parted/parted_unit.diff
+	
+	* stage2/tar.mk: set ac_cv_func_chown_works=1 in configure to
+	override using of rpl_chown
+
+	* extensions/gpartdump/gpart: treat units as float, not int
+
+	* stage2/grep.mk: fixed make install rule
+
+	* Makefile.am: `make sdk' now generates sdk for building
+	gluster-tools
+
+	* skel-master/etc/stage2/fix_state.sh: fix persistant storage
+	
+2006-04-18  Amar S. Tumballi <amar@zresearch.com>
+
+	* extensions/core/Gluster/GFrontEnd/dialog: Updated to enable 
+	'extra-button' and 'extra-label'
+
+	* extensions/GlusterHPC/GlusterHPC: Enabled 'back' option to all 
+	the dialog menus
+
+	* extensions/ginstaller/dest-hdd: Added status check for each 
+	commands in meta script
+
+2006-04-18  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/ginstaller/gstream: tool to stream and graphically
+	display progress of streaming of data
+
+	* extensions/gpartdump/gpart: set active partition for disks
+	
+2006-04-15  Amar S. Tumballi <amar@zresearch.com>
+
+	* extensions/GlusterHPC/GlusterHPC: Change in the presentation of 
+	UI to the user
+
+	* extensions/ginstaller/: UI enhancements
+
+	* extensions/gpartdump/gmountmap: UI enhancements
+
+	* extensions/ginstaller/customize-net: changed the ip type to static
+	
+2006-04-16  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/gpartdump/gpart: added validation and auto fill of
+	partitions/sizes while adding/resizing, dont use parted for
+	setting volume labels
+
+	* extensions/{bootp-manger, client-reg}: s/ipconfig/startip/
+	s/masternode/netmask/, according changes everywhere
+
+	* stage2/skel-master/side_shell: add 'gfdisk' option to 
+	use gpart
+
+	* extensions/core/bin/gdsh: default serial (degree of parallelism
+	= 1)
+
+	* extensions/GlusterHPC/GlusterHPC: call bootp-manager after
+	client-reg
+
+	* source-hdd: supress tar stderr
+	
+2006-04-15  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/core/bin/kick-start: GDesktop by default first,
+	different UI
+
+	* stage2/skel-master/locate-stage3.sh: spawn network-config.sh
+	when asking for NFS
+
+	* extensions/mac-collector: UI enhancements
+	
+2006-04-14  Amar S. Tumballi <amar@zresearch.com>
+
+	* extensions/ginstaller/customize-net: added for configuring network 
+	options.
+
+	* extensions/ginstaller/dest-hdd: updated to customize the network t
+	
+2006-04-14  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/client-reg: fix known_hosts file and /etc/hosts
+	file + bugfix, set master-node
+
+	* stage2/skel-slave/etc/rc.d/rc.slave: pick /etc/hosts from tftpbtoo
+
+	* extensions/Gluster{HPC, EP}/client-kick-start: refer to master node
+	as master-node and not with IP address
+	
+2006-04-13  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/ginstaller/{source, dest}-hdd: s,tar,/usr/bin/tar,
+	for GNU tar to get used for --format=posix option
+
+	bugfixes
+
+	* extensions/gpardump/gpart: use fs-utils tools for creating
+	partitions and not parted
+
+	* patches/udev/scsi-devfs-enable.diff: removed as it cuases
+	problem with grub install
+
+	* stage2/skel-slave/etc/rc.d/rc.slave: set client hostname from
+	dhclient.leases file and get hostname --fqdn to work by fixing
+	/etc/hosts
+
+	* extensions/GlusterHPC/GlusterHPC: added --nokbd to udp-sender
+
+2006-04-12  Amar S. Tumballi <amar@zresearch.com>
+
+	* nfs-utils, portmap, tcp-wrappers: moved to stage2, to enable nfs
+	for probing stage3 extensions.
+
+	* client-kick-start: updating of client ip at /var/tmp/session at 
+	master is moved to the beggining from last.
+	
+2006-04-10  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/gpartdump/gpart: bug fixes - s/1024/1000/ for GB,
+	s/label/mklabel/ for blanking disk
+
+	* extensions/gpartudmp/gprobe: print units in bytes
+
+	* extensions/gpartudmp/grub-convert: tool to convert /dev/hda style
+	to grub's (hd0) style
+
+	* extensions/ginstaller/dest-hdd: sleep before mount, fix grub
+
+	* extensions/Gluster{HPC,EP}/client-kick-start: allow runme output
+
+	* extensions/GlusterEP/GCapture, GProvision: push source/dest action
+	to background
+
+	* extensions/core/bin/kick-start: stay in loop over applications
+
+	* extensions/GlusterHPC/GlusterHPC: set --max-bitrate for udp-sender
+
+	
+2006-04-10  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/ginstaller/source-hdd: removed debugging 'echo' prefix
+	for tar command
+	
+2006-04-10  Amar S. Tumballi <amar@zresearch.com>
+
+	* extensions/GlusterHPC/GlusterHPC: added 'smt' for '--client' option
+
+	* extensions/GlusterHPC/client-kick-start: added more packages in the 
+	script
+	
+2006-04-10  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/ginstaller/dest-hdd: added support for grub bootloader
+	including device map and /boot handling (merge/split)
+	
+2006-04-07  Anand V. Avati <avati@zresearch.com>
+
+	Patch by Harshavardhana Ranganath for locate-stage3.sh + fixes
+
+	* extensions/core/bin/gdscript.c: bug fix, missing argv[0]
+
+2006-04-06  Amar S. Tumballi <amar@zresearch.com>
+
+	* extensions/*/runme: changed 'cp -al' to 'cp -alf'
+
+	* misc: small bug fixes after booting from CD.
+	
+2006-04-06  Anand V. Avati <avati@zresearch.com>
+
+	* ramdisk/linuxrc: updated library paths
+
+2006-04-06  Amar S. Tumballi <amar@zresearch.com>
+
+	* patches/openib/opensm-gluster.patch: added
+
+	* ramdisk/ramdisk.mk: bug related to lib path fixed.
+	
+2006-04-05  Anand V. Avati <avati@zresearch.com>
+
+	* stage3/*.mk: removed --prefix=$(DESTDIR_CROSS)/usr to /usr
+
+	* build.mk: remove *.la files from destdir after make install so that
+	libtool neglects those libraries
+
+>>>>>>> 1.122
+2006-04-04  Anand V. Avati <avati@zresearch.com>
+
+	* deps.mk: added missing dependency from portmap on tcp-wrapper
+
+	* deps.mk: fixed type s/tcp-wrapper/tcp-wrappers/
+
+	* build.mk: sed hackery as workaround for libtool cross compile
+	problems
+	
+2006-04-04  Amar S. Tumballi <amar@zresearch.com>
+
+	* extensions/GlusterHPC/GlusterHPC: Basic implementation complete
+
+	* dest-hdd, gmountmap: Bug fixes
+	
+2006-04-03  Amar S. Tumballi <amar@zresearch.com>
+
+	* extensions/ginstaller/dest-hdd: updated to write first line of 
+	output script according to the application.
+	
+2006-04-03  Anand V. Avati <avati@zresearch.com>
+
+	Patch by Harshavardhana Ranganath <harsha@80x25.org> 
+	stage3/nfs-utils.mk stage3/portmap.mk stage3/tcp-wrappers.mk
+	and patches/ for the same
+
+	* extensions/GlusterEP/GlusterEP extensions/ginstaller/source-hdd
+	extensions/ginstaller/source-tgz: updated /var/gluster/EP to
+	/var/gluster/system-images
+	
+2006-03-31  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/gpartdump/gmountmap: print all mount points in source
+	for the -t spec
+
+	* extensions/ginstaller/dest-hdd: untar section written to output
+	shell script
+	
+2006-03-31  Amar S. Tumballi <amar@zresearch.com>
+	
+	* extension/ginstaller/dest-hdd: The code layout modularized. Basic 
+	bootloader UI added
+	
+	* extension/GlusterHPC/GlusterHPC: The code layout modularized.
+
+2006-03-31  Amar S. Tumballi <amar@zresearch.com>
+	* extension/gpartdump/gpartdump.py: Added code to remove TempDir, 
+	if mounting fails.
+
+2006-03-30  Anand V. Avati <avati@zresearch.com>
+
+	* stage2/stage2.mk: libc now in ramdisk, not stage2
+
+	* ramdisk/ramdisk.mk: likewise
+
+	* patches/busybox-1.00/config-gluster: busybox not staticlly linked 
+	now
+
+	* configure.ac: added missing extensions/ib-utils/Makefile in
+	AC_CONFIG_FILES
+
+	* deps.mk: added dependency libgcrypt.cross: libgpg-error.native
+	for gpg-error-config during ./configure
+	
+2006-03-29  Anand V. Avati <avati@zresearch.com>
+
+	* GlusterEP/GProvision: feature complete (testing pending)
+
+	* dest-tgz: done
+
+	* source-hdd: accept commands to send tar streams from a file
+	specified by command line,
+	command line arguments changed to be consistant with 
+	{source,dest}-{hdd,tgz} tools
+
+	* added usage comments for source-{tgz,hdd}, dest-tgz
+
+	* GlusterEP/GCapture: feature complete (testing pending)
+	
+2006-03-28  Anand V. Avati <avati@zresearch.com>
+
+	* source-tgz: done
+	* GlusterEP/{GProvision,GCapture}: scripts for transfers in each
+	direction added
+	* ginstaller/dest-hdd: accept 'action' script filename as command
+	line argument or default to /tmp/dest-hdd-out.sh
+	
+2006-03-28  Anand V. Avati <avati@zresearch.com>
+
+	following patch sent by Amar S. Tumballi <amar@zresearch.com>
+
+	* gmountmap changed to give out mount point spec at destination.
+	* dest-hdd rewritten to give out a script, which includes
+	        o partitioning
+	        o mounting different mountpoints
+	        o customizing fstab
+	        ? 'untar'ing and 'bootloader' part to be added
+	* some small bug fixes in 'gmountmap' and 'gprobe'
+	* TODO updated for this release
+	
+2006-03-27  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/gpartdump/gmountmap: feature complete
+
+	* extensions/gpartdump/gpart: fixed format bug for parted rule
+	to change partition label
+
+	* extensions/core/bin/kick-start: selects persistant storage 
+	partition on startup. option to use volatile storage (ramfs)
+	
+2006-03-25  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/gpartdump/gmountmap: tool to map source tar streams
+	to destination partitions
+
+	* extensions/gpartdump/gpart: added command line option to take
+	system spec from file instead of standard input
+	
+2006-03-23  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/gpartdump/{gprobe,gpartdump.py}: support for
+	probing boot loaders in gprobe from 
+	Amar S. Tumballi <amar@zresearch.com>
+	
+2006-03-21  Anand V. Avati <avati@zresearch.com>
+
+	* patches/openib-userspace: patches for cross compile from
+	Amar S. Tumballi <amar@zresearch.com>
+	
+2006-03-19  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/gpartdump/{gpart,gprobe,gpartdump.py}: enhancements
+	
+2006-03-17  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/gpartdump/{gpart,gprobe}: scripts to probe and alter
+	partition table
+	
+2006-03-15  Anand V. Avati <avati@zresearch.com>
+
+	following patches set from Harshavardhana Ranganath <harsha@80x25.org>
+
+	* stage3/{gmp,guile,libtool,freeipmi,libgcrypt,libgpg-error}.mk:
+	* extensions/freeipmi{/,.mk,.gex}: FreeIPMI extension
+	* patches/{freeipmi-0.2.0,guile-1.8.0}/*: patches for cross compiles
+	
+2006-03-09  Anand V. Avati <avati@zresearch.com>
+
+	following patches sent from Amar S. Tumballi <amar@zresearch.com>
+	
+	* stage3/ib-*.mk: openib libraries - ADDED
+	* stage3/sysfs.mk: dependency for libibverbs
+	* extensions/ib-utils*: ADDED as ib-utils extensions
+	* deps.mk: updated and tested upto make -j 8 parallel builds
+	* stage2/pciutils.mk: updated to install .h files in $1
+	* stage2/pcre.mk: configuring with --prefix=/usr and installing with
+	prefix=$1/usr
+	
+2006-03-04  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/ginstaller/gprobe: tool to probe of partitions,
+	os, fstab entries
+	
+2006-03-02  Anand V. Avati <avati@zresearch.com>
+
+	* stage3/netcat.mk: extension for p-to-p tar streaming for
+	GlusterEP
+	
+2006-02-28  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/GlusterEP: empty extension
+
+	* extensions/ginstaller/{dest,source}-{hdd,tgz}: scripts for
+	GlusterHPC and GlusterEP OS transfers
+	
+2006-02-27  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/GlusterHPC/client-kick-start: client side
+	kick-start script (for downloading core.gex etc). Each application
+	should now provide its own client-kick-start script
+
+	* stage2/skel-slave/bin/main_shell: call client-kick-start within
+	screen
+
+	* stage2/skel-slave/etc/rc.d/rc.sysinit: download client-kick-start
+	instead of downloading core.gex
+	
+2006-02-26  Anand V. Avati <avati@zresearch.com>
+
+	* stage2/mc.mk: mcedit text editor to stage2. Thanks to Harshavardhan
+	Ranganath for the diffs
+	
+2006-02-24  Anand V. Avati <avati@zresearch.com>
+
+	* extensions/core/bin/gex: patch from Harshavardhana Ranganath.
+	gex uses OptionParser
+	* stage2/discover-data.mk: use cpio instead of cp -i to stop asking
+	y/n during remake
+	* extensions/client-reg: ask for master node id
+	* extensions/bootp-manager: honor master node id collected
+	* extensions/ginstaller/source: script to run on node to be
+	replicated
+	
+2006-02-23  Bala A  <bala@zresearch.com>
+
+	* patches/discover-data-2.2005.02.13/force-gzip.diff: removed.
+
+2006-02-23  Bala A  <bala@zresearch.com>
+
+	* stage2/discover-data.mk: uses prebuild tarball.
+
+	* stage2/discover.mk: improved.
+
+2006-02-23  Anand V. Avati <avati@zresearch.com>
+
+	* patches/udev-050/scsi-devfs-enable.diff: add devfs style mappings
+	to udev config for scsi devices
+	
+	* stage3/os-prober.mk: added os-prober to stage3
+	* extensions/ginstaller.mk: os-prober belongs to ginstaller extnsion
+	
+	* stage2/expat.mk: fixed install rule as previously expat
+	was getting installed into build system
+
+	* deps.mk: added dependency of discover on expat and discover-data
+
+	* patches/discover-2.0.7/no-doc.diff: documentation is not built
+	now as it was failing
+
+	* stage2/discover-data.mk: fixed typo, 's/discoverdata/discover-data/'
+
+	* patches/discover-data-2.2005.02.13/force-gzip.diff: force gzip
+	so that re-make does not ask interactive 'yes/no' during gzip
+
+2006-02-22  Bala A  <bala@zresearch.com>
+
+	* stage2/discover.mk, stage2/discover-data.mk: added in stage2.
+
+	* deps.mk: updated.
+
+2006-02-22  Bala A  <bala@zresearch.com>
+
+	* stage2/gnutls.mk, stage2/libgcrypt.mk, stage2/libgpg-error.mk,
+	stage2/libidn.mk: removed libs.
+
+	* deps.mk: updated.
+
+2006-02-21  Bala A  <bala@zresearch.com>
+
+	* stage2/gnutls.mk, stage2/libgcrypt.mk, stage2/libgpg-error.mk,
+	stage2/libidn.mk: added new libs.
+
+	* deps.mk: updated.
+
+2006-02-22  Anand V. Avati <avati@zresearch.com>
+
+	* skel-slave/etc/rc.d/rc.sysinit: download and install stage3
+	from master node. register client ip with master in /var/tmp/session
+	on master node
+	* stage2/udev.mk: tuned to be compatible with devfs naming convention
+	(os-prober requires devfs style /dev)
+	
+2006-02-21  Anand V. Avati <avati@zresearch.com>
+
+	* skel-*/etc/rc.d/rc.modules: static list of modules which
+	cannot be probed (e.g. rtc, cdrom)
+	* gex-nfs-rc.diff: from Harshavardhana Ranganath
+	- add error checking and bug fixes in gex tool
+	- add nfs probe for stage3 in stage2
+	- add rc.halt and enhance rc.reboot init scripts
+	* extensions/fs-utils: file system utilities for ext2,ext3,reiserfs,
+	xfs, jfs
+	* stage2/reiserfsprogs.mk: gone, reiserfsprogs moved to fs-utils
+	extensions
+	* Makefile.am: new target 'make deptest' for checking if dependencies
+	specified in deps.mk qualifies for parallel builds
+	* extensions/core/sm{t,w}: re-use same udp-cast channel for stdin
+	as well
+	* build.mk: marked all tarballs as .PRECIOUS: so that they are not
+	deleted when downloaded by makefiles
+	* extensions/bin/gdscript.c: gluster distributed script tool
+	
+2006-02-20  Bala A  <bala@zresearch.com>
+
+	* stage2/expat.mk: added libexpat.
+
+	* deps.mk: updated.
+
+2006-02-20  Anand V. Avati <avati@zresearch.com>
+
+	* bootp-manager: bugfixes
+	* mac-collector: set default next node id correctly for file imports
+	and rest after flushes
+	* ramdsik/linuxrc: workaround for missing ldconfig in toolchain - 
+	symlink lib64 to lib. need new toolchain with fortran support as well
+	* stage2/pcre.mk: fix from Harshavardhana Ranganath <harsha@80x25.org>
+	for building on Fedora Core
+	
+2006-02-19  Anand V. Avati <avati@zresearch.com>
+
+	* COPYING: added GPL license :-)
+	* mac-collector:
+	- new interface, supports add/edit/delete/view/flush
+	* bootp-manager: 
+	- fixed restarting of dhcp
+	- deny unkown-hosts;
+	- read from new mac registry
+	* kernel-prepare.mk, deps.mk, gex.mk: patch from Harshavardhana
+	Ranganath <harsha@80x25.org> for clean parallel builds. tested
+	upto make -j 32 on pentiumD
+	
+2006-02-17  Anand V.Avati <avati@zresearch.com>
+
+	* stage2/usbutils.mk: added usbutils-0.11 - for hotplug to
+	work on USB devices (usbmodules)
+	* stage2/libusb.mk: libusb for usbutils
+	* patches/libusb-0.1.11/un-libtoolize.diff: unlibtoolized libusb
+	to neatly cross compile
+	* stage2/udev.mk: fixed KERNEL_DIR to be picking gluster kernel
+	and not build system kernel
+	* stage3/makebootfat.mk: added to `bootdisk-manger' extension
+	* stage2/skel-{master,slave}/etc/rc.d/rc.sysinit: probing
+	modules based on output of `pcimodules' [pcimodules maps
+	PCI IDS lspci to module names, referring 
+	/lib/modules/`uname -r`/modules.pcimap]
+	* stage2/pciutils.mk: added pciutils-2.1.11
+	* patches/pciutils-2.1.11/pciutils-2.1.11-pcimodules-1.diff:
+	patch found on linuxfromscratch.org. helps hotplug to
+	probe modules better
+	* patches/pciutils-2.1.11/pci.ids-from-slackware.diff: more
+	comprahensive list of pci ids
+	* skel/etc/{inputrc,profile}: fixed <DEL> key issue
+	* patches/linux-2.6.15/config-i386: ramdisk size = 65536
+	* patches/linux-2.6.15/config-x86_64: 
+	- AF_UNIX support inbuilt
+	* extensions/core/kick-start: fixed typo cuasing error
+	* stage2/bin/side_shell: fixed path typo to bootman
+	
+2006-02-16  Bala A  <bala@zresearch.com>
+
+	* stage1/i686/grub/menu.lst: ramdisk size is 64MB now.
+
+	* stage1/x86_64/grub/menu.lst: like wise.
+
+
+2006-02-16 Anand V. Avati <avati@zresearch.com>
+
+	* ramdisk/ramdisk.mk: ramdisk size is 64MB now
+	* patches/linux-2.6.15/config-x86_64: tune
+	- AF_PACKET support inbuilt
+	- enabled NAPI on intel gige and other NIC card drivers
+	- enabled PCI hotplug support
+	- SATA and intel piix support inbuilt
+	- sd_mod inbuilt
+	* skel-{master,slave}/etc/initscript: fixed sane $PATH
+
+	
+2006-02-15  Bala A  <bala@zresearch.com>
+
+	* patches/linux-2.6.15/config-x86_64: ext2/ext3 fs support are
+	built-in.
+
+2006-02-15 Anand V. Avati <avati@zresearch.com>
+
+	* patches/dhcp-3.0.3/neglect-udp-checksum.diff: neglects
+	udp checksum calculation. need to improve this to neglect
+	only for loopback interface packets
+	
+2006-02-13  Bala A  <bala@zresearch.com>
+
+	* patches/linux-2.6.15/config-x86_64: improved configuration.
+
+2006-02-14 Anand V. Avati <avati@zresearch.com>
+
+	* configure.ac: build cdrtools.native only if mkisofs is 
+	unavailable in the build system
+	* stage2/skel-master/bin/bash_shell: exec /bin/bash --login
+	instead of simply calling /bin/bash --login.
+	* stage2/gzip.mk: works with both x86_64 and i686 now
+	* stage2/openssl.mk: doesnt install man pages, saves lot of time
+
+2006-02-13 Anand V. Avati <avati@zresearch.com>
+
+	* stage2/stage2.mk: consider sys-root style and non sys-root style
+	toolchain.
+	fixed /lib/lib*.a removal as on x86_64 it will be /lib64/lib*.a
+	* patches/linux-2.6.15/config-x86_64: changed default ramdisk size 
+	to 32768 (32MB)
+	* stage2/openssl.mk: fixed Configure args for 64bit
+	* etc/initscript: add to LD_LIBRARY_PATH /lib64 and /usr/lib64
+	* ramdisk/linuxrc: copies lib* to /, as a fix to copy lib64 and lib
+	* deps.mk: added comments of why each dependency entry exists
+	* header.mk: added --target=$(CROSS) for cross compiles
+	* patches/net-tools/config.diff: disabled FDDI support 
+	* ncurses.mk: cross build fixes (installing `tic' first)
+	* stage3/disktype.mk: wasnt getting built with toolchain!
+	
+2006-02-12  Bala A  <bala@zresearch.com>
+
+	* patches/linux-2.6.15/config-x86_64: new trivial x86-64 arch
+	kernel config file.
+
+2006-02-11  Anand V. Avati <avati@zresearch.com>
+
+	* stage2/termcap.mk: fixed build issues found in cross compiling
+	* stage2/bzip2.mk:  --ditto-- [stopped `make test']
+	* stage2/gzip.mk:   --ditto-- [ASCPP=$(CROSS)-CPP]
+	* stage2/ncurses.mk: --ditto-- [./configure --build-cc=gcc ]
+	* stage2/jove.mk: fixed symlink creation, $(LOCALCC) issue fixed
+	* stage2/screen.mk: screen autotools hacks to work in cross compile
+	
+2006-02-10  Vikas Gorur  <vikas@80x25.org>
+
+	* stage2/jove.mk, patches/jove4.16.0.61: added jove, a light-weight
+	emacs clone to stage2.
+
+2006-02-10 Anand V. Avati <avati@zresearch.com>
+
+	* stage2/util-linux.mk: fixed /usr/usr install issue
+	* ramdisk/linuxrc: /usr/sbin/pivot_root -> pivot_root
+	* inittab: /usr/sbin/agetty -> /sbin/agetty
+	* patches/dhcp-helper/: updated patch from Amar S. Tumballi
+	
+2006-02-09 Anand V. Avati <avati@zresearch.com>
+
+	* linux-kernel: now 2.6.15, found issues with 2.6.12.3 in udp checksum
+	calculation on lo interface
+	* GIP.py: removed hardcoded /sbin/ip path
+	* ncurses.mk: disable building of ada bindings, misc progs for native
+	* skel-master/inittab: spawn more terminals, i need them :)
+	* stage2/coreutils.mk: new external package, proceeding towards
+	removal of busybox. busybox `cp' does not support `cp -l'
+	* extension/*/runme: changed `cp -a' to `cp -al' to use links instead
+	of content copy in ramfs. uses less ram, and hopefully lesser
+	OOM kills.
+	* stage2/skel-*/etc/rc.d/rc.sysinit: fixed `text file busy' error
+	on bash copy. copies in build time itself.
+	* stage2/net-tools.mk: ifconfig, route, mii-tool et.al. another step
+	closer to removal of busybox
+	* patches/net-tools-1.60/*.diff: compile fixes and pre-confuried
+	config.h
+	* stage2/iputils.mk: ping[6], arping, tracepath[6] et.al
+	* kernel-prepare.mk: sets $(top_builddir)/cross_kernel_include symlink
+	for apps like iputils to use
+
+2006-02-07  Anand V. Avati <avati@zresearch.com>
+
+	* patches/dhcp-3.0.3: added patch for server to listen on non broadcast
+	interfaces (lo) and a fix to send back dhcp reply with correct port
+	* stage3/dhcp-helper.mk: new tool for dhcp relays
+	* patches/dhcp-helper: patches to make it forward dhcp to custom port
+
+	
+2006-02-07  Vikas Gorur  <vikas@80x25.org>
+
+	* configure.ac: check for programs (wget, file, tar, gzip, ...)
+
+
+2006-02-05  Anand V. Avati <avati@zresearch.com>
+
+	* header.mk: added AR=ar in ENV_NATIVE_BUILD
+	* pxelinux.cfg/default (bootp-manager): tuned configuration
+	* client-reg.gex: ask bootp question, and no of nodes
+	* GExtension.py: fix permission before trying to execute extension
+	* skel-master/rc.sysinit: lot of fixes
+	* skel-slave/rc.slave: fixed sed expression 
+	* bootp-manager: added 'auto' option which gets used in the `guided'
+	mode
+	* side_shell: config_network.sh and bootdisk-manager interfaced from here
+	* core/kick-start: redesigned UI to be more intuitive and simpler
+	
+2006-02-04  Anand V. Avati <avati@zresearch.com>
+
+	* TODO: updated new tasks
+	* extensions/*/runme: modified to assume 'destdir' is present in $pwd
+	* stage2/load_stage3.sh: delete extracted copy from temporary directory
+	for core.tgz. call kick-start from here instead of core's runme
+	* build.mk: fixed wge .tar.gz.tar.gz prblem
+	* extensions.mk: gone [was never used!]
+	
+2006-02-03  Anand V. Avati <avati@zresearch.com>
+
+	* TODO: new file. use this to keep list of small atomic tasks
+	which can be done by contributors.
+	* stage2/openssl.mk: avoid reconfiguration to save build time with
+	a .configured file indicator flag. verfied by Amar <amar@80x25.org>
+	
+2006-02-02  Anand V. Avati <avati@zresearch.com>
+
+	* INSTALL: updated documentation to pass --build to ./configure.
+	This is now mandatory
+	* apps/kernel-prepare.mk: use config-$(KERNEL_ARCH) instead of 
+	config-$(CROSS). renamed patches/linux/* and added config for x86_64
+	* apps/kernel-bzimage.mk: remove dependency on lilo
+	* deps.mk: file.cross depends on file.native for the matching version
+	`file' tool to create `magic' file.
+	ncurses.cross depends on ncurses.native for native invocation of `tic'
+	tool during build
+	* stage2/stage2.mk: use $(TOOL_BASE)/$(CROSS)/sys-root if available
+	else copy lib/*.so from toolchain to stage2
+	* stage2/sysvinit.mk: fix -lcrypt arg on x86_64 env
+	* stage2/zlib.mk: pass -fPIC as CFLAG
+	* patches/atftp: patch to fix error in gcc4 (remove __THROW)
+	* header.mk: added missing ; multiple patches on same package was
+	breaking while it was missing
+	use correct $(KERNEL_ARCH) based on linux kernel's Makefile logic
+	(i386 for i.86 etc)
+	* stage1/x86_64: stage1 for x86_64. This is a copy of i686 as 32bit
+	bootmanagers work with x86_64
+	
+2006-02-01  Anand V. Avati <avati@zresearch.com>
+
+	* stage2/bzip2.mk: changes to create shared object libbz2.so
+	* ext/client-boot: s/boot/tftpboot/ typo
+	* ext/core/runme: symlink extensions/lib to lib/python/Gluster
+	* stage2/dhcp.mk: fixed typo s/CROSS_CONFIGURE_CMD/CORSS_PREPARE_CMD/
+	* stage2/stage2.mk: fixed build errors
+	* skel-master/main_shell: fixed typo s/core.gex/core.tgz/
+	
+2006-01-31  Anand V. Avati <avati@zresearch.com>
+
+	* ramdisk/linuxrc: pivot_root now used from util-linux instead of
+	busybox
+	* ramdisk/ramdisk.mk: fixed a re-build buga
+	* skel-{master,slave}/etc/inittab: fixed agetty path
+	
+2006-01-25  Anand V. Avati <avati@zresearch.com>
+
+	* doc/introduction: updated documentation. almost complete.
+	* header.mk: changed $(host_triplet) to $(host_alias)
+	* doc/introduction: more content, still more to come
+	* extensions/bootp-manger/bootp-manager: refer 
+	http://www.zresearch.com/hacking/Infrastructure - Bootp/DHCP section
+	* stage3/udpcast.mk: added to core.gex
+	
+2006-01-25  Vikas Gorur  <vikas@80x25.org>
+
+	* extensions/core/{smt,smw}: Programs for remote execution using
+	udp-{receiver,sender}
+	* extensions/core/{smcp,smcpd}: Copy using UDP cast
+	
+2006-01-24  Vikas Gorur  <vikas@80x25.org>
+
+	* extensions/gpartdump: New extension to duplicate partition table 
+	added. Depends on disktype external package.
+	* extensions/disktype: removed
+
+2006-01-23	Anand V. Avati <avati@zresearch.com>
+
+	* autotools support added
+	* gdsh/gdcp from Vikas G added to core extension
+	
+2006-01-02	Anand V. Avati <avati@zresearch.com>
+
+	* i686-bin/*: gone
+	* hostbuild.mk: compile necessary binaries using host compiler needed
+	for build process, like mkisofs and genext2fs
+	
+2005-12-26	Anand V. Avati <avati@zresearch.com>
+
+	* stage_2.mk: primitive for adding a package into stage2
+	* build.mk: more functional-style 
+	* stage_3.mk: primtive for adding a package into stage3
+	* gex.mk: framework for creating extensions
+	* stage_3/*/Makefile: modified to use new framework
+	* stage_3/disktype: new stage3 extension
+	
+2005-12-23	Anand V. Avati <avati@zresearch.com>
+
+	* top.mk: include default commands for configure, build, install
+	* build.mk: new file, generic build framework, common to stage{2,3}
+	* stage_2/*/Makfile: uses top.mk and build.mk according to new
+	framework. each Makefile is now LOT simpler, and much easier to write
+	stage-3 makefiles.
+	* stage_2/*/patches/: directory to keep patches for tarballs,
+	preferably one file per fix
+	* stage_2/*/patch.diff: moved as patches/bug-name.diff
+
+	
+2005-12-01	Anand V. Avati <avati@zresearch.com>
+
+	* stage_2/skel-{master,slave}/etc/termcap: smaller termcap file
+	added from slackware
+	* stage_2/skel-slave/etc/rc.d/rc.slave: 
+	- tftpd can pass kernel parameter
+	gluster_iface=eth1 etc to select client nodes' interface (default eth0)
+	gluster_port=1234 etc to specify non-std port for dhcp (default 6768)
+	both parameters are optional
+	- import auth keys and host keys from default gw via tftp
+	- master node IP available in /etc/master-node for apps
+	
+2005-11-29	Anand V. Avati <avati@zresearch.com>
+
+	* stage_2/screen: added screen for remote monitoring from master node
+	* stage_2/ssh: master host keys exported to /tftpboot/ssh
+	root user keys exported to /tftpboot/root. entire cluster can
+	no ssh to any other node without host-key 'yes' answer or password
+	* stage_2/genext2fs: to create initrds/ext2fs without creating loop
+	mount. moved from xtra/ to stage_2
+	* stage_2/cdrtools: adds mkisofs and cdrecord, used by bootman 
+	extension. Will be nice to reuse cdrtools built with HOSTCC for the
+	build's mkisofs
+
+	
+2005-11-25  Anand Babu  <ab@zresearch.com>
+
+	* i686-bin/mkisofs: replaced with statically linked mkisofs
+	

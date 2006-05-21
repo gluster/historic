@@ -1,0 +1,104 @@
+diff -pru tcp_wrappers_7.6/Makefile tcp_wrappers_7.6-h/Makefile
+--- tcp_wrappers_7.6/Makefile	1997-03-21 23:57:21.000000000 +0530
++++ tcp_wrappers_7.6-h/Makefile	2006-04-02 20:00:51.000000000 +0530
+@@ -44,7 +44,7 @@ what:
+ #REAL_DAEMON_DIR=/usr/etc
+ #
+ # SysV.4 Solaris 2.x OSF AIX
+-#REAL_DAEMON_DIR=/usr/sbin
++REAL_DAEMON_DIR=/usr/sbin
+ #
+ # BSD 4.4
+ #REAL_DAEMON_DIR=/usr/libexec
+@@ -144,7 +144,7 @@ freebsd:
+ linux:
+ 	@make REAL_DAEMON_DIR=$(REAL_DAEMON_DIR) STYLE=$(STYLE) \
+ 	LIBS= RANLIB=ranlib ARFLAGS=rv AUX_OBJ=setenv.o \
+-	NETGROUP= TLI= EXTRA_CFLAGS="-DBROKEN_SO_LINGER" all
++	NETGROUP= TLI= EXTRA_CFLAGS="-DBROKEN_SO_LINGER" install
+ 
+ # This is good for many SYSV+BSD hybrids with NIS, probably also for HP-UX 7.x.
+ hpux hpux8 hpux9 hpux10:
+@@ -229,7 +229,7 @@ tandem:
+ 
+ # Amdahl UTS 2.1.5 (Richard.Richmond@bridge.bst.bls.com)
+ uts215:
+-	@make REAL_DAEMON_DIR=$(REAL_DAEMON_DIR) STYLE=$(STYLE) \   
++	@make REAL_DAEMON_DIR=$(REAL_DAEMON_DIR) STYLE=$(STYLE) \
+ 	LIBS="-lsocket" RANLIB=echo \
+ 	ARFLAGS=rv AUX_OBJ=setenv.o NETGROUP=-DNO_NETGROUP TLI= all
+ 
+@@ -472,7 +472,7 @@ BUGS = -DGETPEERNAME_BUG -DBROKEN_FGETS 
+ # If your system supports vsyslog(), comment out the following definition.
+ # If in doubt leave it in, it won't harm.
+ 
+-VSYSLOG	= -Dvsyslog=myvsyslog
++#VSYSLOG	= -Dvsyslog=myvsyslog
+ 
+ # End of the system dependencies.
+ #################################
+@@ -657,6 +657,11 @@ HOSTNAME= -DALWAYS_HOSTNAME
+ # Protection against weird shells or weird make programs.
+ 
+ SHELL	= /bin/sh
++INSTPREFIX = $(DESTDIR_LIVE)
++SBINDIR = $(INSTPREFIX)/usr/sbin
++MAN8DIR = $(INSTPREFIX)/usr/man/man8
++LIBDIR = $(INSTPREFIX)/usr/lib
++
+ .c.o:;	$(CC) $(CFLAGS) -c $*.c
+ 
+ CFLAGS	= -O -DFACILITY=$(FACILITY) $(ACCESS) $(PARANOID) $(NETGROUP) \
+@@ -684,12 +689,24 @@ KIT	= README miscd.c tcpd.c fromhost.c h
+ 	refuse.c tcpdchk.8 setenv.c inetcf.c inetcf.h scaffold.c \
+ 	scaffold.h tcpdmatch.8 README.NIS
+ 
++MAN8FILES = tcpd.8 tcpdchk.8 tcpdmatch.8
++
++BINARIES = tcpdchk tcpd tcpdmatch try-from safe_finger
++
+ LIB	= libwrap.a
+ 
+-all other: config-check tcpd tcpdmatch try-from safe_finger tcpdchk
++all other: install
+ 
+ # Invalidate all object files when the compiler options (CFLAGS) have changed.
+ 
++install: config-check tcpdchk tcpd tcpdmatch try-from safe_finger
++	mkdir -p $(LIBDIR)
++	install -m 644 $(LIB) $(LIBDIR)
++	mkdir -p $(SBINDIR)
++	install -m 755 $(BINARIES) $(SBINDIR)
++	mkdir -p $(MAN8DIR)
++	install -m 644 $(MAN8FILES) $(MAN8DIR)
++
+ config-check:
+ 	@set +e; test -n "$(REAL_DAEMON_DIR)" || { make; exit 1; }
+ 	@set +e; echo $(CFLAGS) >/tmp/cflags.$$$$ ; \
+Only in tcp_wrappers_7.6-h/: aap.c
+diff -pru tcp_wrappers_7.6/percent_m.c tcp_wrappers_7.6-h/percent_m.c
+--- tcp_wrappers_7.6/percent_m.c	1994-12-28 22:12:37.000000000 +0530
++++ tcp_wrappers_7.6-h/percent_m.c	2006-04-02 19:14:45.000000000 +0530
+@@ -14,8 +14,8 @@ static char sccsid[] = "@(#) percent_m.c
+ 
+ extern int errno;
+ #ifndef SYS_ERRLIST_DEFINED
+-extern char *sys_errlist[];
+-extern int sys_nerr;
++/* extern char *sys_errlist[];
++   extern int sys_nerr; */
+ #endif
+ 
+ #include "mystdarg.h"
+diff -pru tcp_wrappers_7.6/scaffold.c tcp_wrappers_7.6-h/scaffold.c
+--- tcp_wrappers_7.6/scaffold.c	1997-03-21 23:57:24.000000000 +0530
++++ tcp_wrappers_7.6-h/scaffold.c	2006-04-02 19:24:30.000000000 +0530
+@@ -25,7 +25,7 @@ static char sccs_id[] = "@(#) scaffold.c
+ #define	INADDR_NONE	(-1)		/* XXX should be 0xffffffff */
+ #endif
+ 
+-extern char *malloc();
++/* extern char *malloc();*/
+ 
+ /* Application-specific. */
+ 

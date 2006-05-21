@@ -1,0 +1,41 @@
+diff -pru freeipmi-0.2.0/configure.ac freeipmi-0.2.0-h/configure.ac
+--- freeipmi-0.2.0/configure.ac	2006-02-10 05:01:46.000000000 +0530
++++ freeipmi-0.2.0-h/configure.ac	2006-03-14 15:08:04.205689488 +0530
+@@ -113,26 +113,7 @@ if test "x${enable_fish}" = "xyes" ; the
+ 
+    # Check for minimum required Guile version:
+    GUILE_REQUIRED_MINIMUM_VERSION="1.6.4"
+-   GUILE_VERSION=`guile -c "
+-   (define (guile-current-version>=? min-required-version)
+-   \"return TRUE if current-version >= VER\"
+-   (let
+-      ((installed-major (car (string-split (version) #\.)))
+-       (installed-minor (cadr (string-split (version) #\.)))
+-       (installed-micro (caddr (string-split (version) #\.)))
+-       (required-major (car (string-split min-required-version #\.)))
+-       (required-minor (cadr (string-split min-required-version #\.)))
+-       (required-micro (caddr (string-split min-required-version #\.))))
+-       (if (and (string-ci>=? installed-major required-major)
+-                (string-ci>=? installed-minor required-minor)
+-                (string-ci>=? installed-micro required-micro))
+-           (display \"true\")
+-           (display \"false\"))))
+-   (guile-current-version>=? \"$GUILE_REQUIRED_MINIMUM_VERSION\")"`
+-   if test "$GUILE_VERSION" != true; then
+-      AC_MSG_ERROR([Installed version of GNU Guile is too old. You need "$GUILE_REQUIRED_MINIMUM_VERSION" or higher])
+-   fi
+-
++   GUILE_VERSION="true"
+    NOREADLINE_LIBS=${LIBS}
+    LIBS=${READLINE_LIBS}
+    AC_SEARCH_LIBS([tgetent],[ncurses termcap curses])
+@@ -173,7 +154,7 @@ AC_HEADER_SYS_WAIT
+ AC_CHECK_HEADERS([unistd.h fcntl.h])
+ 
+ dnl Check for random number paths
+-AC_CHECK_FILE([/dev/urandom], AC_DEFINE([HAVE_DEVURANDOM], [1], [Define that you found /dev/urandom]))
+-AC_CHECK_FILE([/dev/random], AC_DEFINE([HAVE_DEVRANDOM], [1], [Define that you found /dev/urandom]))
++# AC_CHECK_FILE([/dev/urandom], AC_DEFINE([HAVE_DEVURANDOM], [1], [Define that you found /dev/urandom]))
++# AC_CHECK_FILE([/dev/random], AC_DEFINE([HAVE_DEVRANDOM], [1], [Define that you found /dev/urandom]))
+ 
+ AC_OUTPUT

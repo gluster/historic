@@ -1,0 +1,27 @@
+Gluster Contributors (sorted alphabetically)
+--------------------------------------------
+
+Core Team
+=========
+
+1. Anand V. Avati <avati@zresearch.com>
+2. Anand Babu <ab@zresearch.com>
+3. Balamurugan A <bala@zresearch.com>
+4. Vikas Gorur <vikas@80x25.org>
+5. Amar S. Tumballi <amar@zresearch.com>
+
+External Contributors
+=====================
+
+ * Basavanagowda Kanur <gowda@80x25.org>
+   - new x86_64 toolchain with requirements
+   - new i686 toolchain with requirements
+
+ * Harshavardhana Ranganath <harsha@80x25.org>
+   - Build fixes: parallel builds, fedora build (pcre fix)
+   - NFS stage2 probe
+   - init scripts for shutdown/halt
+   - gex tool sanitize
+   - fs-utils extension
+   - mc/mcedit to stage2
+   - NFS (utils, portmap, tcpwrappers) external packages

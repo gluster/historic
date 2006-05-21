@@ -1,0 +1,10 @@
+diff -pruN libusb-0.1.11/libusb-config.in libusb-0.1.11-h/libusb-config.in
+--- libusb-0.1.11/libusb-config.in	2004-01-28 04:06:37.000000000 +0530
++++ libusb-0.1.11-h/libusb-config.in	2006-02-17 17:32:25.000000000 +0530
+@@ -75,5 +75,5 @@ if test "$echo_cflags" = "yes"; then
+ 	echo $includes
+ fi
+ if test "$echo_libs" = "yes"; then
+-	echo -L@libdir@ -lusb @OSLIBS@
++	echo -lusb 
+ fi
