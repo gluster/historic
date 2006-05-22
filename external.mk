@@ -20,7 +20,7 @@ APPS_EXTENSIONS = python dhcp-helper makebootfat reiserfsprogs \
 	xfsprogs e2fsprogs jfsutils netcat parted shadow iptables gdb
 #	$(APPS_IPMI) $(APPS_OPENIB)
 
-APPS_PKG = mpich2 $(APPS_OPENIB) mvapich-gen2 torque
+APPS_PKG = mpich2 $(APPS_OPENIB) mvapich-gen2 torque slurm
 
 APPS_BUILD = cdrtools genext2fs kernel-prepare kernel-bzimage
 

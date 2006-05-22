@@ -38,7 +38,6 @@ main ()
 		dialog --msgbox "Cannot reach Master node $headnodeIP"  0 0
 		continue
 	    }
-	    update_etc_hosts
 
 	    iface=$(ip route list | grep default | cut -f5 -d' ')
 	    IP=$(ip address list dev ${iface} | sed -nr -e 's/.*inet ([0-9.]+).*/\1/p')
@@ -51,7 +50,7 @@ main ()
 
 	    echo 127.0.0.1 localhost.localdomain localhost > /etc/hosts
 	    echo ${headnodeIP} master-node.${domain} master-node >> /etc/hosts
-	    echo ${IP} ${hname}.${domain} ${hname} >> /etc/hosts
+	    echo ${IP} $(hostname).${domain} ${hname} >> /etc/hosts
 
 	    break
 	fi
@@ -82,7 +81,7 @@ try_gluster ()
 
     echo 127.0.0.1 localhost.localdomain localhost > /etc/hosts
     echo ${GW} master-node.${domain} master-node >> /etc/hosts
-    echo ${IP} ${hname}.${domain} ${hname} >> /etc/hosts
+    echo ${IP} $(hostname).${domain} ${hname} >> /etc/hosts
 
     headnodeIP=${GW};
     found="y"

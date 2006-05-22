@@ -1,6 +1,7 @@
 
 # build dependency graph
 
+readline.live: ncurses.live
 file.live: file.native # `file' is run during build to compile `magic' file
 python.live: python.native readline.live ncurses.live openssl.live bzip2.live gzip.live # dependencies to provide bindings
 bash.live: ncurses.live readline.live # dependency
@@ -63,4 +64,6 @@ ib-libsdp.pkg: ib-libibverbs.pkg
 ib-tools.pkg: pciutils.pkg zlib.pkg ib-libmthca.pkg # These tools use the already existing library
 ib-libosmcomp.pkg: ib-libibumad.pkg
 mvapich-gen2.pkg: $(APPS_OPENIB:%=%.pkg)
+readline.pkg: ncurses.pkg
 torque.pkg: ncurses.pkg
+slurm.pkg: openssl.pkg readline.pkg
