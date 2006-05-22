@@ -51,14 +51,14 @@ def set_part (part, fresh=False):
             i = 0
             oldstate = None
             while True:
-                oldstate = '/var/state-mount/gluster-state.%d' % 0
+                oldstate = '/var/state-mount/gluster-state.%d' % i
                 if not os.path.isdir (oldstate):
                     break
                 i = i + 1
-            if not os.system ("mkdir -p %s" % oldstate):
+            if os.system ("mkdir -p %s" % oldstate):
                 dlg.msgbox ('Could not create directory in %s' % part)
                 return False
-            os.system ("mv /var/state-mount/gluster-state %s" % oldstate)
+            os.system ("mv /var/state-mount/gluster-state/* %s" % oldstate)
 
     os.system ("mkdir -p /var/state-mount/gluster-state 2>/dev/null")
     os.system ("rm -f /var/gluster 2>/dev/null")

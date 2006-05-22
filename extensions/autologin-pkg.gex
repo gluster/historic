@@ -1,5 +1,5 @@
 package-name: AutoLogin Package
-package-description: Enables user to create ssh keys and password less login
+package-description: Configure cluster for passwordless ssh authentication
 package-maintainer: Amar S. Tumballi <amar@zresearch.com>
 package-contents: autologin-pkg.tgz
 package-exec: ./runme

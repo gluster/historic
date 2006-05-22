@@ -30,8 +30,11 @@ my_ip = os.popen ("ifconfig -a | sed -n -e 's/.*HWaddr //p' | head -n -1").readl
 port_base = 13370
 
 def source_config ():
-    os.system ('gprobe | gpart-sel -o /tmp/gc.spec -m /tmp/gc_approx_max -c /tmp/gc.tar.cmds')
-    return 
+    if os.system ('gprobe | gpart-sel -o /tmp/gc.spec -m /tmp/gc_approx_max -c /tmp/gc.tar.cmds') == 0:
+        return
+    else:
+        sys.exit (1)
+        return
 
 def dest_config ():
     os.system ('ssh master-node mkdir -p /var/tmp/%s' % my_ip)

@@ -17,6 +17,7 @@
 #  
 
 echo "Gluster client node"
+cd /
 
 export PS1='\h:\w\$ '
 
