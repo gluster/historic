@@ -189,11 +189,16 @@ def run_map (os_dict, part_dict, source_dump, dest_dump, auto):
             (ret, sel) = dlg.menu ('select os and mount',
                                    choices=choices,
                                    default_item=sel,
-                                   ok_label='select',
-                                   cancel='done')
+                                   ok_label='Select',
+                                   cancel='Done',
+                                   extra_label='Back',
+                                   extra_button=True)
         else:
             ret = 1
 
+        if ret == 4:
+            sys.exit (1)
+            break
         if ret != 0:
             all_fine = True
             for _os in os_dict.keys ():

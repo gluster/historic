@@ -72,7 +72,10 @@ def dest_config (partlist):
                   title='[ Partition Assignment ]',
                   yes_label='Auto',
                   no_label='Manual'):
-        os.system ('gmeta-installer -i /tmp/provision.spec -c /tmp/gprov.dest.cmds')
+        if os.system ('gmeta-installer -i /tmp/provision.spec -c /tmp/gprov.dest.cmds') == 0:
+            return
+        else:
+            sys.exit (0)
     else:
         os.system ('gmeta-installer --auto -i /tmp/provision.spec -c /tmp/gprov.dest.cmds')
     return
