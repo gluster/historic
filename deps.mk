@@ -63,3 +63,4 @@ ib-libsdp.pkg: ib-libibverbs.pkg
 ib-tools.pkg: pciutils.pkg zlib.pkg ib-libmthca.pkg # These tools use the already existing library
 ib-libosmcomp.pkg: ib-libibumad.pkg
 mvapich-gen2.pkg: $(APPS_OPENIB:%=%.pkg)
+torque.pkg: ncurses.pkg
