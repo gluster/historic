@@ -1,0 +1,55 @@
+#!/bin/sh
+
+_init ()
+{
+    home='/';
+    pkg_name="mvapich-gen2"
+    os_base="/tmp/ginstaller";
+    prefix="/opt/gluster";
+    return 0
+}
+
+first_time ()
+{
+    mkdir -p /var/gluster/.ssh /var/gluster/hostkeys;
+    ssh-keygen -t dsa -f /var/gluster/ssh/id_dsa -N '' >>/var/log/proglog 2>&1
+    cp -f /var/gluster/ssh/id_dsa.pub /var/gluster/ssh/authorized_keys2
+    ssh-keygen -t rsa -f /var/gluster/hostkeys/ssh_host_rsa_key -N '' >>/var/log/proglog 2>&1
+     ssh-keygen -t dsa -f /var/gluster/hostkeys/ssh_host_dsa_key -N '' >>/var/log/proglog 2>&1
+     ssh-keygen -t rsa1 -f /var/gluster/hostkeys/ssh_host_key -N '' >>/var/log/proglog 2>&1
+
+    rsa_key=$(cat /var/gluster/hostkeys/ssh_host_rsa_key.pub)
+    hostname=$(sed -n -e 's/hostname = \(.*\)$/\1/p' /var/gluster/clientinfo)
+    domain=$(sed -n -e 's/domain = \(.*\)$/\1/p' /var/gluster/clientinfo)
+
+    echo ${hostname}* $rsa_key > /var/gluster/ssh/known_hosts
+    echo master-node $rsa_key >> /var/gluster/ssh/known_hosts
+    echo ${hostname}*.${domain} $rsa_key >> /var/gluster/ssh/known_hosts
+    echo master-node.${domain} $rsa_key >> /var/gluster/ssh/known_hosts
+
+    tar -cf /var/gluster/ssh.tar /var/gluster/ssh/*;
+    tar -cf /var/gluster/hostkeys.tar /var/gluster/hostkeys/*;
+    
+    #rm -r /var/gluster/ssh/ /var/gluster/hostkeys/;
+}
+
+main ()
+{
+    local my_dir="$(dirname $0)";
+    [ -f /var/gluster/ssh.tar ] || first_time
+    for key in $(gmount -o); do
+	    # install on master node
+	    mkdir -p /tmp/ginstaller/${key}/{root/.ssh,etc/ssh} ;
+	    chmod 700 /tmp/ginstaller/${key}/root/.ssh;
+	    cat /var/gluster/ssh.tar | tar -C /tmp/ginstaller/${key}/root/.ssh -x;
+	    cat /var/gluster/hostkeys.tar | tar -C /tmp/ginstaller/${key}/etc/ssh -x;
+
+	    # install on ALL slave nodes
+	    gcsh mkdir -p /tmp/ginstaller/${key}/{root/.ssh,etc/ssh};
+	    gcsh chmod 700 /tmp/ginstaller/${key}/root/.ssh;
+	    cat /var/gluster/ssh.tar | gcsh tar -C /tmp/ginstaller/${key}/root/.ssh -x;
+	    cat /var/gluster/hostkeys.tar | gcsh tar -C /tmp/ginstaller/${key}/etc/ssh -x;
+    done
+}
+
+_init "$@" && main "$@";

@@ -1,7 +1,7 @@
 
 APPLICATIONS = GlusterHPC GlusterEP
 
-BUNDLES = mpich2-pkg openib-pkg mvapich-gen2-pkg torque-pkg slurm-pkg
+BUNDLES = mpich2-pkg openib-pkg mvapich-gen2-pkg torque-pkg slurm-pkg autologin-pkg
 
 EXTENSIONS= \
 	init \
