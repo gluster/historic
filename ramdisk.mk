@@ -31,7 +31,7 @@ initrd.slave: $(GENEXT2FS_NATIVE_IF_YES) ramdisk-template
 	rm -rf $(top_builddir)/ramdisk.slave
 	cp -af $(DESTDIR_RAMDISK) $(top_builddir)/ramdisk.slave
 	cd $(abs_top_srcdir)/ramdisk/skel-slave && \
-		(find . | grep -Ev 'CVS|~' | \
+		(find . | grep -Ev 'CVS|~|.arch-ids' | \
 		cpio -puvd $(abs_top_builddir)/ramdisk.slave)
 	genext2fs -b 65536 -e 0 -D $(abs_top_srcdir)/ramdisk/devices.txt \
 		-d $(top_builddir)/ramdisk.slave \
@@ -44,7 +44,7 @@ initrd.master: $(GENEXT2FS_NATIVE_IF_YES) ramdisk-template
 	mkdir -p $(top_builddir)/ramdisk.master
 	cp -af $(DESTDIR_RAMDISK)/* $(top_builddir)/ramdisk.master
 	cd $(abs_top_srcdir)/ramdisk/skel-master && \
-		(find . | grep -Ev 'CVS|~' | \
+		(find . | grep -Ev 'CVS|~|.arch-ids' | \
 		cpio -puvd $(abs_top_builddir)/ramdisk.master)
 	genext2fs -b 65536 -e 0 -D $(abs_top_srcdir)/ramdisk/devices.txt \
 		-d $(top_builddir)/ramdisk.master \
