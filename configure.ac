@@ -19,6 +19,7 @@ extensions/mpich2-pkg/Makefile
 extensions/mvapich-gen2-pkg/Makefile
 extensions/openib-pkg/Makefile
 extensions/torque-pkg/Makefile
+extensions/slurm-pkg/Makefile
 extensions/shutdown/Makefile
 extensions/GlusterHPC/Makefile
 extensions/GlusterEP/Makefile

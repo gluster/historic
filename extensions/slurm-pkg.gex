@@ -1,0 +1,6 @@
+package-name: slurm
+package-description: Simple Linux Utility for Resource Management
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: slurm-pkg.tgz
+package-exec: ./runme
+hpc-register: slurm
