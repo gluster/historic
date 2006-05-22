@@ -1,6 +1,6 @@
 #!/usr/bin/python
+# Copyright (C) 2006 by Z Research Inc. <http://www.zresearch.com>
 
-#Program to create photo.html based on Number arguments
 
 try:
     import getopt, os, sys, string
