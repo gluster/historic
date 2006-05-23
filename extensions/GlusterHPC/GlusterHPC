@@ -263,7 +263,7 @@ def display_status ():
                   "%d nodes failed\n" % len (failed_nodes),
                   title='[ Report ]',
                   yes_label='Ok',
-                  no_label='Detailed Report'):
+                  no_label='Details'):
         dlg.textbox (filename='/tmp/ghpc_stats')
 
     return 

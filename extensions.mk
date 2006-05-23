@@ -28,7 +28,9 @@ HPC_PACKAGES = \
 	c3-pkg \
 	cerebro-pkg \
 	genders-pkg \
-	lam-pkg
+	lam-pkg \
+	conman-pkg \
+	ganglia-pkg
 
 EXTENSIONS= \
 	init \
