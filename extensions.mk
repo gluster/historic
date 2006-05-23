@@ -25,7 +25,10 @@ HPC_PACKAGES = \
 	slurm-pkg \
 	autologin-pkg \
 	pdsh-pkg \
-	c3-pkg
+	c3-pkg \
+	cerebro-pkg \
+	genders-pkg \
+	lam-pkg
 
 EXTENSIONS= \
 	init \

@@ -1,0 +1,410 @@
+diff -rpuN lam-7.1.2/configure lam-7.1.2-h/configure
+--- lam-7.1.2/configure	2006-03-11 03:01:14.000000000 +0530
++++ lam-7.1.2-h/configure	2006-05-24 01:04:14.000000000 +0530
+@@ -5197,7 +5197,7 @@ lam_ac_size=-1
+ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+-
++lam_ac_size=1
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -5271,6 +5271,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=2
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -5344,6 +5346,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=4
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -5417,6 +5421,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=4
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -5490,6 +5496,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=4
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -5563,6 +5571,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=8
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -5636,6 +5646,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=4
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -5709,6 +5721,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=8
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -5782,6 +5796,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=16
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -5855,6 +5871,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=8
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -5940,6 +5958,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=1
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6017,6 +6037,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=2
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6094,6 +6116,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=4
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6171,6 +6195,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=4
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6248,6 +6274,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=4
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6325,6 +6353,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=8
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6402,6 +6432,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=4
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6479,6 +6511,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=8
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6556,6 +6590,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=16
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6633,6 +6669,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=8
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -8862,6 +8900,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=1
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -8950,6 +8990,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=4
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -9048,6 +9090,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=1
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -9140,6 +9184,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=4
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -18928,73 +18974,7 @@ _ACEOF
+ # and suggesting fixes.
+ 
+ 
+-# glibc's memcpy has weird copying issues when the size being copied
+-# is not divisble by 4 on x86 platforms.  See if we're linking against
+-# glibc, and if so, enable a workaround that first copies (size % 8)
+-# "prefix" bytes over before memcpy'ing over the rest of the block.
+-# Also provide a --without option to turn this behavior off because we
+-# don't know when/if glibc will fix this behavior, and/or if it really
+-# happens on all platforms.
+-
+-echo "$as_me:$LINENO: checking for glibc" >&5
+-echo $ECHO_N "checking for glibc... $ECHO_C" >&6
+-if test "$cross_compiling" = yes; then
+-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&5
+-echo "$as_me: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&2;}
+-   { (exit 1); exit 1; }; }
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-#include <stdio.h>
+-
+-int main(int argc, char* argv[])
+-{
+-  FILE *fp = fopen("configtest.out", "w");
+-#ifdef __GLIBC__
+-  fprintf(fp, "1\n");
+-#else
+-  fprintf(fp, "0\n");
+-#endif
+-  fclose(fp);
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-  :
+-else
+-  echo "$as_me: program exited with status $ac_status" >&5
+-echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-fi
+-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+-fi
+-have_glibc=`cat configtest.out`
+-if test "$have_glibc" = "1"; then
+-    echo "$as_me:$LINENO: result: yes" >&5
+-echo "${ECHO_T}yes" >&6
+-else
+-    echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6
+-fi
+-rm -f configtest.out
++have_glibc=1
+ 
+ # If we have glibc, then assume we want the prefix memcpy
+ 
+@@ -19810,6 +19790,9 @@ _ACEOF
+ #
+ # The final "test", just to make it obvious what happened
+ #
++
++lam_have_sysv_sem=1
++
+ echo "$as_me:$LINENO: checking for SYSV semaphore support" >&5
+ echo $ECHO_N "checking for SYSV semaphore support... $ECHO_C" >&6
+ if test "$lam_have_sysv_sem" = "1"; then
+@@ -20129,6 +20112,9 @@ fi
+ #
+ # The final "test", just to make it obvious what happened
+ #
++
++lam_have_sysv_shmem=1
++
+ echo "$as_me:$LINENO: checking for SYSV shared memory support" >&5
+ echo $ECHO_N "checking for SYSV shared memory support... $ECHO_C" >&6
+ if test "$lam_have_sysv_shmem" = "1"; then
+@@ -22366,77 +22352,9 @@ _ACEOF
+ 
+ echo "$as_me:$LINENO: checking if threads have different pids (pthreads on linux)" >&5
+ echo $ECHO_N "checking if threads have different pids (pthreads on linux)... $ECHO_C" >&6
+-CPPFLAGS_save="$CPPFLAGS"
+-CPPFLAGS="$CPPFLAGS $THREAD_CPPFLAGS"
+-CFLAGS_save="$CFLAGS"
+-CFLAGS="$CFLAGS $THREAD_CFLAGS"
+-LDFLAGS_save="$LDFLAGS"
+-LDFLAGS="$LDFLAGS $THREAD_LDFLAGS"
+-LIBS_save="$LIBS"
+-LIBS="$LIBS $THREAD_LIBS"
+-if test "$cross_compiling" = yes; then
+-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&5
+-echo "$as_me: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&2;}
+-   { (exit 1); exit 1; }; }
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-#include <pthread.h>
+-#include <sys/types.h>
+-#include <unistd.h>
+-#include <stdlib.h>
+-void *checkpid(void *arg);
+-int main(int argc, char* argv[]) {
+-  pthread_t thr;
+-  int pid, retval;
+-  pid = getpid();
+-  pthread_create(&thr, NULL, checkpid, &pid);
+-  pthread_join(thr, (void **) &retval);
+-  exit(retval);
+-}
+-void *checkpid(void *arg) {
+-   int ret;
+-   int ppid = *((int *) arg);
+-   if (ppid == getpid())
+-     ret = 0;
+-   else
+-     ret = 1;
+-     pthread_exit((void *) ret);
+-}
+-_ACEOF
+-rm -f conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-  MSG=no LAM_THREADS_HAVE_DIFFERENT_PIDS=0
+-else
+-  echo "$as_me: program exited with status $ac_status" >&5
+-echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+ 
+-( exit $ac_status )
+ MSG=yes LAM_THREADS_HAVE_DIFFERENT_PIDS=1
+-fi
+-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+-fi
+ 
+-CFLAGS="$CFLAGS_save"
+-CPPFLAGS="$CPPFLAGS_save"
+-LDFLAGS="$LDFLAGS_save"
+-LIBS="$LIBS_save"
+ 
+ echo "$as_me:$LINENO: result: $MSG" >&5
+ echo "${ECHO_T}$MSG" >&6
+@@ -25467,6 +25385,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=4
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -25540,6 +25460,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=1
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then

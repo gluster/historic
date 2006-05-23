@@ -84,3 +84,4 @@ readline.pkg: ncurses.pkg
 torque.pkg: ncurses.pkg
 slurm.pkg: openssl.pkg readline.pkg
 pdsh.pkg: slurm.pkg readline.pkg
+cerebro.pkg: slurm.pkg genders.pkg

@@ -15,10 +15,5 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 
-c3.%: PACKAGE_NAME="c3-4.0.1"
-c3.%: PKG_CONFIGURE_CMD=true
-c3.%: PKG_BUILD_CMD=true
-c3.%: C3_TOOLS=cexec cexecs cget ckill ckillnode cpush crm cname cnum clist cpushimage cshutdown
-c3.%: C3_LIBS=c3_file_obj.py c3_com_obj.py c3_except.py c3_sock.py
-c3.%: C3_PFX=/opt/gluster/c3
-c3.%: PKG_INSTALL_CMD=mkdir -p $1/$(C3_PFX); cp $(C3_TOOLS) $(C3_LIBS) $1/$(C3_PFX)
+genders.%: PACKAGE_NAME=genders-1.4-1
+genders.%: PKG_CONFIGURE_CMD=ac_cv_func_malloc_0_nonnull=yes $(DEFAULT_PKG_CONFIGURE_CMD) --with-genders-file=/opt/gluster/etc/genders

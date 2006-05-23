@@ -1,0 +1,6 @@
+package-name: cerebro
+package-description: LLNL's Cluster monitoring tools and libraries
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: cerebro-pkg.tgz
+package-exec: ./runme
+hpc-register: cerebro

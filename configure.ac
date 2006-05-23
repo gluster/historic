@@ -22,6 +22,9 @@ extensions/torque-pkg/Makefile
 extensions/slurm-pkg/Makefile
 extensions/pdsh-pkg/Makefile
 extensions/c3-pkg/Makefile
+extensions/cerebro-pkg/Makefile
+extensions/genders-pkg/Makefile
+extensions/lam-pkg/Makefile
 extensions/autologin-pkg/Makefile
 extensions/shutdown/Makefile
 extensions/GlusterHPC/Makefile

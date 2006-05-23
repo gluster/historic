@@ -1,0 +1,6 @@
+package-name: lam
+package-description: LAM MPI from http://www.lam-mpi.org
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: lam-pkg.tgz
+package-exec: ./runme
+hpc-register: lam
