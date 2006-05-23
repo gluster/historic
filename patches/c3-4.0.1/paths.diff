@@ -1,0 +1,583 @@
+diff -pruN c3-4.0.1/CHANGELOG c3-4.0.1-h/CHANGELOG
+--- c3-4.0.1/CHANGELOG	2003-07-16 04:16:06.000000000 +0530
++++ c3-4.0.1-h/CHANGELOG	2006-05-23 21:30:53.000000000 +0530
+@@ -79,7 +79,7 @@ Version 3.1.2
+ 	when using cnum with an indirect remote cluster it actually executed cname
+ 	added some documentation to the parsing internals for other people to use.
+ 	when using -f or --file with cpush it looked for the alternate configuration file on remote cluster (it
+-		should have looked for /etc/c3.conf).
++		should have looked for /opt/gluster/etc/c3.conf).
+ 	added a --all option to cnum
+ 
+ Version 4.0
+diff -pruN c3-4.0.1/INSTALL c3-4.0.1-h/INSTALL
+--- c3-4.0.1/INSTALL	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/INSTALL	2006-05-23 21:30:53.000000000 +0530
+@@ -81,7 +81,7 @@ B. C3 install
+ 	After you complete the pre-install (step A), install the Cluster 
+ 	Command & Control (C3) tools. Begin by untar'ring the C3 package 
+ 	and running the install script.  The install script places the C3 
+-	scripts in /opt/c3-4 and the man pages in the appropriate directory.  
++	scripts in /opt/gluster/c3 and the man pages in the appropriate directory.  
+ 
+ 	The C3 install script installs the C3 command suite, but does not 
+ 	configure the commands or any local clusters for operation.  
+@@ -99,11 +99,11 @@ C. C3 configuration
+ 
+ 	-.  implicitly:  an instance of a C3 command fails to name a specific
+ 	configuration file, and the command defaults to the list of cluster
+-	descriptions given in /etc/c3.conf.
++	descriptions given in /opt/gluster/etc/c3.conf.
+ 	
+ 	When you install C3, you should create a default configuration file 
+ 	that is appropriate to the site.  This file, which should be named
+-	/etc/c3.conf, should consist of a list of **cluster descriptor
++	/opt/gluster/etc/c3.conf, should consist of a list of **cluster descriptor
+ 	blocks**:  syntactic objects that name and describe a single cluster 
+ 	that is accessible to that system's users.  
+ 
+@@ -280,7 +280,7 @@ C. C3 configuration
+ 
+ 	For this feature to work properly, the remote machine must also 
+ 	support	a fully operational C3 suite (version 4.0) placed in the 
+-	/opt/c3-4 directory.  
++	/opt/gluster/c3 directory.  
+ 
+ 	The indirect cluster descriptors can be used to construct **chains** 
+ 	of remote references:  that is, multi-node configurations where an
+@@ -296,8 +296,8 @@ D. Post-install
+ 	following two commands to push ckillnode to each node in the default 
+ 	cluster.
+ 
+-	cexec mkdir /opt/c3-4
+-	cpush /opt/c3-4/ckillnode
++	cexec mkdir /opt/gluster/c3
++	cpush /opt/gluster/c3/ckillnode
+ 
+ 	For the scalable version a full C3 install is needed on each node.
+ 	This can be accomplished by either installing the RPM on each node
+diff -pruN c3-4.0.1/Install-c3 c3-4.0.1-h/Install-c3
+--- c3-4.0.1/Install-c3	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/Install-c3	2006-05-23 21:30:53.000000000 +0530
+@@ -7,7 +7,7 @@ man5="c3 c3-range c3.conf c3-scale"
+ man4="cpushimage cshutdown"
+ docs="KNOWN_BUGS CHANGELOG README INSTALL"
+ 
+-basedir="/opt/c3-4"
++basedir="/opt/gluster/c3"
+ 
+ if [ $# -gt 1 ]; then
+   echo "usage: $0 [-u]"
+diff -pruN c3-4.0.1/README.scale c3-4.0.1-h/README.scale
+--- c3-4.0.1/README.scale	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/README.scale	2006-05-23 21:30:53.000000000 +0530
+@@ -150,7 +150,7 @@ cluster part8 {
+         :node57
+  } 
+ 
+-On node1 /etc/c3.conf
++On node1 /opt/gluster/etc/c3.conf
+ 
+ cluster stage {
+ 	node1
+diff -pruN c3-4.0.1/c3-4.0.spec c3-4.0.1-h/c3-4.0.spec
+--- c3-4.0.1/c3-4.0.spec	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/c3-4.0.spec	2006-05-23 21:30:53.000000000 +0530
+@@ -3,7 +3,7 @@
+ %define   name        c3
+ %define   ver         4.0
+ %define   rel         1
+-%define   prefix      /opt/c3-4
++%define   prefix      /opt/gluster/c3
+ %define   profiled    /etc/profile.d
+ 
+ Summary: Cluster Command and Control (C3) - command line tool suite  
+diff -pruN c3-4.0.1/c3.csh c3-4.0.1-h/c3.csh
+--- c3-4.0.1/c3.csh	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/c3.csh	2006-05-23 21:30:53.000000000 +0530
+@@ -1 +1 @@
+-setenv PATH "${PATH}:/opt/c3-4/"
++setenv PATH "${PATH}:/opt/gluster/c3/"
+diff -pruN c3-4.0.1/c3.sh c3-4.0.1-h/c3.sh
+--- c3-4.0.1/c3.sh	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/c3.sh	2006-05-23 21:30:53.000000000 +0530
+@@ -1,3 +1,3 @@
+-if ! echo $PATH | /bin/grep -q "/opt/c3-4" ; then
+-  PATH="$PATH:/opt/c3-4/"
++if ! echo $PATH | /bin/grep -q "/opt/gluster/c3" ; then
++  PATH="$PATH:/opt/gluster/c3/"
+ fi
+diff -pruN c3-4.0.1/cexec c3-4.0.1-h/cexec
+--- c3-4.0.1/cexec	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/cexec	2006-05-23 21:30:53.000000000 +0530
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 
+@@ -6,7 +6,7 @@ try:
+ 	try:
+ 		def_path = os.environ[ 'C3_PATH' ]
+ 	except KeyError:
+-		def_path = '/opt/c3-4'
++		def_path = '/opt/gluster/c3'
+ 	#######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -19,7 +19,7 @@ try:
+ 		--help -h	= this screen
+ 		--file -f	= file containing list of ip's if 
+ 				  one is not supplied then
+-				  /etc/c3.conf will be used
++				  /opt/gluster/etc/c3.conf will be used
+ 		-i		= interactive mode, ask once before 
+ 				  executing
+ 		--head		= execute command on head node
+@@ -50,7 +50,7 @@ try:
+ 	to_print = 0			#not used in parallel version
+ 	interactive = 0			#prompt before execution
+ 	head_node = 0			#execute only on head node
+-	filename = "/etc/c3.conf"	#default config file
++	filename = "/opt/gluster/etc/c3.conf"	#default config file
+ 	all = 0				#only execute on specified clusters
+ 	pipe_output = 0
+ 	defusername = ""
+@@ -131,7 +131,7 @@ try:
+ 		try:
+ 			filename = os.environ[ 'C3_CONF' ]
+ 		except KeyError:
+-			filename = '/etc/c3.conf'
++			filename = '/opt/gluster/etc/c3.conf'
+ 	#######################################################
+ 
+ 	######### set default user name #######################
+diff -pruN c3-4.0.1/cexecs c3-4.0.1-h/cexecs
+--- c3-4.0.1/cexecs	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/cexecs	2006-05-23 21:30:53.000000000 +0530
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 	
+@@ -6,7 +6,7 @@ try:
+         try:
+                 def_path = os.environ[ 'C3_PATH' ]
+         except KeyError:
+-                def_path = '/opt/c3-4'
++                def_path = '/opt/gluster/c3'
+         #######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -19,7 +19,7 @@ try:
+ 		--help -h	= this screen
+ 		--file -f	= file containing list of ip's if 
+ 				  one is not supplied then
+-				  /etc/c3.conf will be used
++				  /opt/gluster/etc/c3.conf will be used
+ 		-i		= interactive mode, ask once before 
+ 				  executing
+ 		--head		= execute command on head node
+@@ -47,7 +47,7 @@ try:
+ 	to_print = 0			#not used in parallel version
+ 	interactive = 0			#prompt before execution
+ 	head_node = 0			#execute only on head node
+-	filename = "/etc/c3.conf"	#default config file
++	filename = "/opt/gluster/etc/c3.conf"	#default config file
+ 	pidlist = []			#list if pid's to wait on
+ 	all = 0
+ 	#######################################################
+@@ -132,7 +132,7 @@ try:
+                 try:
+                         filename = os.environ[ 'C3_CONF' ]
+                 except KeyError:
+-                        filename = '/etc/c3.conf'
++                        filename = '/opt/gluster/etc/c3.conf'
+         #######################################################
+ 
+ 
+diff -pruN c3-4.0.1/cget c3-4.0.1-h/cget
+--- c3-4.0.1/cget	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/cget	2006-05-23 21:30:53.000000000 +0530
+@@ -1,11 +1,11 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 	######### set defaultt c3 path ########################
+         try:
+                 def_path = os.environ[ 'C3_PATH' ]
+         except KeyError:
+-                def_path = '/opt/c3-4'
++                def_path = '/opt/gluster/c3'
+         #######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -19,7 +19,7 @@ try:
+ 		
+ 		--file -f	= file containing list of ip's if 
+ 				  one is not supplied then
+-				  /etc/c3.conf will be used
++				  /opt/gluster/etc/c3.conf will be used
+ 		-i		= interactive mode, ask once before 
+ 				  executing
+ 		--head		= execute command on head node
+@@ -48,7 +48,7 @@ try:
+ 	to_print = 0			#not used in parallel version
+ 	interactive = 0			#prompt before execution
+ 	head_node = 0			#execute only on head node
+-	filename = "/etc/c3.conf"	#default config file
++	filename = "/opt/gluster/etc/c3.conf"	#default config file
+ 	pidlist = []			#list if pid's to wait on
+ 	non_inter = 0			#if called by another program
+ 	all = 0				#flag to execute on all
+@@ -176,7 +176,7 @@ try:
+                 try:
+                         filename = os.environ[ 'C3_CONF' ]
+                 except KeyError:
+-                        filename = '/etc/c3.conf'
++                        filename = '/opt/gluster/etc/c3.conf'
+         #######################################################
+ 	if non_inter and head_node:
+ 		sock = c3_sock.client_sock()
+diff -pruN c3-4.0.1/ckill c3-4.0.1-h/ckill
+--- c3-4.0.1/ckill	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/ckill	2006-05-23 21:30:53.000000000 +0530
+@@ -1,11 +1,11 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 	######### set defaultt c3 path ########################
+         try:
+                 def_path = os.environ[ 'C3_PATH' ]
+         except KeyError:
+-                def_path = '/opt/c3-4'
++                def_path = '/opt/gluster/c3'
+         #######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -20,7 +20,7 @@ try:
+ 		--user -u	= alternate user to kill (root only)
+ 		--file -f	= file containing list of ip's if 
+ 				  one is not supplied then
+-				  /etc/c3.conf will be used
++				  /opt/gluster/etc/c3.conf will be used
+ 		-i		= interactive mode, ask once before 
+ 				  executing
+ 		--head		= execute command on head node
+@@ -49,7 +49,7 @@ try:
+ 	to_print = 0			#not used in parallel version
+ 	interactive = 0			#prompt before execution
+ 	head_node = 0			#execute only on head node
+-	filename = "/etc/c3.conf"	#default config file
++	filename = "/opt/gluster/etc/c3.conf"	#default config file
+ 	c3_options = ""			#options sent to remote c3 command
+ 	options = ""			#options to pass to command
+ 	signal = None			#signal to send kill
+@@ -167,7 +167,7 @@ try:
+                 try:
+                         filename = os.environ[ 'C3_CONF' ]
+                 except KeyError:
+-                        filename = '/etc/c3.conf'
++                        filename = '/opt/gluster/etc/c3.conf'
+         #######################################################
+ 
+ 
+diff -pruN c3-4.0.1/clist c3-4.0.1-h/clist
+--- c3-4.0.1/clist	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/clist	2006-05-23 21:30:53.000000000 +0530
+@@ -1,11 +1,11 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 	######### set defaultt c3 path ########################
+         try:
+                 def_path = os.environ[ 'C3_PATH' ]
+         except KeyError:
+-                def_path = '/opt/c3-4'
++                def_path = '/opt/gluster/c3'
+         #######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -18,12 +18,12 @@ try:
+ 		--help -h	= this screen
+ 		--file -f       = file containing list of ip's if
+ 				  one is not supplied then
+-				  /etc/c3.conf will be used
++				  /opt/gluster/etc/c3.conf will be used
+ 		
+ 	"""
+ 	backslash = re.compile( r"\\" )
+ 
+-	filename = "/etc/c3.conf"       #default config file  
++	filename = "/opt/gluster/etc/c3.conf"       #default config file  
+ 
+ 	#######################################################
+ 
+@@ -67,7 +67,7 @@ try:
+                 try:
+                         filename = os.environ[ 'C3_CONF' ]
+                 except KeyError:
+-                        filename = '/etc/c3.conf'
++                        filename = '/opt/gluster/etc/c3.conf'
+         #######################################################
+ 
+ 	######### make cluster list object from file ##########
+diff -pruN c3-4.0.1/cname c3-4.0.1-h/cname
+--- c3-4.0.1/cname	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/cname	2006-05-23 21:30:53.000000000 +0530
+@@ -1,11 +1,11 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 	######### set defaultt c3 path ########################
+         try:
+                 def_path = os.environ[ 'C3_PATH' ]
+         except KeyError:
+-                def_path = '/opt/c3-4'
++                def_path = '/opt/gluster/c3'
+         #######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -34,7 +34,7 @@ try:
+ 
+ 	######### et default options  #########################
+ 	head_node = 0			#execute only on head node
+-	filename = "/etc/c3.conf"	#default config file
++	filename = "/opt/gluster/etc/c3.conf"	#default config file
+ 	all = 0				#0 only clusters specified 1 all clusters
+ 	defusername = ""		#default user name
+ 	#######################################################
+@@ -112,7 +112,7 @@ try:
+                 try:
+                         filename = os.environ[ 'C3_CONF' ]
+                 except KeyError:
+-                        filename = '/etc/c3.conf'
++                        filename = '/opt/gluster/etc/c3.conf'
+         #######################################################
+ 
+ 
+diff -pruN c3-4.0.1/cnum c3-4.0.1-h/cnum
+--- c3-4.0.1/cnum	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/cnum	2006-05-23 21:30:53.000000000 +0530
+@@ -1,11 +1,11 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 	######### set defaultt c3 path ########################
+         try:
+                 def_path = os.environ[ 'C3_PATH' ]
+         except KeyError:
+-                def_path = '/opt/c3-4'
++                def_path = '/opt/gluster/c3'
+         #######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -18,7 +18,7 @@ try:
+ 		--help -h	= this screen
+ 		--file -f       = file containing list of ip's if
+ 				  one is not supplied then
+-				  /etc/c3.conf will be used
++				  /opt/gluster/etc/c3.conf will be used
+ 		--all		= search all clusters
+ 		
+ 		machine definitions are in the form of
+@@ -36,7 +36,7 @@ try:
+ 
+ 	######### et default options  #########################
+ 	head_node = 0			#execute only on head node
+-	filename = "/etc/c3.conf"	#default config file
++	filename = "/opt/gluster/etc/c3.conf"	#default config file
+ 	defusername = ""		#default user name
+ 	#######################################################
+ 
+@@ -123,7 +123,7 @@ try:
+                 try:
+                         filename = os.environ[ 'C3_CONF' ]
+                 except KeyError:
+-                        filename = '/etc/c3.conf'
++                        filename = '/opt/gluster/etc/c3.conf'
+         #######################################################
+ 
+ 
+diff -pruN c3-4.0.1/cpush c3-4.0.1-h/cpush
+--- c3-4.0.1/cpush	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/cpush	2006-05-23 21:30:53.000000000 +0530
+@@ -1,11 +1,11 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 	######### set defaultt c3 path ########################
+         try:
+                 def_path = os.environ[ 'C3_PATH' ]
+         except KeyError:
+-                def_path = '/opt/c3-4'
++                def_path = '/opt/gluster/c3'
+         #######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -24,7 +24,7 @@ try:
+ 
+ 		-h, --help	= this screen
+ 		-f, --file	= file containing list of ip's if one is not supplied 
+-				  then /etc/c3.conf will be used
++				  then /opt/gluster/etc/c3.conf will be used
+ 		-l, --list	= list of files to push (see man page for format
+ 		-i		= interactive mode, ask once before executing
+ 		--head		= execute command on head node does not execute on 
+@@ -55,7 +55,7 @@ try:
+ 	to_print = 0			#not used in parallel version
+ 	interactive = 0			#prompt before execution
+ 	head_node = 0			#execute only on head node
+-	filename = "/etc/c3.conf"	#default config file
++	filename = "/opt/gluster/etc/c3.conf"	#default config file
+ 	options = ""			#options to be passed to a remote cluster
+ 	options_to_pass = ""		#if a remote cluster, options to command
+ 	filelist = ""			#file with list of files to be transfered
+@@ -220,7 +220,7 @@ try:
+                 try:
+                         filename = os.environ[ 'C3_CONF' ]
+                 except KeyError:
+-                        filename = '/etc/c3.conf'
++                        filename = '/opt/gluster/etc/c3.conf'
+         #######################################################
+ 
+ 
+diff -pruN c3-4.0.1/cpushimage c3-4.0.1-h/cpushimage
+--- c3-4.0.1/cpushimage	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/cpushimage	2006-05-23 21:30:53.000000000 +0530
+@@ -1,11 +1,11 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 	######### set defaultt c3 path ########################
+         try:
+                 def_path = os.environ[ 'C3_PATH' ]
+         except KeyError:
+-                def_path = '/opt/c3-4'
++                def_path = '/opt/gluster/c3'
+         #######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -20,7 +20,7 @@ try:
+ 		--reboot, -r    = reboot nodes after updates complete
+ 		--file -f	= file containing list of ip's if 
+ 				  one is not supplied then
+-				  /etc/c3.conf will be used
++				  /opt/gluster/etc/c3.conf will be used
+ 		-i		= interactive mode, ask once before 
+ 				  executing
+ 		--all           = execute command on all the nodes
+@@ -44,7 +44,7 @@ try:
+ 	######### et default options  #########################
+ 	to_print = 0			#not used in parallel version
+ 	interactive = 0			#prompt before execution
+-	filename = "/etc/c3.conf"	#default config file
++	filename = "/opt/gluster/etc/c3.conf"	#default config file
+ 	options = ""			#options for updateclient
+ 	c3_options = ""			#options used for remote clusters
+ 	pidlist = []			#list if pid's to wait on
+@@ -133,7 +133,7 @@ try:
+                 try:
+                         filename = os.environ[ 'C3_CONF' ]
+                 except KeyError:
+-                        filename = '/etc/c3.conf'
++                        filename = '/opt/gluster/etc/c3.conf'
+         #######################################################
+ 
+ 
+diff -pruN c3-4.0.1/crm c3-4.0.1-h/crm
+--- c3-4.0.1/crm	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/crm	2006-05-23 21:30:53.000000000 +0530
+@@ -1,11 +1,11 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 	######### set defaultt c3 path ########################
+         try:
+                 def_path = os.environ[ 'C3_PATH' ]
+         except KeyError:
+-                def_path = '/opt/c3-4'
++                def_path = '/opt/gluster/c3'
+         #######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -18,7 +18,7 @@ try:
+ 		--help -h	= this screen
+ 		--file -f	= file containing list of ip's if 
+ 				  one is not supplied then
+-				  /etc/c3.conf will be used
++				  /opt/gluster/etc/c3.conf will be used
+ 		-i		= interactive mode, ask once before 
+ 				  executing
+ 		-r -R		= recursive
+@@ -49,7 +49,7 @@ try:
+ 	to_print = 0			#not used in parallel version
+ 	interactive = 0			#prompt before execution
+ 	head_node = 0			#execute only on head node
+-	filename = "/etc/c3.conf"	#default config file
++	filename = "/opt/gluster/etc/c3.conf"	#default config file
+ 	options = ""			#options to rm
+ 	c3_options = ""			#used when a remote cluster is used
+ 	pidlist = []			#list if pid's to wait on
+@@ -151,7 +151,7 @@ try:
+                 try:
+                         filename = os.environ[ 'C3_CONF' ]
+                 except KeyError:
+-                        filename = '/etc/c3.conf'
++                        filename = '/opt/gluster/etc/c3.conf'
+         #######################################################
+ 
+ 
+diff -pruN c3-4.0.1/cshutdown c3-4.0.1-h/cshutdown
+--- c3-4.0.1/cshutdown	2003-07-16 04:14:14.000000000 +0530
++++ c3-4.0.1-h/cshutdown	2006-05-23 21:30:53.000000000 +0530
+@@ -1,11 +1,11 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python
+ try:
+ 	import sys, os
+ 	######### set defaultt c3 path ########################
+         try:
+                 def_path = os.environ[ 'C3_PATH' ]
+         except KeyError:
+-                def_path = '/opt/c3-4'
++                def_path = '/opt/gluster/c3'
+         #######################################################
+ 
+ 	sys.path.append( def_path )
+@@ -29,7 +29,7 @@ try:
+ 		--onreboot	= reboot to specified lilo label
+ 		--file -f	= file containing list of ip's if 
+ 				  one is not supplied then
+-				  /etc/c3.conf will be used
++				  /opt/gluster/etc/c3.conf will be used
+ 		-i		= interactive mode, ask once before 
+ 				  executing
+ 		--head		= execute command on head node
+@@ -58,7 +58,7 @@ try:
+ 	to_print = 0			#not used in parallel version
+ 	interactive = 0			#prompt before execution
+ 	head_node = 0			#execute only on head node
+-	filename = "/etc/c3.conf"	#default config file
++	filename = "/opt/gluster/etc/c3.conf"	#default config file
+ 	options = ""			#options passed to shutdown
+ 	c3_options = ""			#options used for remote clusters
+ 	pidlist = []			#list if pid's to wait on
+@@ -194,7 +194,7 @@ try:
+                 try:
+                         filename = os.environ[ 'C3_CONF' ]
+                 except KeyError:
+-                        filename = '/etc/c3.conf'
++                        filename = '/opt/gluster/etc/c3.conf'
+         #######################################################
+ 
+ 

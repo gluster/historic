@@ -17,7 +17,15 @@
 
 APPLICATIONS = GlusterHPC GlusterEP
 
-BUNDLES = mpich2-pkg openib-pkg mvapich-gen2-pkg torque-pkg slurm-pkg autologin-pkg
+HPC_PACKAGES = \
+	mpich2-pkg \
+	openib-pkg \
+	mvapich-gen2-pkg \
+	torque-pkg \
+	slurm-pkg \
+	autologin-pkg \
+	pdsh-pkg \
+	c3-pkg
 
 EXTENSIONS= \
 	init \
@@ -32,7 +40,7 @@ EXTENSIONS= \
 	net-utils \
         debug-utils \
 	shutdown \
-	$(BUNDLES) \
+	$(HPC_PACKAGES) \
 	$(APPLICATIONS)
 #	freeipmi \
 #	ib-utils
