@@ -23,10 +23,10 @@ up_hosts=$(gping -i /tmp/ghosts/known_hosts -p 1332 2>/dev/null| grep slave | wc
     echo "$0: 0 hosts alive, exiting"
     exit 1;
 }
-echo -n "Commanding $up_hosts hosts $@ ... "
+#echo -n "Commanding $up_hosts hosts $@ ... "
 (echo "$@" && cat ${STDIN:-/dev/stdin}) | udp-sender --nokbd --portbase 10000 --min-clients $up_hosts >/dev/null 2>&1
-echo "done."
-echo -n "Waiting for completion ... "
+#echo "done."
+#echo -n "Waiting for completion ... "
 udp-sender --nokbd --portbase 10002 --min-clients $up_hosts --file /dev/null >/dev/null 2>&1
-echo "done."
+#echo "done."
 exit 0
