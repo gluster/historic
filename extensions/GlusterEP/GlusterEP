@@ -240,11 +240,14 @@ def client ():
                                choices=[('capture',
                                          'Capture current system image'),
                                         ('provision',
-                                         'Provision system from a previously captured image')],
+                                         'Provision system from a previously captured image'),
+                                        ('passwd',
+                                         'Change the passwd')],
                                title='[ GlusterEP Client ]',
                                cancel='Logout')
         if ret != 0:
             if not dlg.yesno ('Are you sure of logout?'):
+                os.system ("rm /.ssh/*")
                 user_login ()
                 continue
             continue
@@ -258,6 +261,13 @@ def client ():
             if os.system ('GProvision') == 0:
                 #dlg.msgbox ('Successfully provisioned') # GProvision will be handling this status inside
                 continue
+            continue
+        if sel == 'passwd':
+            os.system ("ssh -t master-node passwd")
+            os.system ("ssh -t master-node 'ssh-keygen -t dsa -f ~/.ssh/id_dsa -N \'\''")
+            os.system ("ssh master-node 'cp ~/.ssh/id_dsa.pub ~/.ssh/authorized_keys2'")
+            os.system ("rm /.ssh/*")
+            user_login ()
             continue
     return
 
