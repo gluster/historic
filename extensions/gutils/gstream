@@ -111,8 +111,8 @@ def main ():
                 gaugefd.flush ()
                 old_pc = new_pc
     gaugefd.write ("100\n")
-    os.system ('sleep 1')
     gaugefd.close ()
+    os.system ('sleep 1')
     return
 
 main ()

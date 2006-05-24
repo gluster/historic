@@ -62,8 +62,8 @@ def main ():
         return
     pkg_count = 0
     pkg_total = len (sel_list)
-    dlg.infobox ("Loading HPC base on all nodes")
-    os.system ("gex --install /stage3/hpc-base-pkg.tgz")
+    dlg.infobox ("Loading HPC base on all nodes\n")
+    os.system ("gex --install /stage3/hpc-base-pkg.gex")
     for sel_item in sel_list:
         pkg_count += 1
         dlg.infobox ("Loading \"%s\" (%d of %d)\n" %

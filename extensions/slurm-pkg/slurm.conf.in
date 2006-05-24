@@ -2,9 +2,9 @@
 # See the slurm.conf man page for more information
 #
 ControlMachine=master-node
-BackupController=node4
+#BackupController=node2
 #
-SlurmUser=slurm
+SlurmUser=nobody
 SlurmctldPort=7010
 SlurmdPort=7011
 AuthType=auth/none
@@ -62,5 +62,3 @@ JobAcctType=jobacct/none
 #JobAcctParameters=
 #
 # COMPUTE NODES
-NodeName=node[3-4] NodeAddr=192.168.1.20[3-4] Procs=2 State=UNKNOWN
-PartitionName=debug Nodes=node[3-4] Default=YES MaxTime=-1 State=UP

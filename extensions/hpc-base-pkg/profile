@@ -1,4 +1,4 @@
 
-for file in /opt/gluster/etc/env.d/*; do
+for file in /opt/gluster/etc/env.d/*.env; do
   source $file;
 done
