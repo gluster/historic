@@ -15,5 +15,5 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 nfs-utils.%: PACKAGE_NAME=nfs-utils-1.0.8-rc4
-nfs-utils.%: LIVE_PREPARE_CMD=[ -f .prep ] || (sh autogen.sh && touch .prep)
-nfs-utils.%: LIVE_CONFIGURE_CMD=$(DEFAULT_LIVE_CONFIGURE_CMD) --disable-nfsv4 --disable-gss
+#nfs-utils.%: LIVE_PREPARE_CMD=[ -f .prep ] || (sh autogen.sh && touch .prep)
+nfs-utils.%: LIVE_CONFIGURE_CMD=knfsd_cv_bsd_signals=yes $(DEFAULT_LIVE_CONFIGURE_CMD) --disable-nfsv4 --disable-gss
