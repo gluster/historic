@@ -27,6 +27,7 @@ extensions/genders-pkg/Makefile
 extensions/lam-pkg/Makefile
 extensions/ganglia-pkg/Makefile
 extensions/conman-pkg/Makefile
+extensions/hpc-base-pkg/Makefile
 extensions/autologin-pkg/Makefile
 extensions/shutdown/Makefile
 extensions/GlusterHPC/Makefile

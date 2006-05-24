@@ -30,7 +30,8 @@ HPC_PACKAGES = \
 	genders-pkg \
 	lam-pkg \
 	conman-pkg \
-	ganglia-pkg
+	ganglia-pkg \
+	hpc-base-pkg
 
 EXTENSIONS= \
 	init \

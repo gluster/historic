@@ -1,0 +1,4 @@
+#!/bin/sh
+
+grep -q /opt/gluster/etc/profile /etc/profile || 
+	echo "source /opt/gluster/etc/profile" >> /etc/profile
