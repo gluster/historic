@@ -169,8 +169,14 @@ def build_config (mac=True):
             #down_ifaces = os.popen ("").readlines () # <- Not needed now
             domain = "gluster.org"
             # Through a dailog asking in which all interfaces, he wants to run dhcpd
-            choices=map (lambda x:(x, x, "on"), up_ifaces)
-            (ret, ifaces) = dlg.checklist ("Select one or more network interfaces on which you want to enable remote booting of GlusterEP clients\n",
+            choices = map ((lambda x:
+                            (x,
+                             string.join (map (string.strip,
+                                               os.popen ("ip a l dev %s | sed -n -e 's/.*inet \\([^ ]*\\).*/\\1/p'" % x).readlines ()),
+                                          ','),
+                             "on")),
+                           up_ifaces)
+            (ret, ifaces) = dlg.checklist ("Select one or more network interfaces on which you want to enable remote booting of GlusterEP clients",
                                            title='[ Remote Boot Interfaces ]',
                                            choices=choices,
                                            ok_label='Select',
