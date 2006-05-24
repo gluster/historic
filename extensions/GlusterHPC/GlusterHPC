@@ -263,7 +263,9 @@ def display_status ():
                   "%d nodes failed\n" % len (failed_nodes),
                   title='[ Report ]',
                   yes_label='Ok',
-                  no_label='Details'):
+                  no_label='Details',
+                  width=50,
+                  height=16):
         dlg.textbox (filename='/tmp/ghpc_stats')
 
     return 
@@ -295,7 +297,8 @@ def main ():
             return
 
     os.system ('> /var/log/proglog; killall tail')
-    os.system ('gstate-sel')
+    if os.system ('gstate-sel') != 0:
+        return
     
     fn_idx = 0
     function = [register_client, mac_collector, get_node_name, source_config]

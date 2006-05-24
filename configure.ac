@@ -25,6 +25,7 @@ extensions/c3-pkg/Makefile
 extensions/cerebro-pkg/Makefile
 extensions/genders-pkg/Makefile
 extensions/lam-pkg/Makefile
+extensions/ganglia-pkg/Makefile
 extensions/conman-pkg/Makefile
 extensions/autologin-pkg/Makefile
 extensions/shutdown/Makefile

@@ -55,12 +55,17 @@ def main ():
 
     choices = map ((lambda (k, v):
                     (k, v[1], 'on')), menu_dict.items ())
-    (ret, sel_list) = dlg.checklist ('Select HPC applications to install',
+    (ret, sel_list) = dlg.checklist ('Select HPC application or packages to install\n',
+                                     title="[ HPC Extensions ]",
                                      choices=choices)
     if ret != 0:
         return
+    pkg_count = 0
+    pkg_total = len (sel_list)
     for sel_item in sel_list:
-        dlg.infobox ("Installing %s" % menu_dict[sel_item][0])
+        pkg_count += 1
+        dlg.infobox ("Loading \"%s\" (%d of %d)\n" %
+                     (menu_dict[sel_item][0], pkg_count, pkg_total))
         os.system ("gex --install /stage3/%s" % menu_dict[sel_item][0])
 
     return
