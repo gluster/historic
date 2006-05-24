@@ -17,7 +17,7 @@
 #  
 
 chroot=$1
-profiles_dir=$chroot/tmp/gluster-tmp/hw-profiles
+profiles_dir=$chroot/opt/gluster/state/hw-profiles
 mpich_hosts=$chroot/opt/gluster/etc/mpich.hosts
 
 cd $profiles_dir
