@@ -1,6 +1,5 @@
 
 setup_SCRIPTS = slurm-slave slurm-master
+setup_DATA = slurm.conf.in
 setupdir = /opt/gluster/setup
 
-conf_DATA = slurm.conf
-confdir = /opt/gluster/etc
