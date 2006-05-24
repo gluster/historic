@@ -1,4 +1,6 @@
 #!/bin/sh
 
-grep -q /opt/gluster/etc/profile /etc/profile || 
-	echo "source /opt/gluster/etc/profile" >> /etc/profile
+grep -q $1/opt/gluster/etc/profile $1/etc/profile || 
+	echo "source /opt/gluster/etc/profile" >> $1/etc/profile
+
+cp -f /etc/hosts $1/etc/

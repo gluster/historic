@@ -271,7 +271,6 @@ def display_status ():
     return 
 
 def config_source_node (host):
-
     # Create a hosts file using currently collected macs
     mnt_pipe = os.popen ("ssh %s 'gmount -o' 2>>/var/log/proglog" % host)
     mnt_buf = mnt_pipe.readlines ()
@@ -280,9 +279,6 @@ def config_source_node (host):
     for line in mnt_buf:
         arr = line.strip ()
         os.system ("ssh %s 'customize-net /tmp/ginstaller/%s' >>/var/log/proglog 2>&1" % (host, arr))
-        os.system ("scp /etc/hosts %s:/tmp/ginstaller/%s/etc/ >>/var/log/proglog 2>&1" % (host, arr))
-        os.system ("ssh %s mkdir -p /tmp/ginstaller/%s/tmp/gluster-tmp/" % (host, arr))
-        os.system ("scp -r /var/gluster/{clientinfo,macs.txt,hw-profiles} %s:/tmp/ginstaller/%s/tmp/gluster-tmp/ >>/var/log/proglog 2>&1" % (host, arr))
         # Other master node config related stuff should come here
         # os.system ("echo add more stuff here")
     os.system ("ssh %s 'gumount' >>/var/log/proglog 2>&1" % host)

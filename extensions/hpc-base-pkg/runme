@@ -18,7 +18,7 @@
 
 _init ()
 {
-    pkg_name="genders"
+    pkg_name="hpc-base"
     os_base="/tmp/ginstaller";
     prefix="/opt/gluster";
     return 0
@@ -28,24 +28,26 @@ main ()
 {
     local my_dir="$(dirname $0)";
     for key in $(gmount -o); do
-	for tgz in ${my_dir}/*.tgz; do
-	    # install on master node
-	    cat $tgz | tar -C /tmp/ginstaller/$key -xz;
-	    # install on ALL slave nodes
-	    cat $tgz | gcsh tar -C /tmp/ginstaller/$key -xz;
-	done
 	# overriding stuff on master node
 	tar -C ${my_dir}/destdir -c . | tar -C /tmp/ginstaller/$key -x
 	# overriding stuff on slave nodes
 	tar -C ${my_dir}/destdir -c . | gcsh tar -C /tmp/ginstaller/$key -x
 
+	# keep the cluster state in OS mode
+	mkdir -p $os_base/$key/$prefix/state
+	cp -af /var/gluster/{macs.txt,clientinfo,hw-profiles} $os_base/$key/$prefix/state
+	cp -f /tmp/ghosts/known_hosts $os_base/$key/$prefix/etc/nodes
+
+	# Send the cluster state to client nodes
+	STDIN=/dev/null gcsh mkdir -p $os_base/$key/$prefix/state
+	tar -C /var/gluster -c ./{macs.txt,clientinfo,hw-profiles} | gcsh tar -C $os_base/$key/$prefix/state -x
+	STDIN=/tmp/ghosts/known_hosts | gcsh dd of=$os_base/$key/$prefix/etc/nodes
+
 	# setup on master node
 	$os_base/$key/$prefix/setup/$pkg_name-master $os_base/$key
+	# setup on client node
 	STDIN=/dev/null gcsh $os_base/$key/$prefix/setup/$pkg_name-slave $os_base/$key
-	
     done
 }
 
 _init "$@" && main "$@";
-
-
