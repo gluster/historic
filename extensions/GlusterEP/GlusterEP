@@ -217,6 +217,10 @@ def user_login ():
                     os.system ("sleep 100")
             continue
 
+        if sel == '':
+            dlg.msgbox ('No username entered',
+                        title='[ Error ]')
+            continue
         os.system ("mkdir -p /.ssh")
         if not os.system ("scp %s@master-node:.ssh/id_dsa ~/.ssh/" % sel):
             cfg = file ('/.ssh/config','w')

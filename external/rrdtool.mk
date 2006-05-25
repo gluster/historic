@@ -18,4 +18,4 @@
 rrdtool.%: PACKAGE_NAME=rrdtool-1.2.12
 rrdtool.%: PKG_CONFIGURE_ENV=CPPFLAGS="-I$(DESTDIR_PKG)/opt/gluster/include -I$(DESTDIR_PKG)/opt/gluster/include/libart-2.0 -I$(DESTDIR_PKG)/opt/gluster/include/libpng12 -I$(DESTDIR_PKG)/opt/gluster/include/freetype2" LDFLAGS="-L$(DESTDIR_PKG)/opt/gluster/lib"
 rrdtool.%: PKG_CONFIGURE_CMD=rd_cv_ieee_works=yes $(DEFAULT_PKG_CONFIGURE_CMD) --disable-shared --with-pic --disable-tcl
-
+rrdtool.%: PKG_BUILD_CMD=make all PERL_MAKE_OPTIONS="CC=$(CROSS)-gcc AR=$(CROSS)-ar FULL_AR=$(CROSS)-ar CCCDLFLAGS=-fPIC LDDLFLAGS=\"-shared -L/opt/gluster/lib\" LDFLAGS=-L/opt/gluster/lib LD=$(CROSS)-gcc"

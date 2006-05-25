@@ -86,3 +86,4 @@ slurm.pkg: openssl.pkg readline.pkg
 pdsh.pkg: slurm.pkg readline.pkg
 cerebro.pkg: slurm.pkg genders.pkg
 rrdtool.pkg: freetype2.pkg libart_lgpl.pkg libpng.pkg
+ganglia.pkg: rrdtool.pkg
