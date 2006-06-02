@@ -27,8 +27,17 @@ _init ()
 main ()
 {
     local my_dir="$(dirname $0)";
+
+    # collect hardware profiles of all machines
+    ghwdump
+
     for key in $(gmount -o); do
-	# overriding stuff on master node
+	
+	# Customize the network of the network
+	customize-net $os_base/$key
+	STDIN=/dev/null gcsh customize-net $os_base/$key
+	
+        # overriding stuff on master node
 	tar -C ${my_dir}/destdir -c . | tar -C /tmp/ginstaller/$key -x
 	# overriding stuff on slave nodes
 	tar -C ${my_dir}/destdir -c . | gcsh tar -C /tmp/ginstaller/$key -x

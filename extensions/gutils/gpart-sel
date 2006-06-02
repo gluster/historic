@@ -187,7 +187,7 @@ def main ():
         if need_umount:
             umount_cmd = '; umount %s' % mp
         bytes += (int(os.popen ("df -k %s | tail -n -1 | awk '{print $3}'" % mp).readline ().strip ()) * 1000)
-        tar_cmd = "/usr/bin/tar --format=posix -C %s -c . 2>/dev/null %s\n" % (mp, umount_cmd)
+        tar_cmd = "/usr/bin/tar --exclude='./gluster-state*' --format=posix -C %s -c . 2>/dev/null %s\n" % (mp, umount_cmd)
         commands_fd.write ('%s' % tar_cmd)
 
     max_fd.write ('%d\n' % bytes)

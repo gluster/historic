@@ -17,5 +17,5 @@
 #  
 
 export PS1='\h:\w\$ '
-
-exec screen -xRR kick-start-shell /tmp/kick-start
+cd /tmp
+exec screen -L -xRR kick-start-shell /tmp/kick-start 

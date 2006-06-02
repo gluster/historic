@@ -30,6 +30,10 @@ tar -C /.ssh -xf /tmp/dot-ssh.tar
 echo " * Starting SSH daemon"
 /usr/sbin/sshd
 
+echo " * Synchronizing system time"
+date $(ssh master-node date '+%m%d%H%M%Y%S')
+date
+
 echo " * Importing HOSTS file"
 atftp --get --remote-file hosts --local-file /tmp/hosts master-node
 cat /tmp/hosts > /etc/hosts

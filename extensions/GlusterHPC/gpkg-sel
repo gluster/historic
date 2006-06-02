@@ -59,6 +59,7 @@ def main ():
                                      title="[ HPC Extensions ]",
                                      choices=choices)
     if ret != 0:
+        sys.exit (1)
         return
     pkg_count = 0
     pkg_total = len (sel_list)
