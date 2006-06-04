@@ -384,10 +384,9 @@ do_advanced ()
       op=$( dialog --menu "choose what to configure" \
 	  0 0 \
 	  0 \
-	  "names" "configure hostname/domainname" \
 	  "interfaces" "configure interfaces and ip addresses" \
 	  "routes" "configure routes (gateway)" 2>&1 >&3 ) || return $?;
-
+#	  "names" "configure hostname/domainname" \
       [ "${op}" = "interfaces" ] && manage_ifaces;
       [ "${op}" = "names" ] && manage_names;
       [ "${op}" = "routes" ] && manage_routes;
@@ -479,6 +478,7 @@ do_manual_iface_config ()
 	      dialog --msgbox "Invalid IP/MASK : ${ip}/${nm}" 0 0;
 	      continue;
 	  }
+	    cmd="ip link set up dev ${iface}" && oput=$( ${cmd} 2>&1) && \
 	    cmd="ip address flush dev ${iface}" && oput=$( ${cmd} 2>&1 ) && \
 	    cmd="ip address add ${ip}/$(subnet_to_prefix ${nm}) brd + dev ${iface}" && oput=$(${cmd} 2>&1 ) && \
 	    cmd="ip route add default via ${gw}" && if [ ! -z "${gw}" ] ; then oput=$(${cmd} 2>&1); fi  && \
