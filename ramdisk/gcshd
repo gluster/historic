@@ -25,7 +25,7 @@ while :; do
     if [ "$state" != "slave" ]; then
 	continue
     fi
-    echo "Started lisenting on port 10000";
+    echo "Started listening on port 10000";
     udp-receiver --nokbd --portbase 10000 2>/dev/null | { 
 	read cmd; 
 	echo "Evaluating $cmd";

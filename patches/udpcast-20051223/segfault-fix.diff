@@ -1,0 +1,23 @@
+diff -pruN udpcast-20051223/udp-receiver.c udpcast-20051223-h/udp-receiver.c
+--- udpcast-20051223/udp-receiver.c	2005-12-23 16:03:06.000000000 +0530
++++ udpcast-20051223-h/udp-receiver.c	2006-06-04 12:39:59.000000000 +0530
+@@ -55,6 +55,7 @@ static struct option options[] = {
+ #endif
+ 
+     { "log", 1, NULL, 'l' },
++    { NULL, 0, NULL, 0}
+ };
+ 
+ static void intHandler(int nr) {
+diff -pruN udpcast-20051223/udp-sender.c udpcast-20051223-h/udp-sender.c
+--- udpcast-20051223/udp-sender.c	2005-12-23 16:03:18.000000000 +0530
++++ udpcast-20051223-h/udp-sender.c	2006-06-04 12:39:31.000000000 +0530
+@@ -80,7 +80,7 @@ static struct option options[] = {
+     { "nokbd", 0, NULL, 0xb04 },
+ 
+     { "retriesUntilDrop", 1, NULL, 0xc01 },
+-
++    { NULL, 0, NULL, 0 }
+ };
+ 
+ #ifdef NO_BB
