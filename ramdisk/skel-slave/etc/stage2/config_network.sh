@@ -213,6 +213,7 @@ accept_new_route ()
 
       }
       [ ${err} -eq 0 ] && {
+	  ip link set up dev ${iface}
 	  oput=$( ip route add ${prefix} $( get_add_via ${gw}) dev ${iface} 2>&1) || {
 	      dialog --msgbox "could not add route ${prefix} via ${gw} dev ${iface}; (${oput})" 0 0;
 	      continue;
