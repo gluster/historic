@@ -92,6 +92,17 @@ while True:
         break
     
     if ret != 0:
+        ipobj = GIPv4.IPv4 (cfg.get ('global', 'startip'),
+                    cfg.get ('global', 'netmask'))
+        netsize = pow (2, 32 - ipobj.maskbits)
+        totalnodes = string.atoi (cfg.get ('global', 'totalnodes'))
+        if totalnodes < 2:
+            d.msgbox ('Total nodes is invalid. You need atleast 2 hosts')
+            continue
+        if totalnodes > netsize:
+            d.msgbox ('The netmask you specified (%s) accomodates %d hosts, while your total nodes is %d' % (cfg.get ('global', 'netmask'), netsize, totalnodes),
+                        title='[ Error ]')
+            continue
         break
             
     if choice == 'startip':
