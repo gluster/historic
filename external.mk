@@ -17,7 +17,7 @@
 #APPS_STAGE1 = grub syslinux elilo
 
 APPS_RAMDISK = busybox kernel-modules termcap pcre ncurses dialog readline\
-	bash hotplug udev iproute2 udpcast jed\
+	bash hotplug udev iproute2 udpcast jed slang\
 	bzip2 gzip tar zlib openssl openssh sed util-linux sysvinit atftp\
 	findutils grep gawk dhcp file pcap tcpdump lsof screen\
 	coreutils net-tools iputils jove pciutils libusb usbutils expat \
