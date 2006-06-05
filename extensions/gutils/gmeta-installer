@@ -433,7 +433,15 @@ def main ():
         if o == '-v' or o == '--version':
             return
 
-#    os.system ("gprobe | gpart-sel")
+    if not os.access (inp_file, os.R_OK):
+        dlg.infobox ('Provide a proper input file')
+        return
+    
+    if not os.access (commands_file, os.R_OK):
+        dlg.infobox ('Provide a proper commands file')
+        return
+    
+    #    os.system ("gprobe | gpart-sel")
     os.system ("cat %s | gmountmap %s -d %s -m %s -t %s -c %s" %
                (inp_file, auto_arg, dump, mnt, tx, part))
 

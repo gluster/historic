@@ -59,6 +59,8 @@ def get_disk_part (partname):
 def write_dump (fd, disks):
     for disk_name in disks.keys ():
         disk = disks[disk_name]
+        if not disk:
+            continue
         for part_no in disk.keys ():
             if part_no == 0:
                 part_name = disk_name

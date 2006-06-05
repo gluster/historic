@@ -150,6 +150,8 @@ def get_disk_info (_disk):
     parted_fd = os.popen ("parted -s %s unit %% print" % _disk)
     parted_lines = parted_fd.readlines ()
     parted_fd.close ()
+    if len(parted_lines) == 0:
+        return None
     _pieces = parted_lines[0].split()
     _disk_db[0] = {}
     _disk_db[0]['START'] = _pieces[4]
@@ -188,6 +190,8 @@ def main ():
     disks = {}
     for _disk in _disks:
         disks[_disk] = get_disk_info (_disk)
+        if not disks[_disk]:
+            continue
         for part_no in disks[_disk].keys ():
             part_name = '%s%d' % (_disk, part_no)
             if disks[_disk][part_no]['TYPE'] == 'extended':

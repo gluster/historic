@@ -59,9 +59,10 @@ guile.live: ncurses.live libtool.live gmp.live termcap.live readline.live# libgu
 freeipmi.live: guile.live libgcrypt.live guile.native # guile dependency for freeipmi
 libgcrypt.live: libgpg-error.live # libgpg-error dependency for libgcrypt
 libgcrypt.live: libgpg-error.native # for gpg-error-config during ./configure
-parted.live: e2fsprogs.live reiserfsprogs.live jfsutils.live xfsprogs.live # support 
+parted.live: e2fsprogs.live reiserfsprogs.live jfsutils.live xfsprogs.live readline.live # support 
 portmap.live: tcp-wrappers.live # for LIB_WRAP
 gdb.live: termcap.live ncurses.live
+jed.live: slang.live
 
 # packaging
 
