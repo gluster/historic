@@ -29,6 +29,8 @@ list_cdrom_devices ()
     do
       [ "$(cat ${dev})" = "cdrom" ] && echo $(echo ${dev} | cut -f5 -d/);
     done
+
+#    for dev in $( find /sys/block 
 }
 
 

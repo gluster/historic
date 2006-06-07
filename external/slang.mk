@@ -15,3 +15,5 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 slang.%: PACKAGE_NAME=slang-2.0.6
+slang.%: LIVE_BUILD_CMD=$(DEFAULT_LIVE_BUILD_CMD) MODULES="slsmg-module.so termios-module.so select-
+module.so fcntl-module.so varray-module.so"
