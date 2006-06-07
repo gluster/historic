@@ -20,7 +20,7 @@ APPS_RAMDISK = busybox kernel-modules termcap pcre ncurses dialog readline\
 	bash hotplug udev iproute2 udpcast jed slang\
 	bzip2 gzip tar zlib openssl openssh sed util-linux sysvinit atftp\
 	findutils grep gawk dhcp file pcap tcpdump lsof screen\
-	coreutils net-tools iputils jove pciutils libusb usbutils expat \
+	coreutils net-tools iputils pciutils libusb usbutils expat \
 	discover discover-data nfs-utils tcp-wrappers portmap \
 	module-init-tools
 
