@@ -313,7 +313,7 @@ main ()
 {
     local method;
 
-    [ -z "$(which kick-start)" ] || exec kick-start app
+    [ -z "$(which GDesktop)" ] || exec GDesktop app
     check_auto_mode;
 
 

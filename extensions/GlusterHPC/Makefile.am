@@ -1,5 +1,5 @@
 
-client_kick_start_SCRIPTS = client-kick-start
+client_kick_start_SCRIPTS = client-init
 client_kick_startdir = /tftpboot
 
 postinstall_SCRIPTS = postinstall.sh

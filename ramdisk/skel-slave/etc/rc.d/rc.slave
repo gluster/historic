@@ -72,8 +72,8 @@ main ()
 	fi
     done
 
-    atftp --get --remote-file client-kick-start --local-file /tmp/kick-start ${headnodeIP};
-    chmod +x /tmp/kick-start
+    atftp --get --remote-file client-init --local-file /tmp/client-init ${headnodeIP};
+    chmod +x /tmp/client-init
 }
 
 try_gluster ()

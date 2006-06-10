@@ -64,7 +64,7 @@ main ()
 
     rm -rf ${TMP_DIR};
 
-    exec kick-start;
+    exec GDesktop;
 }
 
 _init "$@" && main "$@" ; read
