@@ -266,6 +266,8 @@ def imaging ():
     (ret, hname) = get_node_name ()
     if ret == 0:
         selected_slaves = get_slaves (hname)
+        if not selected_slaves:
+            return 1
         make_slaves (selected_slaves)
         if source_config (hname) != 0:
             return 1
