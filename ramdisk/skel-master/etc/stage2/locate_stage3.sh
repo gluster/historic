@@ -30,7 +30,10 @@ list_cdrom_devices ()
       [ "$(cat ${dev})" = "cdrom" ] && echo $(echo ${dev} | cut -f5 -d/);
     done
 
-#    for dev in $( find /sys/block 
+    for dev in $( ls /dev/scd* 2>/dev/null )
+    do
+      echo $dev | cut -f3 -d/;
+    done
 }
 
 
@@ -199,7 +202,18 @@ method_cdrom ()
       dev_str="";
       for dev in $( list_cdrom_devices )
       do
-	dev_str="${dev_str} '${dev}' '$(cat /proc/ide/${dev}/model)'";
+	minor_num=$(ls -l /dev/$dev | awk '{print $6}');
+	major_num=$(ls -l /dev/$dev | awk '{print $5}' | cut -f1 -d,);
+	this_dev_str="''"
+	[ -d /proc/ide/${dev} ] && \
+	    this_dev_str="$(cat /proc/ide/${dev}/model)";
+	
+	grep_out="$(grep $major_num:$minor_num /sys/block/*/dev)"
+	[ -z "${grep_out}" ] || {
+	    [ -f $(dirname $grep_out)/device/model ] && \
+	    this_dev_str="$(cat $(dirname $grep_out)/device/model)";
+        }
+	dev_str="${dev_str} '${dev}' '${this_dev_str}'";
       done
 
       dev_str="${dev_str} 'manual' 'Manually specify cdrom device'";
