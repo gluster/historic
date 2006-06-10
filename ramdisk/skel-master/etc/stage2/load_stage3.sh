@@ -60,7 +60,7 @@ main ()
 
     ./runme;
 
-    cd -;
+    cd - >/dev/null;
 
     rm -rf ${TMP_DIR};
 
