@@ -20,7 +20,7 @@
 
 from Gluster.GFrontEnd import dialog
 from Gluster import GIP, GIPv4
-import os, sys, sre, string, ConfigParser
+import os, sys, re, string, ConfigParser
 
 clientinfo = "/var/gluster/clientinfo"
 
@@ -29,17 +29,58 @@ cfg.read (clientinfo)
 
 d = dialog.Dialog ();
 
+def is_valid_ip (ip):
+    try:
+        i = GIPv4.IPv4 (ip.strip ('/'))
+    except:
+        return False
+    return True
+
+def is_valid_number (num):
+    try:
+        n = string.atoi (num)
+        return True
+    except:
+        return False
+    return True
+
+def is_valid_netmask (nmask):
+    try:
+        i = GIPv4.IPv4 ('1.1.1.1', nmask)
+    except:
+        return False
+    return True
+
+def is_valid_hostname (hname):
+    c = re.compile ("^[a-zA-Z][a-zA-Z0-9_\-]*$")
+    matches = c.findall (hname)
+    if len (matches) != 1 or matches[0] != hname:
+        return False
+    return True
+
+def is_valid_domain (domain):
+    c = re.compile ("^[a-zA-Z][a-zA-Z0-9_\-\.]*$")
+    matches = c.findall (hname)
+    if len (matches) != 1 or matches[0] != hname:
+        return False
+    return True
+
 cluster_config = {
     'startip': ['192.168.1.1',
-                 'Starting IP of the cluster (master node IP)'],
+                 'Starting IP of the cluster (master node IP)',
+                is_valid_ip],
     'totalnodes': ['64',
-                   'total number of nodes in the cluster (including master node)'],
+                   'total number of nodes in the cluster (including master node)',
+                   is_valid_number],
     'netmask' : ['255.255.255.0',
-                    'Subnet mask of the cluster'],
+                 'Subnet mask of the cluster',
+                 is_valid_netmask],
     'hostname': [ 'node',
-                  'hostname prefix for all nodes. e.g if the hostname prefix is `box\', then nodes will be named `box1\' `box2\' etc' ],
+                  'hostname prefix for all nodes. e.g if the hostname prefix is `box\', then nodes will be named `box1\' `box2\' etc',
+                  is_valid_hostname],
     'domain': [ 'gluster.org',
-                'DNS domain name of the cluster' ],
+                'DNS domain name of the cluster',
+                is_valid_domain],
     'bootp': [ 'yes',
                'should BOOTP be turned on?' ],
     'interface': [ 'eth0', 'client side interface' ]
@@ -55,6 +96,10 @@ def ask_and_set (var):
     (ret, input) = d.inputbox (cluster_config[var][1],
                                init=cfg.get ('global', var))
     if ret != 0:
+        return
+
+    if not cluster_config[var][2] (input):
+        d.msgbox ('Invalid input "%s"' % input.strip ())
         return
     cfg.set ('global', var, input)
     sync ()
