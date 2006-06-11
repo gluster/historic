@@ -31,7 +31,7 @@ echo " * Starting SSH daemon"
 /usr/sbin/sshd
 
 echo " * Synchronizing system time"
-date $(ssh master-node date '+%m%d%H%M%Y%S')
+date $(ssh master-node date '+%m%d%H%M%Y.%S')
 date
 
 echo " * Importing HOSTS file"

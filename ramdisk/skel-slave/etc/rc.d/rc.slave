@@ -24,13 +24,16 @@ _init ()
     GLUSTER_PORT="$(cat /proc/cmdline | sed -n 's/.*gluster_port=\([^ ]*\).*/\1/p')"
     IFACE=${GLUSTER_IFACE:-"$(ip link list | grep BROADCAST | cut -f2 -d:)"}
     PORT=${GLUSTER_PORT:-"6767"}
-    
+
+    GLUSTER_BOOTP="$(cat /proc/cmdline | sed -n 's/.*gluster_bootp=\([^ ]*\).*/\1/p')"
     found="n"
     return 0
 }
 
 main ()
 {
+    [ -z "$GLUSTER_BOOTP" ] || try_gluster
+
     while [ $found = "n" ]
     do
 	dialog --pause 'Gluster master node probe will begin in 10 seconds, Hit EXIT to enter manual configuration' 10 40 10
