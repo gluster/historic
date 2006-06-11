@@ -7,5 +7,5 @@ MENU TITLE Gluster PXE Boot
 LABEL gluster-client
     MENU LABEL
     KERNEL linux.slave
-    APPEND initrd=initrd.slave.gz quiet
+    APPEND initrd=initrd.slave.gz quiet gluster_bootp=yes
 
