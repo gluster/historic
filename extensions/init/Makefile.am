@@ -23,7 +23,7 @@ GlusterGTmp_DATA = \
 
 GlusterGTmpdir = $(datadir)/gluster/extensions/lib/GTmp
 
-bin_SCRIPTS = bin/gex bin/kick-start bin/gdsh bin/gdcp 
+bin_SCRIPTS = bin/gex bin/GDesktop bin/gdsh bin/gdcp 
 
 bin_PROGRAMS = gdscript
 gdscript_SOURCES = bin/gdscript.c
