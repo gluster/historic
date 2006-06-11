@@ -26,12 +26,13 @@ main ()
     local my_dir="$(dirname $0)";
     cp -alf "${my_dir}"/destdir/* /;
 
-    for ext in $EXTENSIONS
-    do
-      gex --install /stage3/$ext.gex;
-    done
-
-    exec GlusterHPC "$@";
+    [ -z "$1" ] && {
+	for ext in $EXTENSIONS
+	do
+	  gex --install /stage3/$ext.gex;
+	done
+	exec GlusterHPC "$@";
+    }
 }
 
 _init "$@" && main "$@";
