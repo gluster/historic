@@ -34,17 +34,16 @@ def main ():
     os.system ('mkdir -p /tmp/ghosts')
     all_hosts = file ('/tmp/ghosts/all_hosts', 'w')
     known_hosts = file ('/tmp/ghosts/known_hosts', 'w')
+    host_prefix = get_hostname ()
+
+    known_macs = file ("/var/gluster/macs.txt").readlines ()
+    node_ids = map (lambda x: int (x.split ()[0]), known_macs)
 
     for i in range (get_totalnodes ()):
-        all_hosts.write ("%s%d\n" % (get_hostname (), i+1))
+        all_hosts.write ("%s%d\n" % (host_prefix, i+1))
+        if i in node_ids:
+            known_hosts.write ("%s%d\n" % (host_prefix, i+1))
     all_hosts.close ()
-    known_macs = file ("/var/gluster/macs.txt").readlines ()
-    node_id = map (lambda x: int (x.split ()[0]), known_macs)
-
-    nodes = map (lambda x: "%s%d" % (get_hostname (), int (x)), node_id)
-
-    for node in nodes:
-        known_hosts.write (node + "\n")
     known_hosts.close ()
 
     os.system ("gping -i /tmp/ghosts/known_hosts | cut -f1 -d: > /tmp/ghosts/up_hosts")
