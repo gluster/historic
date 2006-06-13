@@ -2,10 +2,10 @@ default 0
 timeout 30
 # splashimage (cd0)/boot/grub/gluster-logo.xpm.gz
 
-title -= Gluster Stage-1 MASTER NODE (grub boot loader) =-
+title -= Gluster MASTER NODE (grub boot loader) =-
 kernel (cd)/boot/linux.master ramdisk_size=65536 quiet
 initrd (cd)/boot/initrd.master.gz
 
-title -= Gluster Stage-1 SLAVE NODE (grub boot loader) =-
+title -= Gluster SLAVE NODE (grub boot loader) =-
 kernel (cd)/boot/linux.slave ramdisk_size=65536 quiet
 initrd (cd)/boot/initrd.slave.gz
