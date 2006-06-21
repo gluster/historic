@@ -49,7 +49,9 @@ method_nfs ()
     fi
     while :
     do
-      ip_exportpoint=$(dialog --inputbox "Specify NFS export e.g: 192.168.13.22:/tmp " 0 0 "${ip_exportpoint}" 2>&1 >&3 ) || return 1;
+      ip_exportpoint=$(dialog --title "[ NFS Export ]" \
+	  --inputbox "Specify NFS export e.g: 192.168.13.22:/tmp " 0 0 \
+	  "${ip_exportpoint}" 2>&1 >&3 ) || return 1;
       [ -z "${ip_exportpoint}" ] && { 
 	  dialog --msgbox "Given NFS share path is invalid." 0 0;
 	  continue;
@@ -64,7 +66,9 @@ method_nfs ()
 	  dialog --msgbox "Specified export point is invalid." 0 0;
 	  continue;
       }
-      exportpoint_subdir=$(dialog --inputbox "Specify path relative to the export pointing to the \`extensions' directory" 0 0 "${exportpoint_subdir}" 2>&1 >&3 ) || return 1;
+      exportpoint_subdir=$(dialog --title "[ Extensions Path ]" \
+	  --inputbox "Specify path relative to the export pointing to the `extensions' directory"\
+	  0 0 "${exportpoint_subdir}" 2>&1 >&3 ) || return 1;
 
 #      while :
 #	do
@@ -217,7 +221,7 @@ method_cdrom ()
       done
 
       dev_str="${dev_str} 'manual' 'Manually specify cdrom device'";
-      dev=$( sh -c "dialog --menu 'Choose CD/DVD-ROM device' 0 0 0 ${dev_str}" 2>&1 >&3 ) || return 1;
+      dev=$( sh -c "dialog --title '[ CDROM Source ]' --menu 'Choose CD/DVD-ROM device' 0 0 0 ${dev_str}" 2>&1 >&3 ) || return 1;
       [ "${dev}" = "manual" ] && {
 	  dev=$( dialog --inputbox 'Specify cdrom device' 0 0 /dev/hda 2>&1 >&3 ) || continue;
 	  dev=$(basename "${dev}");
@@ -261,7 +265,7 @@ method_path ()
 
     while :
     do
-      path=$( dialog --inputbox "Path for Gluster" 0 0 "${path}" 2>&1 >&3 ) || return 1;
+      path=$( dialog --title '[ Manual PATH ]' --inputbox "Path for Gluster" 0 0 "${path}" 2>&1 >&3 ) || return 1;
 
       [ -f "${path}/init.gex" ] || {
 	  dialog --msgbox "${path} does not contain init.gex extension" 0 0;
@@ -333,7 +337,7 @@ main ()
 
     while [ ! -f /stage3/init.tgz ] || [ -z "$(tar tzf /stage3/init.tgz ./runme)" ]
     do
-      method=$( dialog --no-cancel --menu  \
+      method=$( dialog --title "[ Gluster Source ]" --no-cancel --menu \
         "Select Gluster extensions source\n" 0 0 0\
 	"cdrom" "Select Gluster CD/DVD-ROM device"\
         "nfs" "NFS mount Gluster extensions" \

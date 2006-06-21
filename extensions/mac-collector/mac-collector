@@ -58,6 +58,7 @@ def get_next_index (idx, mac):
     if idx:
         while True:
             (ret, newidx) = d.inputbox ("%s for %s" % (mac, hostname_prefix),
+                                        title='[ MAC Registry ]',
                                         ok_label="accept",
                                         cancel="reject mac",
                                         init=str (idx))
@@ -92,6 +93,7 @@ def get_next_index (idx, mac):
                 return False
         while True:
             (ret, newidx) = d.inputbox ("%s -> %s" % (mac, hostname_prefix),
+                                        title='[ MAC Registry ]',
                                         ok_label="accept",
                                         cancel="reject mac",
                                         init=str (next_node))
@@ -196,6 +198,7 @@ def add_macs ():
                                           'probe for new nodes from network'),
                                          ('file',
                                           'import macs from text file')],
+                                title='[ Add MAC ]',
                                 cancel='back',
                                 ok_label='ok')
 
@@ -227,7 +230,8 @@ def edit_macs ():
     while True:
         (ret, ans) = d.menu ('edit mac registry',
                              choices=[('set', 'manually set a mac address'),
-                                      ('del', 'delete a node mac entry')])
+                                      ('del', 'delete a node mac entry')],
+                             title='[ Edit MAC ]')
         if ret != 0:
             break
         if ans == 'set':
@@ -369,6 +373,7 @@ def main ():
                                       ('flush',
                                        'flush current registry')
                                       ],
+                             title='[ MAC Collector ]',
                              cancel='done',
                              extra_button=True,
                              extra_label='back',

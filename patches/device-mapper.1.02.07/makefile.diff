@@ -1,0 +1,48 @@
+diff -pru device-mapper.1.02.07_orig/Makefile.in device-mapper.1.02.07/Makefile.in
+--- device-mapper.1.02.07_orig/Makefile.in	2005-12-02 21:09:16.000000000 +0530
++++ device-mapper.1.02.07/Makefile.in	2006-06-21 15:53:57.000000000 +0530
+@@ -18,7 +18,7 @@ top_srcdir = @top_srcdir@
+ VPATH = @srcdir@
+ kernelvsn = @kernelvsn@
+ 
+-SUBDIRS = include man
++SUBDIRS = include
+ 
+ ifeq ("@INTL@", "yes")
+   SUBDIRS += po
+diff -pru device-mapper.1.02.07_orig/lib/Makefile.in device-mapper.1.02.07/lib/Makefile.in
+--- device-mapper.1.02.07_orig/lib/Makefile.in	2006-04-19 22:54:00.000000000 +0530
++++ device-mapper.1.02.07/lib/Makefile.in	2006-06-21 16:01:36.000000000 +0530
+@@ -59,7 +59,7 @@ endif
+ install: $(INSTALL_TYPE) install_include
+ 
+ install_include:
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 444 libdevmapper.h \
++	$(INSTALL) libdevmapper.h \
+ 		$(includedir)/libdevmapper.h
+ 
+ install_dynamic: install_@interface@
+@@ -70,19 +70,19 @@ install_static: install_@interface@_stat
+ 	$(LN_S) -f libdevmapper.a.$(LIB_VERSION) $(libdir)/libdevmapper.a
+ 
+ install_fs: fs/libdevmapper.$(LIB_SUFFIX)
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 555 $(STRIP) $< \
++	$(INSTALL) $(STRIP) $< \
+ 		$(libdir)/libdevmapper.$(LIB_SUFFIX).$(LIB_VERSION)
+ 
+ install_ioctl: ioctl/libdevmapper.$(LIB_SUFFIX)
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 555 $(STRIP) $< \
++	$(INSTALL) $(STRIP) $< \
+ 		$(libdir)/libdevmapper.$(LIB_SUFFIX).$(LIB_VERSION)
+ 
+ install_pkgconfig:
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 444 libdevmapper.pc \
++	$(INSTALL) libdevmapper.pc \
+ 		$(usrlibdir)/pkgconfig/devmapper.pc
+ 
+ install_ioctl_static: ioctl/libdevmapper.a
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 555 $(STRIP) $< \
++	$(INSTALL) $(STRIP) $< \
+ 		$(libdir)/libdevmapper.a.$(LIB_VERSION)
+ 
+ .PHONY: distclean_lib distclean

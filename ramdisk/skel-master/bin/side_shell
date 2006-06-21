@@ -11,12 +11,14 @@ main()
 
     while :
     do
-      choice=$( dialog --menu "Select Action" 0 0 0\
+      choice=$( dialog --title "[ Gluster Tools ]" --menu "Select Action"\
+	  0 0 0\
 	  "network" "configure network interfaces/routes" \
 	  "mac-collector" "collect MACs of the client nodes" \
 	  "bootdisk" "create client bootdisks" \
 	  "gfdisk" "repartitioning tool" \
-	  "shell" "drop into bash shell" 2>&1 >&3) || break;
+	  "shell" "drop into bash shell" \
+	  "gconsole" "gluster console management" 2>&1 >&3) || break;
 
       [ "${choice}" = "network" ] && {
 	  /etc/stage2/config_network.sh;
@@ -58,6 +60,9 @@ main()
 	  else
 	      dialog --msgbox 'Gluster stage-3 not yet loaded' 0 0
 	  fi
+      }
+      [ "${choice}" = "gconsole" ] && {
+	  gconsole
       }
     done      
 }

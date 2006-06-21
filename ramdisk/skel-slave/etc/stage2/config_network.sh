@@ -141,8 +141,8 @@ edit_route ()
 
     while :
     do
-      oput=$( dialog --ok-label "apply" --cancel-label "delete" --extra-label "modify" \
-	  --inputmenu "modify route specifics" 0 0 10 \
+      oput=$( dialog --title "[ Edit Route ]" --ok-label "apply" --cancel-label "delete" \
+	  --extra-label "modify" --inputmenu "modify route specifics" 0 0 10 \
 	  "prefix:" "${prefix}" \
 	  "gateway:" "${gw}" \
 	  "interface:" "${iface}" 2>&1 >&3);
@@ -194,8 +194,8 @@ accept_new_route ()
 
     while :
     do
-      oput=$( dialog --ok-label "apply" --cancel-label "back" --extra-label "modify" \
-	  --inputmenu "enter details of new route" 0 0 10 \
+      oput=$( dialog --title "[ New Route ]" --ok-label "apply" --cancel-label "back" \
+	  --extra-label "modify" --inputmenu "enter details of new route" 0 0 10 \
 	  "prefix:" "${prefix}" \
 	  "gateway:" "${gw}" \
 	  "interface:" "${iface}" 2>&1 >&3);
@@ -247,8 +247,8 @@ config_iface ()
     do
       ip_list=$(get_iface_addrs ${iface});
 
-      action=$( dialog  --ok-label "modify" --cancel-label \
-	  "back" --menu "choose action" 0 0 0 \
+      action=$( dialog --title "[ Configure Interface ]" --ok-label "modify" \
+	  --cancel-label "back" --menu "choose action" 0 0 0 \
           "status" "${mode}" "address(es)" "${ip_list}" 2>&1 >&3 ) || break;
       [ "${action}" = "status" ] && {
 	  no_flag="";
@@ -307,7 +307,7 @@ manage_ifaces ()
 	if_list="${if_list} ${iface} '${type}'";
       done
 
-      if=$( sh -c "dialog --ok-label Select --cancel-label Back --menu 'choose interface' 0 0 0 ${if_list}" 2>&1 >&3 ) || return $?;
+      if=$( sh -c "dialog --title '[ Interface ]' --ok-label Select --cancel-label Back --menu 'choose interface' 0 0 0 ${if_list}" 2>&1 >&3 ) || return $?;
 
       config_iface ${if};
     done
@@ -334,7 +334,7 @@ manage_routes ()
 	r_list="${r_list} ${prefix} '${r_info}'";
       done
 
-      op=$( sh -c "dialog --cancel-label Back --ok-label Select --menu 'Choose to add or edit route' 0 0 0 ${r_list}" 2>&1 >&3 ) || break;
+      op=$( sh -c "dialog --title '[ Manage Route ]' --cancel-label Back --ok-label Select --menu 'Choose to add or edit route' 0 0 0 ${r_list}" 2>&1 >&3 ) || break;
       [ "${op}" = "add" ] && accept_new_route;
       [ "${op}" != "add" ] && edit_route "${op}";
     done
@@ -382,7 +382,7 @@ do_advanced ()
 
     while :
     do
-      op=$( dialog --menu "choose what to configure" \
+      op=$( dialog --title "[ Advanced Configuration ]" --menu "choose what to configure" \
 	  0 0 \
 	  0 \
 	  "interfaces" "configure interfaces and ip addresses" \
@@ -410,7 +410,7 @@ do_dhcp ()
       done
       eth_ifaces="${eth_ifaces} manual 'specify interface name manually'";
 
-      iface=$( sh -c "dialog --ok-label Select --cancel-label Back --menu 'Choose interface to configure via DHCP' 0 0 0 ${eth_ifaces}" \
+      iface=$( sh -c "dialog --title '[ DHCP Config ]' --ok-label Select --cancel-label Back --menu 'Choose interface to configure via DHCP' 0 0 0 ${eth_ifaces}" \
 	  2>&1 >&3 ) || break;
       
       [ "${iface}" = "manual" ] && {
@@ -454,7 +454,8 @@ do_manual_iface_config ()
     while :
     do
       local ERR;
-      op=$( dialog --ok-label Apply --extra-label Modify --cancel-label Back \
+      op=$( dialog --title "[ Manual Interface Configuration ]" --ok-label Apply \
+	  --extra-label Modify --cancel-label Back \
 	  --inputmenu "manual settings of ${iface}" 0 40 10 \
 	  "IP Address:" "${ip}" \
 	  "Subnet Mask:" "${nm}" \
@@ -511,7 +512,7 @@ do_manual ()
       done
       eth_ifaces="${eth_ifaces} manual 'specify interface name manually'";
 
-      iface=$( sh -c "dialog --ok-label Select --cancel-label Back --menu 'Choose interface to configure manually' 0 0 0 ${eth_ifaces}" \
+      iface=$( sh -c "dialog --title '[ Manual Configuration ]' --ok-label Select --cancel-label Back --menu 'Choose interface to configure manually' 0 0 0 ${eth_ifaces}" \
 	  2>&1 >&3 ) || break;
       
       [ "${iface}" = "manual" ] && {
@@ -529,7 +530,7 @@ main ()
     
     while :
     do
-      op=$( dialog --title "Configure Network" --ok-label Select \
+      op=$( dialog --title "[ Configure Network ]" --ok-label Select \
 	  --cancel-label Done --menu "Select mode of network configuration" \
 	  0 0 \
 	  0 \

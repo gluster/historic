@@ -127,6 +127,7 @@ while True:
                                       'totalnodes',
                                       'hostname',
                                       'domain']),
+                            title='[ Cluster Configuration ]',
                             cancel="done",
                             extra_button=True,
                             ok_label="edit",
