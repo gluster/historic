@@ -32,7 +32,7 @@ APPS_OPENIB = ib-prepare ib-libibcommon ib-libibumad \
         ib-libibcm ib-libsdp ib-tools
 
 
-APPS_EXTENSIONS = python dhcp-helper makebootfat reiserfsprogs \
+APPS_EXTENSIONS = python dhcp-helper makebootfat reiserfsprogs device-mapper lvm2 \
 	xfsprogs e2fsprogs jfsutils netcat parted shadow iptables gdb
 #	$(APPS_IPMI) $(APPS_OPENIB)
 

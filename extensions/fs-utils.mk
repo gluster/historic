@@ -15,4 +15,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 fs-utils.gex: EXTENSION=fs-utils
-fs-utils.gex: e2fsprogs.stage3 xfsprogs.stage3 reiserfsprogs.stage3 jfsutils.stage3 
+fs-utils.gex: e2fsprogs.stage3 xfsprogs.stage3 reiserfsprogs.stage3 jfsutils.stage3 \
+		device-mapper.stage3 lvm2.stage3
+

@@ -10,6 +10,20 @@ diff -pru device-mapper.1.02.07_orig/Makefile.in device-mapper.1.02.07/Makefile.
  
  ifeq ("@INTL@", "yes")
    SUBDIRS += po
+diff -pru device-mapper.1.02.07_orig/dmsetup/Makefile.in device-mapper.1.02.07/dmsetup/Makefile.in
+--- device-mapper.1.02.07_orig/dmsetup/Makefile.in	2005-01-27 21:46:52.000000000 +0530
++++ device-mapper.1.02.07/dmsetup/Makefile.in	2006-06-21 19:57:52.000000000 +0530
+@@ -42,8 +42,8 @@ install: $(INSTALL_TYPE)
+ .PHONY: install_dynamic install_static
+ 
+ install_dynamic: dmsetup
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 555 $(STRIP) $< $(sbindir)/$<
++	$(INSTALL) $(STRIP) $< $(sbindir)/$<
+ 
+ install_static: dmsetup.static
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 555 $(STRIP) $< $(sbindir)/$<
++	$(INSTALL) $(STRIP) $< $(sbindir)/$<
+ 
 diff -pru device-mapper.1.02.07_orig/lib/Makefile.in device-mapper.1.02.07/lib/Makefile.in
 --- device-mapper.1.02.07_orig/lib/Makefile.in	2006-04-19 22:54:00.000000000 +0530
 +++ device-mapper.1.02.07/lib/Makefile.in	2006-06-21 16:01:36.000000000 +0530
