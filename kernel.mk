@@ -16,7 +16,7 @@
 #  
 
 kernel-images: kernel-bzimage.live
-	mkdir $(top_builddir)/iso_fs/boot -p
+	mkdir $(top_builddir)/iso_fs_$(ARCH)/boot -p
 	cp $(DESTDIR_LIVE)/boot/vmlinuz \
 		$(top_builddir)/iso_fs_$(ARCH)/boot/linux.master.$(ARCH)
 	cp $(DESTDIR_LIVE)/boot/vmlinuz \
