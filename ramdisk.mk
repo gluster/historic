@@ -23,7 +23,7 @@
 ramdisk-template: $(APPS_RAMDISK:%=%.ramdisk)
 	mkdir -p $(top_builddir)/$(BUILD_LIVE)/ramdisk
 	cd $(top_builddir)/$(BUILD_LIVE)/ramdisk && \
-		$(abs_top_srcddir)/ramdisk/configure --prefix=/usr \
+		$(abs_top_srcdir)/ramdisk/configure --prefix=/usr \
 		--host=$(CROSS) --build=$(GLUSTER_BUILD)
 	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/ramdisk all
 	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/ramdisk \
