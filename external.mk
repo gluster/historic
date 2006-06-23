@@ -17,7 +17,7 @@
 #APPS_STAGE1 = grub syslinux elilo
 
 APPS_RAMDISK = busybox kernel-modules termcap pcre ncurses dialog readline\
-	bash hotplug udev iproute2 udpcast jed slang \
+	bash hotplug udev iproute2 udpcast jed slang\
 	bzip2 gzip tar zlib openssl openssh sed util-linux sysvinit atftp\
 	findutils grep gawk dhcp file pcap tcpdump lsof screen\
 	coreutils net-tools iputils pciutils libusb usbutils expat \
@@ -32,8 +32,9 @@ APPS_OPENIB = ib-prepare ib-libibcommon ib-libibumad \
         ib-libibcm ib-libsdp ib-tools
 
 
-APPS_EXTENSIONS = python dhcp-helper makebootfat reiserfsprogs device-mapper lvm2 \
-	xfsprogs e2fsprogs jfsutils netcat parted shadow iptables gdb
+APPS_EXTENSIONS = python dhcp-helper makebootfat reiserfsprogs \
+	xfsprogs e2fsprogs jfsutils netcat parted shadow iptables gdb \
+	grub
 #	$(APPS_IPMI) $(APPS_OPENIB)
 
 APPS_PKG = mpich2 $(APPS_OPENIB) mvapich-gen2 torque slurm pdsh c3 cerebro \
@@ -152,11 +153,11 @@ $(APPS_ALL:%=%.pkg):
 
 %.dist: %.pkg
 	cd $(BUILD_PKG)/$(PACKAGE_NAME) ; \
-		$(call PKG_INSTALL_CMD,$(DESTDIR_DIST)/$(PACKAGE_NAME))
-	tar -czf $(DESTDIR_DIST)/$(PACKAGE_NAME).tgz -C \
-		$(DESTDIR_DIST)/$(PACKAGE_NAME) .
+		$(call PKG_INSTALL_CMD,$(DESTDIR_DIST)/$(PACKAGE_NAME)-$(ARCH))
+	tar -czf $(DESTDIR_DIST)/$(PACKAGE_NAME)-$(ARCH).tgz -C \
+		$(DESTDIR_DIST)/$(PACKAGE_NAME)-$(ARCH) .
 	mkdir -p $(DESTDIR_STAGE3)/$(EXTENSION)
-	cp $(DESTDIR_DIST)/$(PACKAGE_NAME).tgz $(DESTDIR_STAGE3)/$(EXTENSION)
+	cp $(DESTDIR_DIST)/$(PACKAGE_NAME)-$(ARCH).tgz $(DESTDIR_STAGE3)/$(EXTENSION)
 
 $(BUILD_NATIVE)/% $(BUILD_LIVE)/% $(BUILD_PKG)/%: $(TARBALLS_DIR)/%.tar.gz
 	tar -C $(shell dirname $@) -xzvf $^

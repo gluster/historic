@@ -21,8 +21,13 @@
 	$(call LIVE_INSTALL_CMD,$(DESTDIR_RAMDISK))
 
 ramdisk-template: $(APPS_RAMDISK:%=%.ramdisk)
-	$(MAKE) -C ramdisk all
-	$(MAKE) -C ramdisk install DESTDIR=$(DESTDIR_RAMDISK)
+	mkdir -p $(top_builddir)/$(BUILD_LIVE)/ramdisk
+	cd $(top_builddir)/$(BUILD_LIVE)/ramdisk && \
+		$(abs_top_builddir)/configure --prefix=/usr \
+		--host=$(CROSS) --build=$(GLUSTER_BUILD)
+	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/ramdisk all
+	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/ramdisk \
+		install DESTDIR=$(DESTDIR_RAMDISK)
 
 	-if [ -d $(TOOL_BASE)/$(CROSS)/sys-root ] ;\
 	then \
@@ -44,36 +49,36 @@ ramdisk-template: $(APPS_RAMDISK:%=%.ramdisk)
 	$(abs_top_srcdir)/cleanup.sh $(DESTDIR_RAMDISK) STRIP=$(CROSS)-strip
 
 initrd.slave: $(GENEXT2FS_NATIVE_IF_YES) ramdisk-template
-	rm -rf $(top_builddir)/ramdisk.slave
-	cp -af $(DESTDIR_RAMDISK) $(top_builddir)/ramdisk.slave
+	rm -rf $(top_builddir)/ramdisk.slave.$(ARCH)
+	cp -af $(DESTDIR_RAMDISK) $(top_builddir)/ramdisk.slave.$(ARCH)
 	cd $(abs_top_srcdir)/ramdisk/skel-slave && \
 		(find . | grep -Ev 'CVS|~|.arch-ids' | \
-		cpio -puvd $(abs_top_builddir)/ramdisk.slave)
+		cpio -puvd $(abs_top_builddir)/ramdisk.slave.$(ARCH))
 	genext2fs -b 65536 -e 0 -D $(abs_top_srcdir)/ramdisk/devices.txt \
-		-d $(top_builddir)/ramdisk.slave \
-		$(top_builddir)/initrd.slave.img
-	mkdir -p $(top_builddir)/iso_fs/boot
-	gzip -9 < $(top_builddir)/initrd.slave.img > \
-		$(top_builddir)/iso_fs/boot/initrd.slave.gz
+		-d $(top_builddir)/ramdisk.slave.$(ARCH) \
+		$(top_builddir)/initrd.slave.$(ARCH).img
+	mkdir -p $(top_builddir)/iso_fs_$(ARCH)/boot
+	gzip -9 < $(top_builddir)/initrd.slave.$(ARCH).img > \
+		$(top_builddir)/iso_fs_$(ARCH)/boot/initrd.slave.$(ARCH).gz
 
 initrd.master: $(GENEXT2FS_NATIVE_IF_YES) ramdisk-template
-	mkdir -p $(top_builddir)/ramdisk.master
-	cp -af $(DESTDIR_RAMDISK)/* $(top_builddir)/ramdisk.master
+	mkdir -p $(top_builddir)/ramdisk.master.$(ARCH)
+	cp -af $(DESTDIR_RAMDISK)/* $(top_builddir)/ramdisk.master.$(ARCH)
 	cd $(abs_top_srcdir)/ramdisk/skel-master && \
 		(find . | grep -Ev 'CVS|~|.arch-ids' | \
-		cpio -puvd $(abs_top_builddir)/ramdisk.master)
+		cpio -puvd $(abs_top_builddir)/ramdisk.master.$(ARCH))
 	genext2fs -b 65536 -e 0 -D $(abs_top_srcdir)/ramdisk/devices.txt \
-		-d $(top_builddir)/ramdisk.master \
-		$(top_builddir)/initrd.master.img
-	mkdir -p $(top_builddir)/iso_fs/boot
-	gzip -9 < $(top_builddir)/initrd.master.img > \
-		$(top_builddir)/iso_fs/boot/initrd.master.gz
+		-d $(top_builddir)/ramdisk.master.$(ARCH) \
+		$(top_builddir)/initrd.master.$(ARCH).img
+	mkdir -p $(top_builddir)/iso_fs_$(ARCH)/boot
+	gzip -9 < $(top_builddir)/initrd.master.$(ARCH).img > \
+		$(top_builddir)/iso_fs/boot/initrd.master.$(ARCH).gz
 
 
 initrds: initrd.slave initrd.master
 
 clean.ramdisk:
-	rm -rf $(top_builddir)/{initrd.slave.img,initrd.master.img,ramdisk.slave,ramdisk.master}
+	rm -rf $(top_builddir)/{initrd.slave.*,initrd.master.*,ramdisk.slave.*,ramdisk.master.*}
 	rm -rf $(DESTDIR_RAMDISK)
 
 clean: clean.ramdisk

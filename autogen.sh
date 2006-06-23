@@ -18,7 +18,11 @@
 
 aclocal
 autoconf
-automake --add-missing
+automake --add-missing --copy --foreign
+
+for autogensh in ramdisk/autogen.sh extensions/*/autogen.sh; do
+    sh $autogensh
+done
 
 mkdir -p tarballs
 #wget -Ptarballs/ -nH ftp://ftp.zresearch.com/pub/gluster/external/*

@@ -18,27 +18,28 @@
 abs_top_srcdir = $(shell cd $(top_srcdir) && pwd)
 abs_top_builddir = $(shell cd $(top_builddir) && pwd)
 
-CROSS=$(host_alias)
-GLUSTER_BUILD=$(build_alias)
-ARCH=$(shell echo $(host_alias) | sed 's/-.*//g')
+
+GLUSTER_BUILD=$(shell gcc -dumpmachine)
+ARCH ?= $(shell uname -m)
+CROSS = $(ARCH)-gluster-linux-gnu
 KERNEL_ARCH=$(shell echo $(ARCH) | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
                                   -e s/arm.*/arm/ -e s/sa110/arm/ \
                                   -e s/s390x/s390/ -e s/parisc64/parisc/ )
 
-TOOL_BASE=$(shell dirname `which $(CC)`)/..
+TOOL_BASE=$(shell dirname `which $(CROSS)-gcc 2>/dev/null` 2>/dev/null)/..
 
-DESTDIR_LIVE=$(abs_top_builddir)/destdir_live
+DESTDIR_LIVE=$(abs_top_builddir)/destdir_live_$(ARCH)
 DESTDIR_NATIVE=$(abs_top_builddir)/destdir_native
-DESTDIR_PKG=$(abs_top_builddir)/destdir_pkg
+DESTDIR_PKG=$(abs_top_builddir)/destdir_pkg_$(ARCH)
 
 #DESTDIR_STAGE2=$(abs_top_builddir)/destdir_stage2
 DESTDIR_STAGE3=$(abs_top_builddir)/destdir_stage3
-DESTDIR_RAMDISK=$(abs_top_builddir)/destdir_ramdisk
-DESTDIR_DIST=$(abs_top_builddir)/destdir_dist
+DESTDIR_RAMDISK=$(abs_top_builddir)/destdir_ramdisk_$(ARCH)
+DESTDIR_DIST=$(abs_top_builddir)/destdir_dist_$(ARCH)
 
 BUILD_NATIVE=$(abs_top_builddir)/build_native
-BUILD_LIVE=$(abs_top_builddir)/build_live
-BUILD_PKG=$(abs_top_builddir)/build_pkg
+BUILD_LIVE=$(abs_top_builddir)/build_live_$(ARCH)
+BUILD_PKG=$(abs_top_builddir)/build_pkg_$(ARCH)
 
 TARBALLS_DIR = @TARBALLS_DIR@
 PATCHES_DIR=$(abs_top_srcdir)/patches
@@ -56,7 +57,7 @@ DEFAULT_NATIVE_PREPARE_ENV=FOOBAR=FUBAR
 DEFAULT_NATIVE_CONFIGURE_ENV=CPPFLAGS=-I$(DESTDIR_NATIVE)/usr/include \
 				LDFLAGS=-L$(DESTDIR_NATIVE)/usr/lib
 DEFAULT_NATIVE_BUILD_ENV=FOOBAR=FUBAR
-DEFAULT_NATIVE_INSTALL_ENV=DESTDIR=$(DESTDIR_NATIVE)
+DEFAULT_NATIVE_INSTALL_ENV=
 
 DEFAULT_NATIVE_PREPARE_CMD=FOOBAR=FUBAR
 DEFAULT_NATIVE_CONFIGURE_CMD=./configure --prefix=$(DESTDIR_NATIVE)/usr

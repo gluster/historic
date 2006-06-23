@@ -54,7 +54,7 @@ EXTENSIONS= \
 %.stage3: %.live
 	cd $(BUILD_LIVE)/$(PACKAGE_NAME) ; \
 	export $(LIVE_INSTALL_ENV) ; \
-	$(call LIVE_INSTALL_CMD,$(DESTDIR_STAGE3)/$(EXTENSION)/destdir)
+	$(call LIVE_INSTALL_CMD,$(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(ARCH))
 
 
 include $(EXTENSIONS:%=$(top_srcdir)/extensions/%.mk)
@@ -63,21 +63,25 @@ include $(EXTENSIONS:%=$(top_srcdir)/extensions/%.mk)
 
 extensions: $(EXTENSIONS:%=%.gex) 
 	mkdir -p $(top_builddir)/iso_fs/extensions
-	cp $(DESTDIR_STAGE3)/*.{gex,tgz} $(top_builddir)/iso_fs/extensions
+	cp $(DESTDIR_STAGE3)/*.{gex,tgz} $(top_builddir)/iso_fs_$(ARCH)/extensions
 
 
 $(EXTENSIONS:%=%.gex):
-	$(MAKE) -C $(abs_top_builddir)/extensions/$(EXTENSION) all
-	$(MAKE) -C $(abs_top_builddir)/extensions/$(EXTENSION) install \
+	mkdir -p $(abs_top_builddir)/$(BUILD_LIVE)/$(EXTENSION).gex
+	cd $(abs_top_builddir)/$(BUILD_LIVE)/$(EXTENSIONS).gex && \
+		$(abs_top_srcdir)/extensions/$(EXTENSION)/configure \
+		--prefix=/usr --host=$(CROSS) --build=$(GLUSTER_BUILD)
+	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/$(EXTENSION).gex all
+	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/$(EXTENSION).gex install \
 		DESTDIR=$(DESTDIR_LIVE)
-	mkdir -p $(DESTDIR_STAGE3)/$(EXTENSION)/destdir
-	$(MAKE) -C $(abs_top_builddir)/extensions/$(EXTENSION) install \
-		DESTDIR=$(DESTDIR_STAGE3)/$(EXTENSION)/destdir
+	mkdir -p $(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(CROSS)
+	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/$(EXTENSION).gex install \
+		DESTDIR=$(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(CROSS)
 	cp $(abs_top_srcdir)/extensions/$(EXTENSION)/runme \
 		$(DESTDIR_STAGE3)/$(EXTENSION)
 	cp $(abs_top_srcdir)/extensions/$(EXTENSION).gex \
 		$(DESTDIR_STAGE3)/$(EXTENSION).gex
-	$(abs_top_srcdir)/cleanup.sh $(DESTDIR_STAGE3)/$(EXTENSION)/destdir \
+	$(abs_top_srcdir)/cleanup.sh $(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(CROSS) \
 		STRIP=$(CROSS)-strip
 	tar -C $(DESTDIR_STAGE3)/$(EXTENSION) \
 		-czf $(DESTDIR_STAGE3)/$(EXTENSION).tgz .

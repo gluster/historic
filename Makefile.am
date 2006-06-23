@@ -28,16 +28,19 @@ include $(top_srcdir)/boot.mk
 include $(top_srcdir)/extensions.mk
 
 
-iso: $(CDRTOOLS_NATIVE) boot kernel-images initrds extensions
+iso: $(CDRTOOLS_NATIVE)
 	mkisofs -R -J \
 	-o gluster-$(PACKAGE_VERSION)-$(ARCH).iso \
 	-b boot/grub/stage2_eltorito -c boot.cat -no-emul-boot \
-	-boot-load-size 4 -boot-info-table -V Gluster iso_fs
+	-boot-load-size 4 -boot-info-table -V Gluster iso_fs_$(ARCH)
 
-all: iso
+build-all: boot kernel-images initrds extensions iso
 
+all: 
+	$(foreach a,$(ARCHS), \
+		make build-all ARCH=$(a);)
 clean:
-	rm -rf iso_fs gluster-$(PACKAGE_VERSION)-$(ARCH).iso
+	rm -rf iso_fs* gluster-$(PACKAGE_VERSION)-$(ARCH).iso
 	rm -rf gluster-sdk-$(PACKAGE_VERSION)-$(ARCH)
 	rm -rf gluster-sdk-$(PACKAGE_VERSION)-$(ARCH).tar.gz
 

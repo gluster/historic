@@ -2,40 +2,50 @@
 AC_INIT([gluster], [1.0-rc2], [gluster-devel@nongnu.org])
 AM_INIT_AUTOMAKE
 
-AC_CONFIG_FILES([Makefile doc/Makefile ramdisk/Makefile
-extensions/init/Makefile
-extensions/bootdisk-manager/Makefile
-extensions/bootp-manager/Makefile
-extensions/client-boot/Makefile
-extensions/client-reg/Makefile
-extensions/mac-collector/Makefile
-extensions/fs-utils/Makefile
-extensions/ib-utils/Makefile
-extensions/gutils/Makefile
-extensions/auth/Makefile
-extensions/net-utils/Makefile
-extensions/debug-utils/Makefile
-extensions/mpich2-pkg/Makefile
-extensions/mvapich-gen2-pkg/Makefile
-extensions/openib-pkg/Makefile
-extensions/torque-pkg/Makefile
-extensions/slurm-pkg/Makefile
-extensions/pdsh-pkg/Makefile
-extensions/c3-pkg/Makefile
-extensions/cerebro-pkg/Makefile
-extensions/genders-pkg/Makefile
-extensions/lam-pkg/Makefile
-extensions/ganglia-pkg/Makefile
-extensions/conman-pkg/Makefile
-extensions/hpc-base-pkg/Makefile
-extensions/autologin-pkg/Makefile
-extensions/shutdown/Makefile
-extensions/GlusterHPC/Makefile
-extensions/GlusterEP/Makefile
-extensions/freeipmi/Makefile
+AC_CONFIG_FILES([Makefile 
+
 ])
 
-AC_DEFINE_UNQUOTED(OS, "${host}", [cpu-machine-OS])
+#doc/Makefile 
+#ramdisk/Makefile
+#
+#extensions/shutdown/Makefile
+#extensions/GlusterHPC/Makefile
+#extensions/GlusterEP/Makefile
+#
+#extensions/init/Makefile
+#extensions/bootdisk-manager/Makefile
+#extensions/bootp-manager/Makefile
+#extensions/bootloader-manager/Makefile
+#extensions/client-boot/Makefile
+#extensions/client-reg/Makefile
+#extensions/mac-collector/Makefile
+#extensions/gutils/Makefile
+#
+#extensions/fs-utils/Makefile
+#extensions/ib-utils/Makefile
+#extensions/auth/Makefile
+#extensions/net-utils/Makefile
+#extensions/debug-utils/Makefile
+#extensions/freeipmi/Makefile
+#
+#extensions/mpich2-pkg/Makefile
+#extensions/mvapich-gen2-pkg/Makefile
+#extensions/openib-pkg/Makefile
+#extensions/torque-pkg/Makefile
+#extensions/slurm-pkg/Makefile
+#extensions/pdsh-pkg/Makefile
+#extensions/c3-pkg/Makefile
+#extensions/cerebro-pkg/Makefile
+#extensions/genders-pkg/Makefile
+#extensions/lam-pkg/Makefile
+#extensions/ganglia-pkg/Makefile
+#extensions/conman-pkg/Makefile
+#extensions/hpc-base-pkg/Makefile
+#extensions/autologin-pkg/Makefile
+#
+
+#AC_DEFINE_UNQUOTED(OS, "${host}", [cpu-machine-OS])
 AC_PROG_CC
 AC_PROG_LD
 AC_PROG_MAKE_SET
@@ -94,6 +104,32 @@ TARBALLS_URL=$tarballsurl
 AC_SUBST(TARBALLS_URL)
 AC_MSG_RESULT([$tarballsurl])
 
+
+archs_arg=$(uname -m)
+
+AC_ARG_WITH(archs,
+	AC_HELP_STRING([--with-archs=ARCHLIST],[Comma seperated list of archs]),
+	[ archs_arg="$withval" ])
+archs_arg="$(echo $archs_arg | sed -e 's/,/ /')"
+ARCHS=""
+for arch in $archs_arg; do
+    AC_MSG_CHECKING([gluster toolchain for $arch])
+    got_it=$(which $arch-gluster-linux-gnu-gcc 2>/dev/null)
+    got_it=${got_it:-"no"}
+    AC_MSG_RESULT([$got_it])
+
+    if test $got_it != "no" ; then
+       ARCHS="$ARCHS $arch"
+    fi
+done
+
+echo "Detected archs =${ARCHS}"
+
+if test -z "$ARCHS" ; then
+  AC_ERROR("No requested architectures have a gluster toolchain \$PATH !!!")
+fi
+
+AC_SUBST(ARCHS)
 # fix toolchain
 # fix toolbase (for lib/)
 
