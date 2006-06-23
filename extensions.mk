@@ -67,15 +67,15 @@ extensions: $(EXTENSIONS:%=%.gex)
 
 
 $(EXTENSIONS:%=%.gex):
-	mkdir -p $(abs_top_builddir)/$(BUILD_LIVE)/$(EXTENSION).gex
-	cd $(abs_top_builddir)/$(BUILD_LIVE)/$(EXTENSIONS).gex && \
+	mkdir -p $(BUILD_LIVE)/$(EXTENSION).gex
+	cd $(BUILD_LIVE)/$(EXTENSION).gex && \
 		$(abs_top_srcdir)/extensions/$(EXTENSION)/configure \
 		--prefix=/usr --host=$(CROSS) --build=$(GLUSTER_BUILD)
-	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/$(EXTENSION).gex all
-	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/$(EXTENSION).gex install \
+	$(MAKE) -C $(BUILD_LIVE)/$(EXTENSION).gex all
+	$(MAKE) -C $(BUILD_LIVE)/$(EXTENSION).gex install \
 		DESTDIR=$(DESTDIR_LIVE)
 	mkdir -p $(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(CROSS)
-	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/$(EXTENSION).gex install \
+	$(MAKE) -C $(BUILD_LIVE)/$(EXTENSION).gex install \
 		DESTDIR=$(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(CROSS)
 	cp $(abs_top_srcdir)/extensions/$(EXTENSION)/runme \
 		$(DESTDIR_STAGE3)/$(EXTENSION)
