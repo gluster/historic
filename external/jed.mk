@@ -16,4 +16,4 @@
 #  
 jed.%: PACKAGE_NAME=jed-0.99-18
 jed.%: LIVE_CONFIGURE_CMD=$(DEFAULT_LIVE_CONFIGURE_CMD) --with-slang=$(DESTDIR_LIVE)/usr
-jed.%: LIVE_INSTALL_CMD=make install; ln -sf jed $1/usr/bin/emacs
+jed.%: LIVE_INSTALL_CMD=make install DESTDIR=$1; ln -sf jed $1/usr/bin/emacs
