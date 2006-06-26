@@ -63,6 +63,7 @@ parted.live: e2fsprogs.live reiserfsprogs.live jfsutils.live xfsprogs.live readl
 portmap.live: tcp-wrappers.live # for LIB_WRAP
 gdb.live: termcap.live ncurses.live
 jed.live: slang.live
+lvm2.live: device-mapper.live
 
 # packaging
 
