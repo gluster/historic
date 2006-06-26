@@ -201,7 +201,7 @@ domain = cfg.get ('global', 'domain')
 for index in range (string.atoi (cfg.get ('global', 'totalnodes'))):
     i_idx = index + 1
     i_ip = ipobj[i_idx + offset].getStrings ()[0]
-    hosts_file.write ("%s\t%s%d.%s\t%s%d\n" % (i_ip,
+    hosts_file.write ("%s\t%s%d.%s\t%s%d # Added by Gluster\n" % (i_ip,
                                                hostname,
                                                i_idx,
                                                domain,

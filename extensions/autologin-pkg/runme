@@ -24,19 +24,19 @@ _init ()
 first_time ()
 {
     mkdir -p /var/gluster/ssh /var/gluster/hostkeys;
-    echo -n "Generating DSA authorization keys ... "
+    echo -n "Generating DSA authorization keys ... " >> /var/log/proglog
     ssh-keygen -t dsa -f /var/gluster/ssh/id_dsa -N '' >>/var/log/proglog 2>&1
-    echo "done."
+    echo "done."  >> /var/log/proglog
     cp -f /var/gluster/ssh/id_dsa.pub /var/gluster/ssh/authorized_keys2
-    echo -n "Generating RSA host keys ... "
+    echo -n "Generating RSA host keys ... " >> /var/log/proglog
     ssh-keygen -t rsa -f /var/gluster/hostkeys/ssh_host_rsa_key -N '' >>/var/log/proglog 2>&1
-    echo "done."
-    echo -n "Generating DSA host keys ... "
+    echo "done." >> /var/log/proglog
+    echo -n "Generating DSA host keys ... " >> /var/log/proglog
     ssh-keygen -t dsa -f /var/gluster/hostkeys/ssh_host_dsa_key -N '' >>/var/log/proglog 2>&1
-    echo "done."
-    echo -n "Generating RSA1 host keys ... "
+    echo "done." >> /var/log/proglog
+    echo -n "Generating RSA1 host keys ... " >> /var/log/proglog
     ssh-keygen -t rsa1 -f /var/gluster/hostkeys/ssh_host_key -N '' >>/var/log/proglog 2>&1
-    echo "done."
+    echo "done." >> /var/log/proglog
 
     rsa_key=$(cat /var/gluster/hostkeys/ssh_host_rsa_key.pub)
     hostname=$(sed -n -e 's/hostname = \(.*\)$/\1/p' /var/gluster/clientinfo)
@@ -63,12 +63,18 @@ main ()
     fi
     for key in $(gmount -o); do
 	    # install on master node
+	    cp -af $os_base/${key}/root/.ssh $os_base/${key}/root/.ssh.orig-gluster;
+	    cp -af $os_base/${key}/etc/ssh $os_base/${key}/etc/ssh.orig-gluster;
+	    rm -rf $os_base/${key}/{root/.ssh,etc/ssh} ;
 	    mkdir -p $os_base/${key}/{root/.ssh,etc/ssh} ;
 	    chmod 700 $os_base/${key}/root/.ssh;
 	    cat /var/gluster/ssh.tar | tar -C $os_base/${key}/root/.ssh -x;
 	    cat /var/gluster/hostkeys.tar | tar -C $os_base/${key}/etc/ssh -x;
 
 	    # install on ALL slave nodes
+	    STDIN=/dev/null gcsh cp -af $os_base/${key}/root/.ssh $os_base/${key}/root/.ssh.orig-gluster;
+	    STDIN=/dev/null gcsh cp -af $os_base/${key}/etc/ssh $os_base/${key}/etc/ssh.orig-gluster;
+	    STDIN=/dev/null gcsh rm -rf $os_base/${key}/{root/.ssh,etc/ssh} ;
 	    STDIN=/dev/null gcsh mkdir -p $os_base/${key}/{root/.ssh,etc/ssh};
 	    STDIN=/dev/null gcsh chmod 700 $os_base/${key}/root/.ssh;
 	    cat /var/gluster/ssh.tar | gcsh tar -C $os_base/${key}/root/.ssh -x;

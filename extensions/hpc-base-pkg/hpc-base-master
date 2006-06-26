@@ -3,4 +3,4 @@
 grep -q $1/opt/gluster/etc/profile $1/etc/profile || 
 	echo "source /opt/gluster/etc/profile" >> $1/etc/profile
 
-cp -f /etc/hosts $1/etc/
+[ -f $1/etc/hosts.orig-gluster ] || (cp $1/etc/hosts $1/etc/hosts.orig-gluster && grep "Added by Gluster" /etc/hosts >> $1/etc/hosts)
