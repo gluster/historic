@@ -17,3 +17,4 @@
 
 genders.%: PACKAGE_NAME=genders-1.4-1
 genders.%: PKG_CONFIGURE_CMD=ac_cv_func_malloc_0_nonnull=yes $(DEFAULT_PKG_CONFIGURE_CMD) --with-genders-file=/opt/gluster/etc/genders
+genders.%: PKG_BUILD_CMD=make all EXTRA_PERLFLAGS="$(PKG_BUILD_ENV) $(PKG_CONFIGURE_ENV) OPTIMIZE=-O2"
