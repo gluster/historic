@@ -24,9 +24,9 @@ _init ()
 main ()
 {
     local my_dir="$(dirname $0)";
-    chown -R root.root ${my_dir}/destdir;
+    chown -R root.root ${my_dir}/destdir_$(uname -m);
     touch /etc/login.defs;
-    cp -alf "${my_dir}"/destdir/* /;
+    cp -alf "${my_dir}"/destdir_$(uname -m)/* /;
     chmod +s /usr/bin/{passwd,chfn,chsh,chage};
     chmod +s /bin/su
 }

@@ -28,16 +28,16 @@ main ()
 {
     local my_dir="$(dirname $0)";
     for key in $(gmount -o); do
-	for tgz in ${my_dir}/*.tgz; do
+	for i in ${my_dir}/*-$(uname -m).tgz; do
 	    # install on master node
-	    cat $tgz | tar -C /tmp/ginstaller/$key -xz;
+	    cat $i | tar -C $os_base/$key -xz;
 	    # install on ALL slave nodes
-	    cat $tgz | gcsh tar -C /tmp/ginstaller/$key -xz;
+	    cat $i | gcsh tar -C $os_base/$key -xz;
 	done
 	# overriding stuff on master node
-	tar -C ${my_dir}/destdir -c . | tar -C /tmp/ginstaller/$key -x
+	tar -C ${my_dir}/destdir_$(uname -m) -c . | tar -C $os_base/$key -x
 	# overriding stuff on slave nodes
-	tar -C ${my_dir}/destdir -c . | gcsh tar -C /tmp/ginstaller/$key -x
+	tar -C ${my_dir}/destdir_$(uname -m) -c . | gcsh tar -C $os_base/$key -x
 
 	# setup on master node
 	$os_base/$key/$prefix/setup/$pkg_name-master $os_base/$key

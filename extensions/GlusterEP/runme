@@ -24,7 +24,7 @@ _init ()
 main ()
 {
     local my_dir="$(dirname $0)";
-    cp -alf "${my_dir}"/destdir/* /;
+    cp -alf "${my_dir}"/destdir_$(uname -m)/* /;
 
     if [ "$1" = "--client" ]; then
 	return 0

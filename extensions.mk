@@ -37,6 +37,7 @@ EXTENSIONS= \
 	init \
 	bootdisk-manager \
 	bootp-manager \
+	bootloader-manager \
 	client-boot \
 	client-reg \
 	mac-collector \

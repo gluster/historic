@@ -25,7 +25,7 @@ main ()
 {
     # Enhance it further
     local my_dir="$(dirname $0)";
-    cp -alf "${my_dir}"/destdir/* /;
+    cp -alf "${my_dir}"/destdir_$(uname -m)/* /;
 }
 
 _init "$@" && main "$@";

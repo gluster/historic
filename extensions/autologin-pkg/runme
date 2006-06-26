@@ -63,16 +63,16 @@ main ()
     fi
     for key in $(gmount -o); do
 	    # install on master node
-	    mkdir -p /tmp/ginstaller/${key}/{root/.ssh,etc/ssh} ;
-	    chmod 700 /tmp/ginstaller/${key}/root/.ssh;
-	    cat /var/gluster/ssh.tar | tar -C /tmp/ginstaller/${key}/root/.ssh -x;
-	    cat /var/gluster/hostkeys.tar | tar -C /tmp/ginstaller/${key}/etc/ssh -x;
+	    mkdir -p $os_base/${key}/{root/.ssh,etc/ssh} ;
+	    chmod 700 $os_base/${key}/root/.ssh;
+	    cat /var/gluster/ssh.tar | tar -C $os_base/${key}/root/.ssh -x;
+	    cat /var/gluster/hostkeys.tar | tar -C $os_base/${key}/etc/ssh -x;
 
 	    # install on ALL slave nodes
-	    STDIN=/dev/null gcsh mkdir -p /tmp/ginstaller/${key}/{root/.ssh,etc/ssh};
-	    STDIN=/dev/null gcsh chmod 700 /tmp/ginstaller/${key}/root/.ssh;
-	    cat /var/gluster/ssh.tar | gcsh tar -C /tmp/ginstaller/${key}/root/.ssh -x;
-	    cat /var/gluster/hostkeys.tar | gcsh tar -C /tmp/ginstaller/${key}/etc/ssh -x;
+	    STDIN=/dev/null gcsh mkdir -p $os_base/${key}/{root/.ssh,etc/ssh};
+	    STDIN=/dev/null gcsh chmod 700 $os_base/${key}/root/.ssh;
+	    cat /var/gluster/ssh.tar | gcsh tar -C $os_base/${key}/root/.ssh -x;
+	    cat /var/gluster/hostkeys.tar | gcsh tar -C $os_base/${key}/etc/ssh -x;
     done
 }
 

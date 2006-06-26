@@ -24,7 +24,7 @@ _init ()
 main ()
 {
     local my_dir="$(dirname $0)";
-    cp -alf "${my_dir}"/destdir/* /;
+    cp -alf "${my_dir}"/destdir_$(uname -m)/* /;
     ln -sf /usr/share/gluster/extensions/lib /usr/lib/python2.4/Gluster;
     gex --install /stage3/gutils.gex
     gex --install /stage3/fs-utils.gex

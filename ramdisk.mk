@@ -21,12 +21,12 @@
 	$(call LIVE_INSTALL_CMD,$(DESTDIR_RAMDISK))
 
 ramdisk-template: $(APPS_RAMDISK:%=%.ramdisk)
-	mkdir -p $(top_builddir)/$(BUILD_LIVE)/ramdisk
-	cd $(top_builddir)/$(BUILD_LIVE)/ramdisk && \
+	mkdir -p $(BUILD_LIVE)/ramdisk
+	cd $(BUILD_LIVE)/ramdisk && \
 		$(abs_top_srcdir)/ramdisk/configure --prefix=/usr \
 		--host=$(CROSS) --build=$(GLUSTER_BUILD)
-	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/ramdisk all
-	$(MAKE) -C $(abs_top_builddir)/$(BUILD_LIVE)/ramdisk \
+	$(MAKE) -C $(BUILD_LIVE)/ramdisk all
+	$(MAKE) -C $(BUILD_LIVE)/ramdisk \
 		install DESTDIR=$(DESTDIR_RAMDISK)
 
 	-if [ -d $(TOOL_BASE)/$(CROSS)/sys-root ] ;\
@@ -72,7 +72,7 @@ initrd.master: $(GENEXT2FS_NATIVE_IF_YES) ramdisk-template
 		$(top_builddir)/initrd.master.$(ARCH).img
 	mkdir -p $(top_builddir)/iso_fs_$(ARCH)/boot
 	gzip -9 < $(top_builddir)/initrd.master.$(ARCH).img > \
-		$(top_builddir)/iso_fs/boot/initrd.master.$(ARCH).gz
+		$(top_builddir)/iso_fs_$(ARCH)/boot/initrd.master.$(ARCH).gz
 
 
 initrds: initrd.slave initrd.master

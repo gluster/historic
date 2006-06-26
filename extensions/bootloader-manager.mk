@@ -1,4 +1,3 @@
-#!/bin/sh
 # Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
 #  
 # This program is free software; you can redistribute it and/or modify
@@ -16,19 +15,5 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 
-_init ()
-{
-    return 0
-}
-
-main ()
-{
-    local my_dir="$(dirname $0)";
-    for destdir in "${my_dir}"/destdir_*; do
-	cp -a "${destdir}"* /;
-    done
-}
-
-_init "$@" && main "$@";
-
-
+bootloader-manager.gex: EXTENSION=bootloader-manager
+bootloader-manager.gex: grub.stage3

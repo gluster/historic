@@ -1,0 +1,19 @@
+diff -pruN jed-0.99-18/src/Makefile.in jed-0.99-18-h/src/Makefile.in
+--- jed-0.99-18/src/Makefile.in	2006-02-16 08:39:50.000000000 +0530
++++ jed-0.99-18-h/src/Makefile.in	2006-06-25 01:29:27.000000000 +0530
+@@ -131,13 +131,8 @@ $(OBJDIR)/jed: $(OBJS) $(OBJDIR)/display
+ 	cd $(OBJDIR); $(CC) $(OFILES) display.o $(GPMMOUSEO) \
+            -o jed $(EXEC_LIBS)
+ 
+-slangversion: $(OBJDIR)/chkslang
+-	if $(OBJDIR)/chkslang jed $(MIN_SLANG_VERSION) $(MAX_SLANG_VERSION);\
+-	then exit 0; else $(RM) $(OBJDIR)/chkslang; exit 1; fi
+-
+-$(OBJDIR)/chkslang: config.h Makefile chkslang.c $(DOT_O_DEPS) $(chkslang_O_DEP)
+-	$(CC) $(ALL_CFLAGS) $(LDFLAGS) $(SRCDIR)/chkslang.c -o $(OBJDIR)/chkslang $(EXEC_LIBS)
+-
++slangversion: 
++	exit 0
+ 
+ $(OBJDIR):
+ 	-mkdir $(OBJDIR)

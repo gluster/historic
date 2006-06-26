@@ -3,7 +3,7 @@ all:
 
 install:
 	mkdir -p $(DESTDIR)/tftpboot
-	cp $(top_builddir)/iso_fs/boot/linux.slave \
+	cp $(top_builddir)/../../iso_fs_$(ARCH)/boot/linux.slave.$(ARCH) \
 		$(DESTDIR)/tftpboot
-	cp $(top_builddir)/iso_fs/boot/initrd.slave.gz \
+	cp $(top_builddir)/../../iso_fs_$(ARCH)/boot/initrd.slave.$(ARCH).gz \
 		$(DESTDIR)/tftpboot

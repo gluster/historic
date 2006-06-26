@@ -38,9 +38,9 @@ main ()
 	STDIN=/dev/null gcsh customize-net $os_base/$key
 	
         # overriding stuff on master node
-	tar -C ${my_dir}/destdir -c . | tar -C /tmp/ginstaller/$key -x
+	tar -C ${my_dir}/destdir_$(uname -m) -c . | tar -C $os_base/$key -x
 	# overriding stuff on slave nodes
-	tar -C ${my_dir}/destdir -c . | gcsh tar -C /tmp/ginstaller/$key -x
+	tar -C ${my_dir}/destdir_$(uname -m) -c . | gcsh tar -C $os_base/$key -x
 
 	# keep the cluster state in OS mode
 	mkdir -p $os_base/$key/$prefix/state
