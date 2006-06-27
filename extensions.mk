@@ -62,8 +62,10 @@ include $(EXTENSIONS:%=$(top_srcdir)/extensions/%.mk)
 
 .PHONY: extensions
 
-extensions: $(EXTENSIONS:%=%.gex) 
-	mkdir -p $(top_builddir)/iso_fs/extensions
+extensions: $(EXTENSIONS:%=%.gex)
+
+copy-extensions:
+	mkdir -p $(top_builddir)/iso_fs_$(ARCH)/extensions
 	cp $(DESTDIR_STAGE3)/*.{gex,tgz} $(top_builddir)/iso_fs_$(ARCH)/extensions
 
 

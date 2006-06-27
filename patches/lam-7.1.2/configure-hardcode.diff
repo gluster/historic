@@ -1,223 +1,367 @@
-diff -rpuN lam-7.1.2/configure lam-7.1.2-h/configure
+diff -pruN lam-7.1.2/configure lam-7.1.2-hacked/configure
 --- lam-7.1.2/configure	2006-03-11 03:01:14.000000000 +0530
-+++ lam-7.1.2-h/configure	2006-05-24 01:04:14.000000000 +0530
-@@ -5197,7 +5197,7 @@ lam_ac_size=-1
++++ lam-7.1.2-hacked/configure	2006-06-26 16:54:13.000000000 +0530
+@@ -4396,32 +4396,6 @@ echo "${ECHO_T}$co_result" >&6
+ CFLAGS="$co_result"
+ 
+ 
+-# config/lam_ansi_protos.m4
+-
+-# Determine if compiler and options accepts ANSI prototypes.
+-echo "$as_me:$LINENO: checking whether the C compiler ($CC $CFLAGS) accepts ANSI prototypes" >&5
+-echo $ECHO_N "checking whether the C compiler ($CC $CFLAGS) accepts ANSI prototypes... $ECHO_C" >&6
+-cat > conftest.c <<EOF
+-static double foo(double bar) { return(2.0*bar); }
+-int main(int argc, char **argv)
+-{ double x; x = foo(2.0); return(0); }
+-EOF
+-$CC $CFLAGS -o conftest conftest.c 1>&5 2>&1
+-if test -s conftest && (./conftest; exit) 2>/dev/null; then
+-    lam_ac_ansi_protos=yes
+-else
+-    lam_ac_ansi_protos=no
+-fi
+-echo "$as_me:$LINENO: result: $lam_ac_ansi_protos" >&5
+-echo "${ECHO_T}$lam_ac_ansi_protos" >&6
+-/bin/rm -f conftest*
+-if test "$lam_ac_ansi_protos" = no; then
+-    { echo "$as_me:$LINENO: WARNING: *** LAM requires a compiler which understands ANSI C prototypes" >&5
+-echo "$as_me: WARNING: *** LAM requires a compiler which understands ANSI C prototypes" >&2;}
+-    { { echo "$as_me:$LINENO: error: *** Cannot continue." >&5
+-echo "$as_me: error: *** Cannot continue." >&2;}
+-   { (exit 1); exit 1; }; }
+-fi
+ 
+ # Do we have a broken compiler that does not defined __STDC__ even
+ # though it really is?  Hard coded for the moment for Solaris cc.  can
+@@ -5197,7 +5171,7 @@ lam_ac_size=-1
  fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
 -
-+lam_ac_size=1
++lam_ac_size=$GLUSTER_SIZEOF_CHAR
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -5271,6 +5271,8 @@ fi
+@@ -5271,6 +5245,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_size=2
-+
- echo "$as_me:$LINENO: result: $lam_ac_size" >&5
- echo "${ECHO_T}$lam_ac_size" >&6
- if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -5344,6 +5346,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_size=4
++lam_ac_size=$GLUSTER_SIZEOF_SHORT
 +
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -5417,6 +5421,8 @@ fi
+@@ -5344,6 +5320,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_size=4
++lam_ac_size=$GLUSTER_SIZEOF_WCHAR
 +
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -5490,6 +5496,8 @@ fi
+@@ -5417,6 +5395,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_size=4
++lam_ac_size=$GLUSTER_SIZEOF_INT
 +
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -5563,6 +5571,8 @@ fi
+@@ -5490,6 +5470,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_size=8
++lam_ac_size=$GLUSTER_SIZEOF_LONG
 +
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -5636,6 +5646,8 @@ fi
+@@ -5563,6 +5545,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_size=4
++lam_ac_size=$GLUSTER_SIZEOF_LONG_LONG
 +
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -5709,6 +5721,8 @@ fi
+@@ -5636,6 +5620,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_size=8
++lam_ac_size=$GLUSTER_SIZEOF_FLOAT
 +
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -5782,6 +5796,8 @@ fi
+@@ -5709,6 +5695,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_size=16
++lam_ac_size=$GLUSTER_SIZEOF_DOUBLE
 +
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -5855,6 +5871,8 @@ fi
+@@ -5782,6 +5770,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_size=8
++lam_ac_size=$GLUSTER_SIZEOF_LONG_DOUBLE
 +
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -5940,6 +5958,8 @@ fi
+@@ -5855,6 +5845,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_align=1
-+
- if test "`expr $lam_ac_align \<= 0`" = "1"; then
-     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
- echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -6017,6 +6037,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_align=2
-+
- if test "`expr $lam_ac_align \<= 0`" = "1"; then
-     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
- echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -6094,6 +6116,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_align=4
-+
- if test "`expr $lam_ac_align \<= 0`" = "1"; then
-     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
- echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -6171,6 +6195,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_align=4
-+
- if test "`expr $lam_ac_align \<= 0`" = "1"; then
-     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
- echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -6248,6 +6274,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_align=4
-+
- if test "`expr $lam_ac_align \<= 0`" = "1"; then
-     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
- echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -6325,6 +6353,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_align=8
-+
- if test "`expr $lam_ac_align \<= 0`" = "1"; then
-     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
- echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -6402,6 +6432,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_align=4
-+
- if test "`expr $lam_ac_align \<= 0`" = "1"; then
-     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
- echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -6479,6 +6511,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_align=8
-+
- if test "`expr $lam_ac_align \<= 0`" = "1"; then
-     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
- echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -6556,6 +6590,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_align=16
-+
- if test "`expr $lam_ac_align \<= 0`" = "1"; then
-     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
- echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -6633,6 +6669,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_align=8
-+
- if test "`expr $lam_ac_align \<= 0`" = "1"; then
-     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
- echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -8862,6 +8900,8 @@ fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
-+lam_ac_size=1
++lam_ac_size=$GLUSTER_SIZEOF_VOID_P
 +
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -8950,6 +8990,8 @@ fi
+@@ -5940,6 +5932,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_size=4
++lam_ac_align=$GLUSTER_ALIGNMENT_CHAR
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6017,6 +6011,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=$GLUSTER_ALIGNMENT_SHORT
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6094,6 +6090,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=$GLUSTER_ALIGNMENT_WCHAR
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6171,6 +6169,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=$GLUSTER_ALIGNMENT_INT
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6248,6 +6248,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=$GLUSTER_ALIGNMENT_LONG
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6325,6 +6327,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=$GLUSTER_ALIGNMENT_LONG_LONG
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6402,6 +6406,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=$GLUSTER_ALIGNMENT_FLOAT
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6479,6 +6485,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=$GLUSTER_ALIGNMENT_DOUBLE
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6556,6 +6564,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=$GLUSTER_ALIGNMENT_LONG_DOUBLE
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -6633,6 +6643,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=$GLUSTER_ALIGNMENT_VOID_P
++
+ if test "`expr $lam_ac_align \<= 0`" = "1"; then
+     { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
+ echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
+@@ -8862,6 +8874,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_size=$GLUSTER_SIZEOF_CXX_BOOL
 +
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -9048,6 +9090,8 @@ fi
+@@ -8950,6 +8964,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_align=1
++lam_ac_size=$GLUSTER_SIZEOF_CXX_INT
++
+ echo "$as_me:$LINENO: result: $lam_ac_size" >&5
+ echo "${ECHO_T}$lam_ac_size" >&6
+ if test "`expr $lam_ac_size \<= 0`" = "1"; then
+@@ -9048,6 +9064,8 @@ fi
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ fi
+ 
++lam_ac_align=$GLUSTER_ALIGNMENT_CXX_BOOL
 +
  if test "`expr $lam_ac_align \<= 0`" = "1"; then
      { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
  echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -9140,6 +9184,8 @@ fi
+@@ -9140,6 +9158,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
-+lam_ac_align=4
++lam_ac_align=$GLUSTER_ALIGNMENT_CXX_INT
 +
  if test "`expr $lam_ac_align \<= 0`" = "1"; then
      { echo "$as_me:$LINENO: WARNING: *** Problem running configure test!" >&5
  echo "$as_me: WARNING: *** Problem running configure test!" >&2;}
-@@ -18928,73 +18974,7 @@ _ACEOF
+@@ -9379,8 +9399,8 @@ lam_fortran_underscore=0
+ lam_fortran_caps=0
+ lam_fortran_no_underscore=0
+ 
+-LAM_SIZEOF_FORTRAN_INT=0
+-LAM_SIZEOF_FORTRAN_REAL=0
++LAM_SIZEOF_FORTRAN_INT=4
++LAM_SIZEOF_FORTRAN_REAL=4
+ LAM_SIZEOF_FORTRAN_DBLPREC=0
+ LAM_SIZEOF_FORTRAN_COMPLEX=0
+ LAM_SIZEOF_FORTRAN_DBLCOMPLEX=0
+@@ -9719,6 +9739,9 @@ else
+     HAPPY=0
+ fi
+ 
++HAPPY=1
++echo $GLUSTER_SIZEOF_FORTRAN_INT > conftestval
++
+ if test "$HAPPY" = "1" -a -f conftestval; then
+     lam_ac_fortsize=`cat conftestval`
+     echo "$as_me:$LINENO: result: $lam_ac_fortsize" >&5
+@@ -9923,6 +9946,9 @@ else
+     HAPPY=0
+ fi
+ 
++HAPPY=1
++echo $GLUSTER_SIZEOF_FORTRAN_REAL > conftestval
++
+ if test "$HAPPY" = "1" -a -f conftestval; then
+     lam_ac_fortsize=`cat conftestval`
+     echo "$as_me:$LINENO: result: $lam_ac_fortsize" >&5
+@@ -10127,6 +10153,9 @@ else
+     HAPPY=0
+ fi
+ 
++HAPPY=1
++echo $GLUSTER_SIZEOF_FORTRAN_DBLPREC > conftestval
++
+ if test "$HAPPY" = "1" -a -f conftestval; then
+     lam_ac_fortsize=`cat conftestval`
+     echo "$as_me:$LINENO: result: $lam_ac_fortsize" >&5
+@@ -10331,6 +10360,9 @@ else
+     HAPPY=0
+ fi
+ 
++HAPPY=1
++echo $GLUSTER_SIZEOF_FORTRAN_COMPLEX > conftestval
++
+ if test "$HAPPY" = "1" -a -f conftestval; then
+     lam_ac_fortsize=`cat conftestval`
+     echo "$as_me:$LINENO: result: $lam_ac_fortsize" >&5
+@@ -10535,6 +10567,9 @@ else
+     HAPPY=0
+ fi
+ 
++HAPPY=1
++echo $GLUSTER_SIZEOF_FORTRAN_DBLCOMPLEX > conftestval
++
+ if test "$HAPPY" = "1" -a -f conftestval; then
+     lam_ac_fortsize=`cat conftestval`
+     echo "$as_me:$LINENO: result: $lam_ac_fortsize" >&5
+@@ -10751,6 +10786,9 @@ else
+     HAPPY=0
+ fi
+ 
++HAPPY=1
++echo $GLUSTER_ALIGNMENT_FORTRAN_INT > conftestval
++
+ if test "$HAPPY" = "1" -a -f conftestval; then
+     lam_ac_align=`cat conftestval`
+     echo "$as_me:$LINENO: result: $lam_ac_align" >&5
+@@ -10961,6 +10999,9 @@ else
+     HAPPY=0
+ fi
+ 
++HAPPY=1
++echo $GLUSTER_ALIGNMENT_FORTRAN_REAL > conftestval
++
+ if test "$HAPPY" = "1" -a -f conftestval; then
+     lam_ac_align=`cat conftestval`
+     echo "$as_me:$LINENO: result: $lam_ac_align" >&5
+@@ -11171,6 +11212,9 @@ else
+     HAPPY=0
+ fi
+ 
++HAPPY=1
++echo $GLUSTER_ALIGNMENT_FORTRAN_DBLPREC > conftestval
++
+ if test "$HAPPY" = "1" -a -f conftestval; then
+     lam_ac_align=`cat conftestval`
+     echo "$as_me:$LINENO: result: $lam_ac_align" >&5
+@@ -11381,6 +11425,9 @@ else
+     HAPPY=0
+ fi
+ 
++HAPPY=1
++echo $GLUSTER_ALIGNMENT_FORTRAN_COMPLEX > conftestval
++
+ if test "$HAPPY" = "1" -a -f conftestval; then
+     lam_ac_align=`cat conftestval`
+     echo "$as_me:$LINENO: result: $lam_ac_align" >&5
+@@ -11591,6 +11638,9 @@ else
+     HAPPY=0
+ fi
+ 
++HAPPY=1
++echo $GLUSTER_ALIGNMENT_FORTRAN_DBLCOMPLEX > conftestval
++
+ if test "$HAPPY" = "1" -a -f conftestval; then
+     lam_ac_align=`cat conftestval`
+     echo "$as_me:$LINENO: result: $lam_ac_align" >&5
+@@ -18928,73 +18978,7 @@ _ACEOF
  # and suggesting fixes.
  
  
@@ -292,7 +436,7 @@ diff -rpuN lam-7.1.2/configure lam-7.1.2-h/configure
  
  # If we have glibc, then assume we want the prefix memcpy
  
-@@ -19810,6 +19790,9 @@ _ACEOF
+@@ -19810,6 +19794,9 @@ _ACEOF
  #
  # The final "test", just to make it obvious what happened
  #
@@ -302,7 +446,7 @@ diff -rpuN lam-7.1.2/configure lam-7.1.2-h/configure
  echo "$as_me:$LINENO: checking for SYSV semaphore support" >&5
  echo $ECHO_N "checking for SYSV semaphore support... $ECHO_C" >&6
  if test "$lam_have_sysv_sem" = "1"; then
-@@ -20129,6 +20112,9 @@ fi
+@@ -20129,6 +20116,9 @@ fi
  #
  # The final "test", just to make it obvious what happened
  #
@@ -312,7 +456,7 @@ diff -rpuN lam-7.1.2/configure lam-7.1.2-h/configure
  echo "$as_me:$LINENO: checking for SYSV shared memory support" >&5
  echo $ECHO_N "checking for SYSV shared memory support... $ECHO_C" >&6
  if test "$lam_have_sysv_shmem" = "1"; then
-@@ -22366,77 +22352,9 @@ _ACEOF
+@@ -22366,77 +22356,9 @@ _ACEOF
  
  echo "$as_me:$LINENO: checking if threads have different pids (pthreads on linux)" >&5
  echo $ECHO_N "checking if threads have different pids (pthreads on linux)... $ECHO_C" >&6
@@ -390,7 +534,7 @@ diff -rpuN lam-7.1.2/configure lam-7.1.2-h/configure
  
  echo "$as_me:$LINENO: result: $MSG" >&5
  echo "${ECHO_T}$MSG" >&6
-@@ -25467,6 +25385,8 @@ fi
+@@ -25467,6 +25389,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
@@ -399,7 +543,7 @@ diff -rpuN lam-7.1.2/configure lam-7.1.2-h/configure
  echo "$as_me:$LINENO: result: $lam_ac_size" >&5
  echo "${ECHO_T}$lam_ac_size" >&6
  if test "`expr $lam_ac_size \<= 0`" = "1"; then
-@@ -25540,6 +25460,8 @@ fi
+@@ -25540,6 +25464,8 @@ fi
  rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
  fi
  
