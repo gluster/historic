@@ -77,14 +77,14 @@ $(EXTENSIONS:%=%.gex):
 	$(MAKE) -C $(BUILD_LIVE)/$(EXTENSION).gex all
 	$(MAKE) -C $(BUILD_LIVE)/$(EXTENSION).gex install \
 		DESTDIR=$(DESTDIR_LIVE)
-	mkdir -p $(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(CROSS)
+	mkdir -p $(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(ARCH)
 	$(MAKE) -C $(BUILD_LIVE)/$(EXTENSION).gex install \
-		DESTDIR=$(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(CROSS)
+		DESTDIR=$(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(ARCH)
 	cp $(abs_top_srcdir)/extensions/$(EXTENSION)/runme \
 		$(DESTDIR_STAGE3)/$(EXTENSION)
 	cp $(abs_top_srcdir)/extensions/$(EXTENSION).gex \
 		$(DESTDIR_STAGE3)/$(EXTENSION).gex
-	$(abs_top_srcdir)/cleanup.sh $(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(CROSS) \
+	$(abs_top_srcdir)/cleanup.sh $(DESTDIR_STAGE3)/$(EXTENSION)/destdir_$(ARCH) \
 		STRIP=$(CROSS)-strip
 	tar -C $(DESTDIR_STAGE3)/$(EXTENSION) \
 		-czf $(DESTDIR_STAGE3)/$(EXTENSION).tgz .
