@@ -37,7 +37,6 @@ EXTENSIONS= \
 	init \
 	bootdisk-manager \
 	bootp-manager \
-	bootloader-manager \
 	client-boot \
 	client-reg \
 	mac-collector \
@@ -51,6 +50,7 @@ EXTENSIONS= \
 	$(APPLICATIONS)
 #	freeipmi \
 #	ib-utils
+#	bootloader-manager \
 
 %.stage3: %.live
 	cd $(BUILD_LIVE)/$(PACKAGE_NAME) ; \
