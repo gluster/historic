@@ -1,0 +1,41 @@
+#!/usr/bin/python
+
+from Gluster.GFrontEnd import dialog
+from Gluster.gpartdump import *
+from Gluster import GExtension
+import os, string, sys, getopt
+import ConfigParser
+
+dlg = dialog.Dialog ()
+config = ConfigParser.ConfigParser()
+
+config.read("/var/gluster/clientinfo")
+node = config.get("global", "hostname")
+totalnodes = config.get("global", "totalnodes")
+
+def main ():
+    global node
+    # 'GConsole'
+    # 'Log'
+    while True:
+	(ret, sel) = dlg.menu ("Select an operation",
+				title = '[ GConsole ]',
+				choices = [('GConsole', 'Installation Status Of The Remote Node'),
+					  ('Log', 'View Log Messages')],
+				cancel = 'Exit')
+	if ret != 0:
+	   break
+	
+	if sel == 'GConsole':
+	   (r,node) = dlg.inputbox ("Enter The Node Number: (For Example: %s" %node + "[2-%s])" % totalnodes)
+	   if r != 0:
+		continue
+	   os.system ("ssh -t root@%s screen -x" % node)
+	   os.system ("read")
+
+	if sel == 'Log':
+	   (r,node) = dlg.inputbox ("Enter The Node Number: (For Example: %s" %node + "[2-%s])" % totalnodes)
+	   if r != 0:
+		continue
+	   os.system ("ssh -C root@%s dmesg | less "  % node)
+main()

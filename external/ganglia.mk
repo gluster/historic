@@ -17,3 +17,4 @@
 
 ganglia.%: PACKAGE_NAME=ganglia-3.0.2
 ganglia.%: PKG_BUILD_CMD=make all $(PKG_BUILD_ENV) LIBTOOL="sh $(BUILD_PKG)/$(PACKAGE_NAME)/libtool --tag=CC"
+ganglia.%: PKG_CONFIGURE_ENV=$(DEFAULT_CONFIGURE_ENV) $(PKG_BUILD_ENV)

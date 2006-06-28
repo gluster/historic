@@ -28,10 +28,10 @@ HPC_PACKAGES = \
 	c3-pkg \
 	cerebro-pkg \
 	genders-pkg \
-	lam-pkg \
 	conman-pkg \
 	ganglia-pkg \
-	hpc-base-pkg
+	hpc-base-pkg \
+	lam-pkg
 
 EXTENSIONS= \
 	init \

@@ -41,7 +41,7 @@ def get_domainname ():
 def no_hosts ():
     global number_of_nodes
     
-    nodes = os.popen ("gping -i /tmp/ghosts/known_hosts").readlines ()
+    nodes = os.popen ("gping -i /tmp/ghpc_selected_dst_nodes").readlines ()
 
     nodes = map (lambda x: x.strip ().split (':')[0], nodes)
     number_of_nodes = len (nodes)
@@ -188,27 +188,65 @@ def hpc_action (node):
         dlg.msgbox ("Problems during installation\nExiting\n",
                     title='[ Error ]')
         return
-
     return
+
+def get_dst_nodes (dst_nodes):
+    # write the name of the nodes in the dst_nodes properly
+    fd = file ('/tmp/ghpc_selected_dst_nodes', 'w')
+    nodes = dst_nodes.split (',')
+    if nodes[-1] == '':
+        dlg.msgbox ("Enter a valid entry. Check the examples given\n",
+                    title="[ Error ]")
+        fd.close ()
+        return 1
+    for i in nodes:
+        x = i.split ('-')
+        if len (x) == 1:
+            fd.write ("%s%s\n" % (get_hostname (), x[0]))
+        elif len (x) == 2:
+            if x[0] < x[1]:
+                for a in range (int (x[0]), int (x[1]) + 1):
+                    fd.write ("%s%s\n" % (get_hostname (), a))
+            else:
+                dlg.msgbox ("Enter a valid entry. Check the examples given\n",
+                            title="[ Error ]")
+                fd.close ()
+                return 1
+        else:
+            dlg.msgbox ("Enter a valid entry. Check the examples given\n",
+                        title="[ Error ]")
+            fd.close ()
+            return 1
+    fd.close ()
+    return 0
 
 def get_node_name ():
     sel = None
     while True:
-        (ret, sel) = dlg.inputbox ("Select the node from which to take image \n('%s' for master node)" % get_hostname ('1'),
+        (ret, sel) = dlg.inputbox ("Select the source and destination for imaging\n\n" + 
+        "Examples:\n1:2-64       -- Image node2 to node64 from node1 (or master-node)\n" +
+                   "4:5,10,20-29 -- Image node5,node10 and node20 to node29 from node4\n\n" +
+                   "NOTE: If you leave the inputbox empty, it specifies not to do any imaging, but only configure all the cluster nodes\n",
                                    title="[ Image Selector ]",
                                    ok_label = ' Select ',
-                                   cancel=' Cancel ',
-                                   init=get_hostname ('1'))
+                                   cancel=' Back ',
+                                   init='1:2-%s' % reg.get ('global', 'totalnodes'))
+        # Validate and write the session hosts file
+        
         if ret != 0:
             return (ret, None)
-        if sel == get_hostname ('1'):
-            break
         if sel == '':
-            dlg.msgbox ("Please enter a valid node name")
-            continue
-        if os.system ("gping %s" % sel) != 0:
-            dlg.msgbox ("%s is not reachable" % sel,
+            return (0, None)
+        nodes = sel.strip ().split (':')
+        if len (nodes) > 2:
+            dlg.msgbox ("Enter a valid entry. Check the examples given\n",
                         title="[ Error ]")
+            continue
+        if os.system ("gping %s" % get_hostname (nodes[0])) != 0:
+            dlg.msgbox ("%s is not reachable" % get_hostname (nodes[0]),
+                        title="[ Error ]")
+            continue
+        if get_dst_nodes (nodes[1]) == 1:
             continue
         break
     return (ret, sel)
@@ -270,6 +308,8 @@ def display_status ():
 def imaging ():
     (ret, hname) = get_node_name ()
     if ret == 0:
+        if not hname:
+            return 0
         selected_slaves = get_slaves (hname)
         if not selected_slaves:
             return 1
@@ -278,6 +318,7 @@ def imaging ():
             return 1
         dest_config (hname)
         hpc_action (hname)
+        collect_status ()
     else:
         return 1
 
@@ -311,7 +352,6 @@ def main ():
                 return 0
         if fn_idx == len (function):
             break
-    collect_status ()
     all_slaves = map (string.strip, file ('/tmp/ghosts/known_hosts').readlines ())
     make_slaves (all_slaves)
     
@@ -324,7 +364,7 @@ def main ():
     os.system ("gumount")
     
     if ret == 0:
-    	display_status ()
+        display_status ()
     return
 
 main ()
