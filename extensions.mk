@@ -50,7 +50,7 @@ EXTENSIONS= \
 	$(APPLICATIONS)
 #	freeipmi \
 #	ib-utils
-#	bootloader-manager \
+#	bootloader-manager
 
 %.stage3: %.live
 	cd $(BUILD_LIVE)/$(PACKAGE_NAME) ; \
