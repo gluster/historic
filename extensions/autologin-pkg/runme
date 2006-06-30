@@ -18,6 +18,8 @@
 
 _init ()
 {
+    pkg_name="auto-login"
+    os_base="/tmp/ginstaller";
     return 0
 }
 

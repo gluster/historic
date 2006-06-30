@@ -238,7 +238,7 @@ def get_node_name ():
         if sel == '':
             return (0, None)
         nodes = sel.strip ().split (':')
-        if len (nodes) > 2:
+        if len (nodes) > 2 or nodes[1] == '':
             dlg.msgbox ("Enter a valid entry. Check the examples given\n",
                         title="[ Error ]")
             continue
@@ -353,9 +353,13 @@ def main ():
                 return 0
         if fn_idx == len (function):
             break
+
+    # Now the imaging is done. Install and configure the HPC apps.
+    
     all_slaves = map (string.strip, file ('/tmp/ghosts/known_hosts').readlines ())
     make_slaves (all_slaves)
-    
+
+    os.system ("ghpc_send >>/var/log/proglog 2>&1")
     os.system ("STDIN=/dev/null gcsh gmount")
     os.system ("gmount")
 
