@@ -67,7 +67,7 @@ method_nfs ()
 	  continue;
       }
       exportpoint_subdir=$(dialog --title "[ Extensions Path ]" \
-	  --inputbox "Specify path relative to the export pointing to the \'extensions\' directory"\
+	  --inputbox "Specify path relative to the export pointing to the 'extensions' directory"\
 	  0 0 "${exportpoint_subdir}" 2>&1 >&3 ) || return 1;
 
 #      while :
