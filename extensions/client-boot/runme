@@ -25,7 +25,7 @@ main ()
 {
     local my_dir="$(dirname $0)";
     for destdir in "${my_dir}"/destdir_*; do
-	cp -a "${destdir}"* /;
+	cp -a "${destdir}"/* /;
     done
 }
 

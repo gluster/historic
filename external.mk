@@ -180,6 +180,8 @@ clean.build:
 	rm -rf $(DESTDIR_LIVE) $(DESTDIR_NATIVE) $(DESTDIR_PKG) $(DESTDIR_DIST)
 	rm -rf $(BUILD_LIVE) $(BUILD_NATIVE) $(BUILD_PKG)
 
-clean: 
+clean.build_arch: 
 	$(foreach a, $(ARCHS), \
 		make clean.build ARCH=$(a);)
+
+clean: clean.build_arch

@@ -248,6 +248,7 @@ def get_node_name ():
             continue
         if get_dst_nodes (nodes[1]) == 1:
             continue
+        sel = get_hostname (nodes[0])
         break
     return (ret, sel)
 
