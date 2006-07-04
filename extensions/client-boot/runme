@@ -27,6 +27,9 @@ main ()
     for destdir in "${my_dir}"/destdir_*; do
 	cp -a "${destdir}"/* /;
     done
+    arch=$(uname -m);
+    ln -sf linux.slave.$arch /tftpboot/linux.slave
+    ln -sf initrd.slave.$arch.gz /tftpboot/initrd.slave.gz
 }
 
 _init "$@" && main "$@";
