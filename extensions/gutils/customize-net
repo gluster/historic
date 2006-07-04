@@ -21,12 +21,12 @@
 try:
     import getopt, os, sys, string
 except ImportError, msg:
-    print "netconf: Import Error:", msg
+    print "customize-net: Import Error:", msg
 
 static_options = ['address', 'netmask', 'gateway']
 
 def usage():
-    print """Usage: netconf.py 
+    print """Usage: customize-net
 
     -h --help         Displays the help menu
     -v --version      Displays the version of the program
@@ -65,7 +65,7 @@ def update_iface(_path, _iface, _flag):
 
     config_file = "%s/etc/network/interfaces" % _path
     if os.access (config_file, os.R_OK):
-        if os.access ("%s.orig-gluster" % config_file, os.R_OK):
+        if not os.access ("%s.orig-gluster" % config_file, os.R_OK):
             os.system ("cp %s %s.orig-gluster" % (config_file, config_file))
         f = open ("%s" % config_file, "r")
         tmpf = open (".tmpinterfaces", "w")
@@ -121,7 +121,7 @@ def update_iface(_path, _iface, _flag):
 
     config_file = '%s/etc/rc.d/rc.inet1.conf' % _path
     if os.access (config_file, os.R_OK):
-        if os.access ("%s.orig-gluster" % config_file, os.R_OK):
+        if not os.access ("%s.orig-gluster" % config_file, os.R_OK):
             os.system ("cp %s %s.orig-gluster" % (config_file, config_file))
         os.system ("sed -i -e 's/_DHCP\[%d\]=\"yes\"/_DHCP\[%d\]=\"\"/' %s"
                    % (if_num, if_num, config_file))
@@ -140,7 +140,7 @@ def update_iface(_path, _iface, _flag):
 
     config_file = "%s/etc/sysconfig/network-scripts/ifcfg-%s" % (_path, _iface)
     if os.access (config_file, os.R_OK):
-        if os.access ("%s.orig-gluster" % config_file, os.R_OK):
+        if not os.access ("%s.orig-gluster" % config_file, os.R_OK):
             os.system ("cp %s %s.orig-gluster" % (config_file, config_file))
         if _flag != 'up':
             os.system ("sed -i -e 's/ONBOOT=.*/ONBOOT=no/' %s" % config_file)
@@ -153,7 +153,7 @@ def update_iface(_path, _iface, _flag):
 
     config_file = '%s/etc/sysconfig/network' % _path
     if os.access (config_file, os.R_OK):
-        if os.access ("%s.orig-gluster" % config_file, os.R_OK):
+        if not os.access ("%s.orig-gluster" % config_file, os.R_OK):
             os.system ("cp %s %s.orig-gluster" % (config_file, config_file))
         os.system ("grep -q GATEWAY %s || echo GATEWAY= >> %s" %
                    (config_file, config_file))
@@ -209,27 +209,27 @@ def main():
     domainname = os.popen ("hostname -d").readline ().strip ()
 
     if os.access ('%s/etc/hostname' % os_path, os.R_OK):
-        if os.access ("%s/etc/hostname.orig-gluster" % os_path, os.R_OK):
+        if not os.access ("%s/etc/hostname.orig-gluster" % os_path, os.R_OK):
             os.system ("cp %s/etc/hostname %s/etc/hostname.orig-gluster" %
                        (os_path, os_path))
         os.system ("echo '%s.%s' > %s/etc/hostname" %
                    (hostname, domainname, os_path))
     
     if os.access ('%s/etc/HOSTNAME' % os_path, os.R_OK):
-        if os.access ("%s/etc/HOSTNAME.orig-gluster" % os_path, os.R_OK):
+        if not os.access ("%s/etc/HOSTNAME.orig-gluster" % os_path, os.R_OK):
             os.system ("cp %s/etc/HOSTNAME %s/etc/HOSTNAME.orig-gluster" %
                        (os_path, os_path))
         os.system ("echo '%s.%s' > %s/etc/HOSTNAME" %
                    (hostname, domainname, os_path))
 
     if os.access ('%s/etc/sysconfig/network' % os_path, os.R_OK):
-        if os.access ("%s/etc/sysconfig/network.orig-gluster" % os_path, os.R_OK):
+        if not os.access ("%s/etc/sysconfig/network.orig-gluster" % os_path, os.R_OK):
             os.system ("cp %s/etc/sysconfig/network %s/etc/sysconfig/network.orig-gluster" %
                        (os_path, os_path))
         os.system ("sed -i -e 's/NAME=.*/NAME=%s/' %s/etc/sysconfig/network" %
                    (hostname, os_path))
 
-    if os.access ("%s/etc/resolv.conf.orig-gluster" % os_path, os.R_OK):
+    if not os.access ("%s/etc/resolv.conf.orig-gluster" % os_path, os.R_OK):
         os.system ("cp %s/etc/resolv.conf %s/etc/resolv.conf.orig-gluster" %
                    (os_path, os_path))
     os.system ("cp -af /etc/resolv.conf %s/etc/" % os_path)
