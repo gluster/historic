@@ -38,7 +38,7 @@ APPS_EXTENSIONS = python dhcp-helper makebootfat reiserfsprogs device-mapper lvm
 #	$(APPS_IPMI) $(APPS_OPENIB)
 
 APPS_PKG = mpich2 $(APPS_OPENIB) mvapich-gen2 torque slurm pdsh c3 cerebro \
-	genders lam conman freetype2 libart_lgpl libpng rrdtool ganglia
+	genders lam conman freetype2 libart_lgpl libpng rrdtool ganglia powerman
 
 APPS_BUILD = cdrtools genext2fs kernel-prepare kernel-bzimage
 
