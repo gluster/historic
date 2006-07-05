@@ -27,7 +27,7 @@ def main ():
 	   break
 	
 	if sel == 'GConsole':
-	   (r,node) = dlg.inputbox ("Enter The Node Number: (For Example: %s" %node + "[2-%s])" % totalnodes)
+	   (r,node) = dlg.inputbox ("Enter the node name: (For example: %s" %node + "[2-%s])" % totalnodes)
 	   if r != 0:
 		continue
 	   os.system ("ssh -t root@%s screen -x" % node)
@@ -37,5 +37,5 @@ def main ():
 	   (r,node) = dlg.inputbox ("Enter The Node Number: (For Example: %s" %node + "[2-%s])" % totalnodes)
 	   if r != 0:
 		continue
-	   os.system ("ssh -C root@%s dmesg | less "  % node)
+	   os.system ("ssh -C root@%s dmesg | more "  % node)
 main()
