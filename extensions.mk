@@ -31,8 +31,8 @@ HPC_PACKAGES = \
 	conman-pkg \
 	ganglia-pkg \
 	hpc-base-pkg \
-	lam-pkg \
-	powerman-pkg
+	lam-pkg
+#	powerman-pkg
 
 EXTENSIONS= \
 	init \
