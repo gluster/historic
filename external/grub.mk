@@ -16,4 +16,6 @@
 #  
 
 grub.%: PACKAGE_NAME=grub-0.97
+grub.%: CROSS=i686-gluster-linux-gnu
+grub.%: LIVE_CONFIGURE_ENV=$(DEFAULT_LIVE_CONFIGURE_ENV) CFLAGS="-static"
 
