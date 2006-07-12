@@ -59,9 +59,9 @@ def is_valid_hostname (hname):
     return True
 
 def is_valid_domain (domain):
-    c = re.compile ("^[a-zA-Z][a-zA-Z0-9_\-\.]*$")
-    matches = c.findall (hname)
-    if len (matches) != 1 or matches[0] != hname:
+    c = re.compile ("^[a-zA-Z0-9][a-zA-Z0-9_\-\.]*$")
+    matches = c.findall (domain)
+    if len (matches) != 1 or matches[0] != domain:
         return False
     return True
 

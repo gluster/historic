@@ -30,7 +30,7 @@ list_cdrom_devices ()
       [ "$(cat ${dev})" = "cdrom" ] && echo $(echo ${dev} | cut -f5 -d/);
     done
 
-    for dev in $( ls /dev/scd* 2>/dev/null )
+    for dev in $( ls /sys/block/ | grep -e 'scd' -e 'sr' 2>/dev/null )
     do
       echo $dev | cut -f3 -d/;
     done

@@ -50,17 +50,17 @@ main()
       [ "${choice}" = "shell" ] && {
 	  /bin/bash --login;
       }
-      [ "${choice}" = "mac-collector" ] && {
-	  if [ -f /usr/bin/gpart ] ; then
-	      chmod +x /usr/share/gluster/extensions/mac-collector/*
-	      /usr/share/gluster/extensions/mac-collector/mac-collector
-	      echo 
-	      echo -n "Press [Enter] to continue"
-	      read
-	  else
-	      dialog --msgbox 'Gluster stage-3 not yet loaded' 0 0
-	  fi
-      }
+      # [ "${choice}" = "mac-collector" ] && {
+      #  if [ -f /usr/bin/gpart ] ; then
+      #chmod +x /usr/share/gluster/extensions/mac-collector/*
+      #/usr/share/gluster/extensions/mac-collector/mac-collector
+      #echo 
+      #echo -n "Press [Enter] to continue"
+      #read
+      #  else
+      #  dialog --msgbox 'Gluster stage-3 not yet loaded' 0 0
+      #  fi
+      #}
       [ "${choice}" = "gconsole" ] && {
 	  gconsole
       }
