@@ -1,0 +1,12 @@
+timeout 5
+default 0
+
+
+title GlusterEP
+kernel @GRUB_ROOT@/gluster-state/linux.master quiet gluster_stage3=disk:@ROOT@:gluster-state/extensions gluster_app=GlusterEP gluster_state=@ROOT@
+initrd @GRUB_ROOT@/gluster-state/initrd.master.gz
+
+title GlusterHPC
+kernel @GRUB_ROOT@/gluster-state/linux.master quiet gluster_stage3=disk:@ROOT@:gluster-state/extensions gluster_app=GlusterHPC gluster_state=@ROOT@
+initrd @GRUB_ROOT@/gluster-state/initrd.master.gz
+

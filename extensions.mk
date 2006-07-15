@@ -15,7 +15,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 
-APPLICATIONS = GlusterHPC GlusterEP
+APPLICATIONS = GlusterHPC GlusterEP self-install shutdown
 
 HPC_PACKAGES = \
 	mpich2-pkg \
@@ -47,7 +47,6 @@ EXTENSIONS= \
 	auth \
 	net-utils \
         debug-utils \
-	shutdown \
 	$(HPC_PACKAGES) \
 	$(APPLICATIONS)
 #	freeipmi \
