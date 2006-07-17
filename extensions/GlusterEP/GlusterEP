@@ -143,7 +143,12 @@ def master ():
         os.system ("/var/gluster/EP/rc.local")
     
     # GExtension.run ('client-reg')
-    GExtension.run ('bootp-manager', '--allow 2>>/var/log/proglog')
+    while True:
+        if GExtension.run ('bootp-manager', '--allow 2>>/var/log/proglog') != 1:
+            break
+        os.system ("/etc/stage2/config_network.sh")
+        os.system ("gdump-netstate /var/gluster/EP/rc.local")
+        os.system ("chmod +x /var/gluster/EP/rc.local")
 
     first_time = True
     while ('<no users>', '') in get_usernames ():

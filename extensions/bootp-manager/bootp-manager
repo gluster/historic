@@ -164,6 +164,11 @@ def build_config (mac=True):
         option = 'allow'
         while True:
             up_ifaces = os.popen ("ip link list | grep UP | grep -v NO-CARRIER | sed -n -e 's/^[0-9]*:\\ \\([^:]*\\):.*$/\\1/p' | grep -v lo").readlines ()
+            if up_ifaces == '':
+                dlg.infobox ("None of network interfaces are configured, configure n/w before progressing.",
+                             title='[ Error ]')
+                sys.exit (1)
+
             up_ifaces = map (string.strip, up_ifaces)
         
             #down_ifaces = os.popen ("").readlines () # <- Not needed now
@@ -185,7 +190,7 @@ def build_config (mac=True):
                 continue
 
             if len (ifaces) == 0:
-                sys.exit ()
+                sys.exit (0)
                 return False
             break
 
