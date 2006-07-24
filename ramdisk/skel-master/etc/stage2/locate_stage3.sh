@@ -285,7 +285,7 @@ check_auto_mode ()
 {
     # example stage3 specifiers
     #
-    # gluster_stage3=disk:sda1:gluster-beta/iso_fs/extensions
+    # gluster_stage3=disk:/dev/sda1:gluster-beta/iso_fs/extensions
     # gluster_stage3=cdrom:sdb
 
     local gl_s3;
@@ -301,13 +301,13 @@ check_auto_mode ()
     case $s3_scheme in
 	disk)
 	    teh_disk=$(echo $gl_s3 | cut -f2 -d:)
-	    [ -b "/dev/$teh_disk" ] || {
+	    [ -b "$teh_disk" ] || {
 		dialog --msgbox "Invalid disk '$teh_disk'" 0 0
 		return 1;
 	    }
 	    mkdir -p /var/stage3-mount;
 	    umount /var/stage3-mount 2>/dev/null;
-	    err=$(mount /dev/$teh_disk /var/stage3-mount 2>&1) || {
+	    err=$(mount $teh_disk /var/stage3-mount 2>&1) || {
 		dialog --title "Mount error" \
 		    --msgbox "mount $teh_disk: $error" 0 0;
 		return 1;

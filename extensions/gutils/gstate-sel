@@ -66,13 +66,14 @@ def set_part (part, fresh=False):
     return True
 
 def get_cmdline_state ():
+    # gluster_state=/dev/sda1 should return 'sda1'
     cmdline = file ('/proc/cmdline').readline ().strip ()
     pieces = cmdline.split ()
     for piece in pieces:
         sub_pieces = piece.split ('=')
         if len (sub_pieces) > 1:
             if sub_pieces[0] == 'gluster_state':
-                return sub_pieces[1]
+                return sub_pieces[1].split ('/')[-1]
     return None
 
 def init_fix (parts):

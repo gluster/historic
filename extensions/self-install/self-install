@@ -13,20 +13,20 @@ def get_partitions ():
 def get_grub_disk (disk):
     lines = file ('/boot/grub/device.map').readlines ()
     for line in lines:
-        (grubdisk, realdisk) = line.split ()[0:1]
+        (grubdisk, realdisk) = line.split ()[0:2]
         if disk == realdisk:
             return grubdisk.strip ("()")
     return None
 
 def self_install (part):
-    os.system ("mount /dev/%s /boot" % part)
+    os.system ("mount %s /boot" % part)
     os.system ("mkdir -p /boot/grub")
     
     os.system ("cp -a /usr/lib/grub/i386-pc/* /boot/grub")
 
     os.system ("rm -f /boot/grub/device.map")
     dlg.infobox ("Probing drives\n")
-    os.system ("grub --device-map=/boot/grub/device.map 2>/dev/null >/dev/null")
+    os.system ("echo quit | grub --no-curses --device-map=/boot/grub/device.map 2>/dev/null >/dev/null")
     (disk, partno) = get_disk_part (part)
     grubdisk = get_grub_disk (disk)
     grubpartno = partno - 1
@@ -41,7 +41,7 @@ def self_install (part):
     os.system ("cp -a /stage3/*.{gex,tgz} /boot/gluster-state/extensions")
 
     dlg.infobox ("Installing bootloader")
-    os.system ("cat /tmp/menu.lst.in | sed -e 's/@ROOT@/%s/g' -e 's/@GRUBROOT@/%s/g' > /boot/grub/menu.lst" % (part, grubroot))
+    os.system ("cat /tmp/menu.lst.in | sed -e 's/@ROOT@/%s/g' -e 's/@GRUB_ROOT@/%s/g' > /boot/grub/menu.lst" % (part, grubroot))
     os.system ("grub-install '%s' >/dev/null 2>&1" % grubdisk)
     os.system ("umount /boot")
 
@@ -64,11 +64,11 @@ def main ():
                 break
             teh_part = sel
             
-        if (os.system ("mount /dev/%s /boot" % teh_part) != 0):
+        if (os.system ("mount %s /boot" % teh_part) != 0):
             if (dlg.yesno ("Do you want to format %s?" % teh_part)):
                 teh_part = None
                 continue
-            os.system ("mkfs.ext3 /dev/%s" % teh_part)
+            os.system ("mkfs.ext3 %s" % teh_part)
         else:
             os.system ("umount /boot")
         break
