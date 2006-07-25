@@ -40,6 +40,7 @@ EXTENSIONS= \
 	bootp-manager \
 	bootloader-manager \
 	client-boot \
+	master-boot \
 	client-reg \
 	mac-collector \
 	fs-utils \

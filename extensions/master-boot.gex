@@ -1,0 +1,5 @@
+package-name: Master-BOOT
+package-description: Kernel and ramdisk/initrd for master boot (in /tftpboot)
+package-maintainer: Amar S. Tumballi <amar@zresearch.com>
+package-contents: master-boot.tgz
+package-exec: ./runme

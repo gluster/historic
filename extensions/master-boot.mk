@@ -15,6 +15,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 
-client-boot.gex: EXTENSION=client-boot
-client-boot.gex: kernel-bzimage.live initrd.slave
+master-boot.gex: EXTENSION=master-boot
+master-boot.gex: kernel-bzimage.live initrd.master
 
