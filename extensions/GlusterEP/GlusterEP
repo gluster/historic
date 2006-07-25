@@ -101,6 +101,7 @@ def image_management ():
     return
 
 def config_client ():
+    os.system ("rm /var/gluster/EP/bootp.iface -f")
     os.system ("/etc/stage2/config_network.sh")
     os.system ("gdump-netstate /var/gluster/EP/rc.local")
     os.system ("chmod +x /var/gluster/EP/rc.local")

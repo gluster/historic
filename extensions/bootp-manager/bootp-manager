@@ -27,7 +27,6 @@ bootp_port = 67
 dhcpd_port = 6767
 
 dlg = dialog.Dialog ()
-ifaces = None
 
 clientinfo = '/var/gluster/clientinfo'
 state_dir = '/var/gluster'
@@ -160,7 +159,6 @@ def build_config (mac=True):
         extra_opts = "%s   " % string.join (map (host_entry, range (no_hosts + 1)), '')
     else:
         # Now.. I have to get all the info from the current system status
-        global ifaces
         option = 'allow'
         while True:
             up_ifaces = os.popen ("ip link list | grep UP | grep -v NO-CARRIER | sed -n -e 's/^[0-9]*:\\ \\([^:]*\\):.*$/\\1/p' | grep -v lo").readlines ()
@@ -195,6 +193,7 @@ def build_config (mac=True):
             break
 
         for iface in ifaces:
+            os.system ("echo %s >> /var/gluster/EP/bootp.iface" % iface)
             ip_addr = os.popen ("ip address list dev %s | sed -n -e 's/^.*inet \\([^ ]*\\).*$/\\1/p'" % iface).readline ().split ('/')[0]
             netmask = os.popen ("ifconfig %s | sed -n -e 's/.*Mask://p'" % iface).readline ().strip ()
             if not ip:
@@ -211,19 +210,27 @@ def build_config (mac=True):
 
 def auto_option (need_mac=True):
     iface = ''
+
+    if not need_mac:
+        os.system ("rm /var/gluster/EP/bootp.iface -f")
         
-    if not build_config (need_mac):
-        dlg.msgbox ("could not acquire mac addresses")
-        sys.exit (1)
+    if not os.access ("/var/gluster/EP/bootp.iface", os.R_OK):
+        if not build_config (need_mac):
+            dlg.msgbox ("could not acquire mac addresses")
+            sys.exit (1)
 
     if need_mac:
         need_bootp = reg.get ('global', 'bootp')
         iface = reg.get ('global', 'interface')
     else:
         # Ask user on which interface he requires bootp to run
+        ifaces = ['']
         need_bootp = 'yes'
+        a = file ("/var/gluster/EP/bootp.iface").readlines ()
+        ifaces = map (strip, a);
         iface = ifaces[0]
         if iface == '':
+            os.system ("rm /var/gluster/EP/bootp.iface -f")
             return
 
     if need_bootp == 'yes':

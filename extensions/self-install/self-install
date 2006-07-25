@@ -10,8 +10,8 @@ def get_partitions ():
     partlist = gdump_partlist (read_gdump (os.popen ("gprobe")))
     return partlist
 
-def get_grub_disk (disk):
-    lines = file ('/boot/grub/device.map').readlines ()
+def get_grub_disk (disk, bootdir):
+    lines = file ('%s/grub/device.map' % bootdir).readlines ()
     for line in lines:
         (grubdisk, realdisk) = line.split ()[0:2]
         if disk == realdisk:
@@ -19,29 +19,32 @@ def get_grub_disk (disk):
     return None
 
 def self_install (part):
+    boot_dir = "/boot"
     os.system ("mount %s /boot" % part)
-    os.system ("mkdir -p /boot/grub")
+    if os.access ("/boot/boot/grub", os.R_OK):
+        boot_dir = "/boot/boot"
+    os.system ("mkdir -p %s/grub" % boot_dir)
     
-    os.system ("cp -a /usr/lib/grub/i386-pc/* /boot/grub")
+    os.system ("cp -a /usr/lib/grub/i386-pc/* %s/grub" % boot_dir)
 
-    os.system ("rm -f /boot/grub/device.map")
+    os.system ("rm -f %s/grub/device.map" % boot_dir)
     dlg.infobox ("Probing drives\n")
-    os.system ("echo quit | grub --no-curses --device-map=/boot/grub/device.map 2>/dev/null >/dev/null")
+    os.system ("echo quit | grub --no-curses --device-map=%s/grub/device.map 2>/dev/null >/dev/null" % boot_dir)
     (disk, partno) = get_disk_part (part)
-    grubdisk = get_grub_disk (disk)
+    grubdisk = get_grub_disk (disk, boot_dir)
     grubpartno = partno - 1
     grubroot = "(%s,%d)" % (grubdisk, grubpartno)
 
     dlg.infobox ("Installing kernel and initrd")
-    os.system ("cp -a /tftpboot/initrd.master.$(uname -m).gz /boot/grub/initrd.master.gz")
-    os.system ("cp -a /tftpboot/linux.master.$(uname -m) /boot/grub/linux.master")
+    os.system ("cp -a /tftpboot/initrd.master.$(uname -m).gz %s/grub/initrd.master.gz" % boot_dir)
+    os.system ("cp -a /tftpboot/linux.master.$(uname -m) %s/grub/linux.master" % boot_dir)
 
     dlg.infobox ("Installing extensions")
     os.system ("mkdir -p /boot/gluster-state/extensions")
     os.system ("cp -a /stage3/*.{gex,tgz} /boot/gluster-state/extensions")
 
     dlg.infobox ("Installing bootloader")
-    os.system ("cat /tmp/menu.lst.in | sed -e 's/@ROOT@/%s/g' -e 's/@GRUB_ROOT@/%s/g' > /boot/grub/menu.lst" % (part, grubroot))
+    os.system ("cat /tmp/menu.lst.in | sed -e 's#@ROOT@#%s#g' -e 's#@GRUB_ROOT@#%s#g' >> %s/grub/menu.lst" % (part, grubroot, boot_dir))
     os.system ("grub-install '%s' >/dev/null 2>&1" % grubdisk)
     os.system ("umount /boot")
 

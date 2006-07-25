@@ -23,6 +23,7 @@ _init ()
 
 main ()
 {
+    gex --install /stage3/master-boot.gex
     local my_dir="$(dirname $0)";
     cp -alf "${my_dir}"/destdir_$(uname -m)/* /;
 
