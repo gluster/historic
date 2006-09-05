@@ -53,8 +53,8 @@ def main ():
 
     for i in range (get_totalnodes ()):
         all_hosts.write ("%s%d\n" % (host_prefix, i+1))
-        if i in node_ids:
-            known_hosts.write ("%s%d\n" % (host_prefix, i))
+        if (i+1) in node_ids:
+            known_hosts.write ("%s%d\n" % (host_prefix, i+1))
             i_ip = ipobj[i + 1 + offset].getStrings ()[0]
             known_ip.write ("%s\n" % i_ip)
     all_hosts.close ()

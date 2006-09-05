@@ -106,8 +106,8 @@ def source_action (node):
     min_clients = os.popen ('gping -p 1332 -i /tmp/session_hosts | grep slave | wc -l').readline ().strip ()
     cmd_file = os.popen ("ssh %s dd of=/tmp/ghpc_src_cmds 2>>/var/log/proglog" % node, "w")
     for i in range (no_parts):
-        cmd_file.write ('udp-sender --portbase %d --nokbd --min-clients %s --max-wait 1200 2>/dev/null\n' %
-                    (port_base + 2*i, min_clients))
+        cmd_file.write ('udp-sender --portbase %d --nokbd --min-clients %s --max-wait 1200 --interface %s 2>/dev/null\n' %
+                    (port_base + 2*i, min_clients, reg.get ('global', 'interface')))
     cmd_file.flush ()
     cmd_file.close ()
 
@@ -171,6 +171,7 @@ def hpc_action (node):
         return
 
     dlg.infobox ("Installing boot manager in client nodes\n")
+    os.system ("sleep 7");
     if os.system ("/tmp/gmi/04-bootloader.sh >>/var/log/proglog 2>&1"):
         dlg.msgbox ("Problems during installation\nExiting\n",
                     title='[ Error ]')
@@ -206,7 +207,7 @@ def get_dst_nodes (dst_nodes):
     for i in nodes:
         x = i.split ('-')
         if len (x) == 1:
-            fd.write ("%s\n" % (ipobj [ offset + 1 + x[0]]))
+            fd.write ("%s\n" % (ipobj [ offset + int (x[0]) ]))
         elif len (x) == 2:
             if int (x[0]) < int (x[1]):
                 for a in range (int (x[0]), int (x[1]) + 1):

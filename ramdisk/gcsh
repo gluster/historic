@@ -18,15 +18,16 @@
 
 [ -f /tmp/ghosts/known_ip ] || ghosts --update-known-hosts 2>/dev/null
 up_hosts=$(gping -i /tmp/ghosts/known_ip -p 1332 2>/dev/null| grep slave | wc -l)
+iface=$(sed -n -e 's/interface = \(.*\)/\1/p' /var/gluster/clientinfo )
 
 [ "$up_hosts" = 0 ] && {
     echo "$0: 0 hosts alive, exiting"
     exit 1;
 }
 #echo -n "Commanding $up_hosts hosts $@ ... "
-(echo "$@" && cat ${STDIN:-/dev/stdin}) | udp-sender --nokbd --portbase 10000 --min-clients $up_hosts >/dev/null 2>&1
+(echo "$@" && cat ${STDIN:-/dev/stdin}) | udp-sender --nokbd --portbase 10000 --min-clients $up_hosts --interface $iface >/dev/null 2>&1
 #echo "done."
 #echo -n "Waiting for completion ... "
-udp-sender --nokbd --portbase 10002 --min-clients $up_hosts --file /dev/null >/dev/null 2>&1
+udp-sender --nokbd --portbase 10002 --min-clients $up_hosts --interface $iface --file /dev/null >/dev/null 2>&1
 #echo "done."
 exit 0
