@@ -24,7 +24,7 @@ def main ():
     base_dir = '/var/gluster/hw-profiles'
     os.system ("mkdir -p %s" % base_dir)
     os.system ("STDIN=/dev/null gcsh 'ghwprobe > /tmp/.status.in' >/dev/null 2>&1")
-    fd = os.popen ("gping -i /tmp/ghosts/known_hosts")
+    fd = os.popen ("gping -i /tmp/ghosts/known_ip")
     nodes_lines = fd.readlines ()
     fd.close ()
     masternode_line = os.popen ("ghwprobe").readline ()

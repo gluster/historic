@@ -16,8 +16,8 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 
-[ -f /tmp/ghosts/known_hosts ] || ghosts --update-known-hosts 2>/dev/null
-up_hosts=$(gping -i /tmp/ghosts/known_hosts -p 1332 2>/dev/null| grep slave | wc -l)
+[ -f /tmp/ghosts/known_ip ] || ghosts --update-known-hosts 2>/dev/null
+up_hosts=$(gping -i /tmp/ghosts/known_ip -p 1332 2>/dev/null| grep slave | wc -l)
 
 [ "$up_hosts" = 0 ] && {
     echo "$0: 0 hosts alive, exiting"

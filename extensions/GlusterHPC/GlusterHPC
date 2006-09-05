@@ -20,7 +20,7 @@
 
 import getopt, sys, os, ConfigParser
 from Gluster.gpartdump import *
-from Gluster import GExtension, GIPv4
+from Gluster import GExtension, GIPv4, GIP
 from Gluster.GFrontEnd import dialog
 
 dlg = dialog.Dialog ()
@@ -90,7 +90,7 @@ def make_slaves (slave_list):
     for slave in slave_list:
         session_hosts.write ("%s\n" % slave)
     session_hosts.close ()
-    os.system ("gping -p 1332 -i /tmp/ghosts/known_hosts -m up >/dev/null 2>&1")
+    os.system ("gping -p 1332 -i /tmp/ghosts/known_ip -m up >/dev/null 2>&1")
     os.system ("gping -p 1332 -i /tmp/session_hosts -m slave >/dev/null 2>&1")
     os.system ("sleep 1")
     return
@@ -192,6 +192,10 @@ def hpc_action (node):
 
 def get_dst_nodes (dst_nodes):
     # write the name of the nodes in the dst_nodes properly
+    ipobj = GIPv4.IPv4 (reg.get ('global', 'startip'),
+                        reg.get ('global', 'netmask'))
+    offset = int (ipobj.hostpart) - 1
+
     fd = file ('/tmp/ghpc_selected_dst_nodes', 'w')
     nodes = dst_nodes.split (',')
     if nodes[-1] == '':
@@ -202,11 +206,11 @@ def get_dst_nodes (dst_nodes):
     for i in nodes:
         x = i.split ('-')
         if len (x) == 1:
-            fd.write ("%s%s\n" % (get_hostname (), x[0]))
+            fd.write ("%s\n" % (ipobj [ offset + 1 + x[0]]))
         elif len (x) == 2:
             if int (x[0]) < int (x[1]):
                 for a in range (int (x[0]), int (x[1]) + 1):
-                    fd.write ("%s%s\n" % (get_hostname (), a))
+                    fd.write ("%s\n" % (ipobj[a + 1 + offset]))
             else:
                 dlg.msgbox ("Enter a valid entry. Check the examples given\n",
                             title="[ Error ]")
@@ -356,7 +360,7 @@ def main ():
 
     # Now the imaging is done. Install and configure the HPC apps.
     
-    all_slaves = map (string.strip, file ('/tmp/ghosts/known_hosts').readlines ())
+    all_slaves = map (string.strip, file ('/tmp/ghosts/known_ip').readlines ())
     make_slaves (all_slaves)
 
     os.system ("ghpc_send >>/var/log/proglog 2>&1")

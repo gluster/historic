@@ -51,11 +51,11 @@ struct host_status {
   struct host_status *next; /* next in chain */
 };
 
-static struct host_status *host_status[2047];
+static struct host_status *host_status[65536];
 
 static unsigned int host_status_hash (in_addr_t addr)
 {
-  return addr % 2047;
+  return htonl (addr) % 65536;
 }
 
 struct host_status *lookup (in_addr_t host)
@@ -117,7 +117,7 @@ void set_original_name (in_addr_t host, char *name)
   struct host_status *st = lookup (host);
   
   if (st == NULL) {
-    struct host_status *new = malloc (sizeof (struct host_status));
+    struct host_status *new = calloc (1, sizeof (struct host_status));
     struct host_status *head = host_status [host_status_hash (host)];
 
     new->host = host;
@@ -157,8 +157,8 @@ void load_hosts (const char *filename)
   char *p;
   int i = 0;
   char *nl;
-  int hosts_capacity = 1024;
-  hosts = calloc (sizeof (in_addr_t), hosts_capacity);
+  int hosts_capacity = 65537;
+  hosts = calloc (sizeof (in_addr_t *), hosts_capacity);
 
   if (!fp) {
     fprintf (stderr, "Error: %s: ", filename);
@@ -166,27 +166,18 @@ void load_hosts (const char *filename)
     exit (1);
   }
 
-  p = fgets (line, 256, fp);
-  nl = strchr (line, '\n');
-  if (nl)
-    *nl = '\0';
-  hosts[i] = lookup_host (line);
-  set_original_name (hosts[i], line);
-
-  while (p) {
-    i++;
-    if (i == hosts_capacity){
-      hosts = realloc (hosts, hosts_capacity * 2 * sizeof (char *));
+  while (fgets (line, 256, fp)) {
+    if (i == hosts_capacity - 1){
+      hosts = realloc (hosts, hosts_capacity * 2 * sizeof (in_addr_t *));
       hosts_capacity *= 2;
     }
-
-    p = fgets (line, 256, fp);
     nl = strchr (line, '\n');
     if (nl)
       *nl = '\0';
 
     hosts[i] = lookup_host (line);
     set_original_name (hosts[i], line);
+    i++;
   }
 
   hosts[i] = INADDR_NONE;
@@ -217,7 +208,7 @@ void handle_replies (int sock, struct timeval *ts)
   FD_SET (sock, &fs);
 
   while (select (sock+1, &fs, NULL, NULL, ts) > 0) {
-    len = recvfrom (sock, recvbuf, 1024, 0, (struct sockaddr *)&peer, &slen);
+    len = recvfrom (sock, recvbuf, 256, 0, (struct sockaddr *)&peer, &slen);
     recvbuf[len] = '\0';
     set_reply (peer.sin_addr.s_addr, recvbuf);
   }
@@ -320,7 +311,7 @@ int main (int argc, char **argv)
   if (input_file)
     load_hosts (input_file);
   else {
-    hosts = malloc (sizeof (char *));
+    hosts = calloc (1, sizeof (char *));
     hosts[0] = lookup_host (host);
     set_original_name (hosts[0], host);
     hosts[1] = INADDR_NONE;
@@ -361,7 +352,7 @@ int main (int argc, char **argv)
       if (lookup (hosts[i])->replied) {
 	replied_count ++;
 	if (!only_count)
-	  printf ("%s: %s\n", get_original_name (hosts[i]), 
+	  printf ("%s: %s\n", inet_ntoa (*(struct in_addr *)&hosts[i]), 
 		  get_reply (hosts[i]));
       } else {
 	all_replied = 1;

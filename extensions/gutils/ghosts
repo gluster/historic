@@ -19,6 +19,7 @@
 ##
 
 import os, sys, string, ConfigParser
+from Gluster import GIP, GIPv4
 
 reg = ConfigParser.ConfigParser ()
 clientinfo = '/var/gluster/clientinfo'
@@ -32,9 +33,20 @@ def get_totalnodes ():
 
 def main ():
     os.system ('mkdir -p /tmp/ghosts')
+
     all_hosts = file ('/tmp/ghosts/all_hosts', 'w')
     known_hosts = file ('/tmp/ghosts/known_hosts', 'w')
+    all_ip = file ('/tmp/ghosts/all_ip', 'w')
+    known_ip = file ('/tmp/ghosts/known_ip', 'w')
+    
     host_prefix = get_hostname ()
+    ipobj = GIPv4.IPv4 (reg.get ('global', 'startip'),
+                        reg.get ('global', 'netmask'))
+    offset = int (ipobj.hostpart) - 1
+
+    for index in range (string.atoi (reg.get ('global', 'totalnodes'))):
+        i_ip = ipobj[index + 1 + offset].getStrings ()[0]
+        all_ip.write ("%s\n" % i_ip)
 
     known_macs = file ("/var/gluster/macs.txt").readlines ()
     node_ids = map (lambda x: int (x.split ()[0]), known_macs)
@@ -43,10 +55,14 @@ def main ():
         all_hosts.write ("%s%d\n" % (host_prefix, i+1))
         if i in node_ids:
             known_hosts.write ("%s%d\n" % (host_prefix, i))
+            i_ip = ipobj[i + 1 + offset].getStrings ()[0]
+            known_ip.write ("%s\n" % i_ip)
     all_hosts.close ()
     known_hosts.close ()
-
-    os.system ("gping -i /tmp/ghosts/known_hosts | cut -f1 -d: > /tmp/ghosts/up_hosts")
+    all_ip.close ()
+    known_ip.close ()
+    
+    os.system ("gping -i /tmp/ghosts/known_ip | cut -f1 -d: > /tmp/ghosts/up_ip")
     return
 
 main ()
