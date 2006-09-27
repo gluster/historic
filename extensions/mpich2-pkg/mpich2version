@@ -1,0 +1,93 @@
+#! /bin/sh
+#
+# Simple script to report information about the MPICH2 installation. This script will likely be replaced with a program closer to
+# that found in MPICH1 once the library contains information on patches applied, etc.
+#
+
+print_usage()
+{
+    echo ""
+    echo "usage: mpich2version [-v|--version] [-d|--device] [-c|--configure] [-h|--help]"
+    echo ""
+    echo "    --version - Show the version number for this installation of MPICH2"
+    echo "    --device - Show the device used by this installation"
+    echo "    --configure - Show the configure options used to build this installation"
+    echo ""
+}
+
+if test $# -eq 0 ; then
+    include_version=true
+    include_device=true
+    include_config_opts=true
+elif test $# -eq 1 ; then
+    arg=$1
+    case $arg in
+	-v|--version)
+	echo "1.0.3"
+	;;
+
+	-d|--device)
+	echo "ch3:sock"
+	;;
+
+	-c|--configure)
+	echo "--prefix=/opt/gluster/mpich2-1.0.3 --host=x86_64-gluster-linux-gnu --build=x86_64-slackware-linux --disable-aio"
+	;;
+
+	-h|--help)
+	print_usage
+	exit 0
+	;;
+
+	*)
+	echo ""
+	echo "Invalid option: $arg"
+	print usage
+	exit 1
+	;;
+    esac
+else
+    include_version=false
+    include_device=false
+    include_config_opts=false
+
+    for arg ; do
+	case $arg in
+	    -v|--version)
+	    include_version=true
+	    ;;
+
+	    -d|--device)
+	    include_device=true
+	    ;;
+
+	    -c|--configure)
+	    include_config_opts=true
+	    ;;
+
+	    -h|--help)
+	    print_usage
+	    exit 0
+	    ;;
+
+	    *)
+	    echo ""
+	    echo "Invalid option: $arg"
+	    print usage
+	    exit 1
+	    ;;
+	esac
+    done
+fi
+
+if test "$include_version" = "true" ; then
+    echo "Version:           1.0.3"
+fi
+if test "$include_device" = "true" ; then
+    echo "Device:            ch3:sock"
+fi
+if test "$include_config_opts" = "true" ; then
+    echo "Configure Options: --prefix=/opt/gluster/mpich2-1.0.3 --host=x86_64-gluster-linux-gnu --build=x86_64-slackware-linux --disable-aio"
+fi
+
+exit 0

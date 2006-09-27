@@ -1,0 +1,13 @@
+diff -pruN dhcp-3.0.3/common/packet.c dhcp-3.0.3-h/common/packet.c
+--- dhcp-3.0.3/common/packet.c	2005-03-03 22:25:23.000000000 +0530
++++ dhcp-3.0.3-h/common/packet.c	2006-02-15 17:27:56.000000000 +0530
+@@ -318,6 +318,9 @@ ssize_t decode_udp_ip_header (interface,
+ 					       (u_int32_t)ulen))));
+ 
+   udp_packets_seen++;
++#ifndef NO_GLUSTER_HACKS
++  usum = 0;
++#endif
+   if (usum && usum != sum) {
+ 	  udp_packets_bad_checksum++;
+ 	  if (udp_packets_seen > 4 &&

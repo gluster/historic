@@ -1,0 +1,5 @@
+package-name: Authentication module
+package-description: Contains `shadow' package
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: auth.tgz
+package-exec: ./runme

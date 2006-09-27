@@ -1,0 +1,68 @@
+diff -pru portmap_4/Makefile portmap_4-h/Makefile
+--- portmap_4/Makefile	1996-05-31 19:20:40.000000000 +0530
++++ portmap_4-h/Makefile	2006-04-02 20:29:22.000000000 +0530
+@@ -46,11 +46,11 @@ CHECK_PORT = -DCHECK_PORT
+ # libwrap.a object library. WRAP_DIR should specify the directory with
+ # that library.
+ 
+-WRAP_DIR= ../tcp_wrappers
++WRAP_DIR=$(DESTDIR_LIVE)/usr/lib
+ 
+ # Auxiliary object files that may be missing from your C library.
+ #
+-AUX	= daemon.o strerror.o
++#AUX	= daemon.o strerror.o
+ 
+ # NEXTSTEP is a little different. The following seems to work with NS 3.2
+ #
+@@ -66,14 +66,22 @@ AUX	= daemon.o strerror.o
+ ##############################
+ 
+ SHELL	= /bin/sh
++BINARIES = rpc.portmap pmap_dump pmap_set
++DESTDIR = $(DESTDIR_LIVE)
++SBINDIR = $(DESTDIR)/usr/sbin
+ 
+-COPT	= -Dconst= -Dperror=xperror $(HOSTS_ACCESS) $(CHECK_PORT) \
++COPT	= $(HOSTS_ACCESS) $(CHECK_PORT) \
+ 	$(SYS) -DFACILITY=$(FACILITY) $(ULONG) $(ZOMBIES) $(SA_LEN)
+ CFLAGS	= $(COPT) -O $(NSARCHS) $(SETPGRP)
+ OBJECTS	= portmap.o pmap_check.o from_local.o $(AUX)
+ 
+ all:	portmap pmap_dump pmap_set
+ 
++install: all
++	mkdir -p $(SBINDIR)
++	mv -f portmap rpc.portmap
++	install -m 755 $(BINARIES) $(SBINDIR)
++
+ portmap: $(OBJECTS) $(WRAP_DIR)/libwrap.a
+ 	$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(WRAP_DIR)/libwrap.a $(LIBS)
+ 
+diff -pru portmap_4/portmap.c portmap_4-h/portmap.c
+--- portmap_4/portmap.c	1996-05-31 19:22:59.000000000 +0530
++++ portmap_4-h/portmap.c	2006-04-02 20:16:19.000000000 +0530
+@@ -85,6 +85,7 @@ static char sccsid[] = "@(#)portmap.c 1.
+ #include <stdio.h>
+ #include <syslog.h>
+ #include <netdb.h>
++#include <errno.h>
+ #include <sys/socket.h>
+ #include <sys/ioctl.h>
+ #include <sys/wait.h>
+@@ -233,13 +234,13 @@ main(argc, argv)
+ 
+ #ifndef lint
+ /* need to override perror calls in rpc library */
+-void
++/*void
+ perror(what)
+ 	const char *what;
+ {
+ 
+ 	syslog(LOG_ERR, "%s: %m", what);
+-}
++}*/
+ #endif
+ 
+ static struct pmaplist *

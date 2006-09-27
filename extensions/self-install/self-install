@@ -1,0 +1,83 @@
+#!/usr/bin/python
+
+from Gluster.GFrontEnd import dialog
+from Gluster.gpartdump import *
+import string, os, sys
+
+dlg = dialog.Dialog ();
+
+def get_partitions ():
+    partlist = gdump_partlist (read_gdump (os.popen ("gprobe")))
+    return partlist
+
+def get_grub_disk (disk, bootdir):
+    lines = file ('%s/grub/device.map' % bootdir).readlines ()
+    for line in lines:
+        (grubdisk, realdisk) = line.split ()[0:2]
+        if disk == realdisk:
+            return grubdisk.strip ("()")
+    return None
+
+def self_install (part):
+    boot_dir = "/boot"
+    os.system ("mount %s /boot" % part)
+    if os.access ("/boot/boot/grub", os.R_OK):
+        boot_dir = "/boot/boot"
+    os.system ("mkdir -p %s/grub" % boot_dir)
+    
+    os.system ("cp -a /usr/lib/grub/i386-pc/* %s/grub" % boot_dir)
+
+    os.system ("rm -f %s/grub/device.map" % boot_dir)
+    dlg.infobox ("Probing drives\n")
+    os.system ("echo quit | grub --no-curses --device-map=%s/grub/device.map 2>/dev/null >/dev/null" % boot_dir)
+    (disk, partno) = get_disk_part (part)
+    grubdisk = get_grub_disk (disk, boot_dir)
+    grubpartno = partno - 1
+    grubroot = "(%s,%d)" % (grubdisk, grubpartno)
+
+    dlg.infobox ("Installing kernel and initrd")
+    os.system ("cp -a /tftpboot/initrd.master.$(uname -m).gz %s/grub/initrd.master.gz" % boot_dir)
+    os.system ("cp -a /tftpboot/linux.master.$(uname -m) %s/grub/linux.master" % boot_dir)
+
+    dlg.infobox ("Installing extensions")
+    os.system ("mkdir -p /boot/gluster-state/extensions")
+    os.system ("cp -a /stage3/*.{gex,tgz} /boot/gluster-state/extensions")
+
+    dlg.infobox ("Installing bootloader")
+    os.system ("cat /tmp/menu.lst.in | sed -e 's#@ROOT@#%s#g' -e 's#@GRUB_ROOT@#%s#g' >> %s/grub/menu.lst" % (part, grubroot, boot_dir))
+    os.system ("grub-install '%s' >/dev/null 2>&1" % grubdisk)
+    os.system ("umount /boot")
+
+    dlg.msgbox ("Installation to %s complete. You may now reboot your system from %s to boot into gluster" % (part, disk))
+    return
+
+def main ():
+    teh_part = None
+    os.system ("mkdir -p /boot")
+    while True:
+        partitions = get_partitions ()
+        if len (partitions) == 0:
+            dlg.msgbox ("No partitions found")
+            break
+        else:
+            (ret, sel) = dlg.menu ("Select partition to install",
+                                   choices=map (lambda x: (x, ''),
+                                                partitions.keys ()))
+            if ret != 0:
+                break
+            teh_part = sel
+            
+        if (os.system ("mount %s /boot" % teh_part) != 0):
+            if (dlg.yesno ("Do you want to format %s?" % teh_part)):
+                teh_part = None
+                continue
+            os.system ("mkfs.ext3 %s" % teh_part)
+        else:
+            os.system ("umount /boot")
+        break
+
+    if teh_part:
+        self_install (teh_part)
+    return
+
+main ()

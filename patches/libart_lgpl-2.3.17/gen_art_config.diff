@@ -1,0 +1,21 @@
+diff -pruN libart_lgpl-2.3.17/Makefile.in libart_lgpl-2.3.17-hacked/Makefile.in
+--- libart_lgpl-2.3.17/Makefile.in	2005-01-21 15:22:11.000000000 +0530
++++ libart_lgpl-2.3.17-hacked/Makefile.in	2006-06-26 21:37:41.000000000 +0530
+@@ -442,7 +442,7 @@ testuta$(EXEEXT): $(testuta_OBJECTS) $(t
+ 
+ gen_art_config$(EXEEXT): $(gen_art_config_OBJECTS) $(gen_art_config_DEPENDENCIES)
+ 	@rm -f gen_art_config$(EXEEXT)
+-	$(LINK) $(gen_art_config_LDFLAGS) $(gen_art_config_OBJECTS) $(gen_art_config_LDADD) $(LIBS)
++	$(CC_FOR_BUILD) $(gen_art_config_LDFLAGS) $(gen_art_config_OBJECTS) $(gen_art_config_LDADD) $(LIBS) -o gen_art_config
+ 
+ install-binSCRIPTS: $(bin_SCRIPTS)
+ 	@$(NORMAL_INSTALL)
+@@ -681,6 +681,8 @@ art_vpath_svp.lo art_vpath_svp.o : art_v
+ 	art_vpath_svp.h art_svp.h art_rect.h art_point.h art_vpath.h \
+ 	art_pathcode.h art_misc.h art_config.h
+ gen_art_config.o: gen_art_config.c config.h
++	$(CC_FOR_BUILD) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c $<
++
+ libart-features.lo libart-features.o : libart-features.c \
+ 	libart-features.h
+ testart.o: testart.c art_misc.h art_config.h art_vpath.h art_rect.h \

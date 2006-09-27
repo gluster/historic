@@ -1,0 +1,26 @@
+Gluster Contributors (sorted alphabetically)
+--------------------------------------------
+
+Core Team
+=========
+
+1. Anand V. Avati <avati@zresearch.com>
+2. Anand Babu <ab@zresearch.com>
+3. Balamurugan A <bala@zresearch.com>
+4. Vikas Gorur <vikas@80x25.org>
+5. Amar S. Tumballi <amar@zresearch.com>
+6. Harshavardhana Ranganath <harsha@zresearch.com>
+
+External Contributors
+=====================
+
+ * Basavanagowda Kanur <gowda@zresearch.com>
+   - new x86_64 toolchain with requirements
+   - new i686 toolchain with requirements
+
+ * Yohandri Cueto 
+   - gdb extension
+   - testing & bug reports
+
+ * Arun Mahajan <arun@zresearch.com>
+   - gconsole tool

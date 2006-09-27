@@ -1,0 +1,5 @@
+package-name: Debug tools
+package-description: Gdb by now...
+package-maintainer: Yohandry Cueto <cueto@ldc.usb.ve>
+package-contents: debug-utils.tgz
+package-exec: ./runme

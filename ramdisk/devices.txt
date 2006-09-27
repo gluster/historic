@@ -1,0 +1,4 @@
+/dev          d      755    0     0       -       -       -      -       -
+/dev/console  c      640    0     0       5       1       0      0       -
+/dev/initctl  p      640    0     0
+/dev/null     c	     666    0	  0	  1       3       0      0       -

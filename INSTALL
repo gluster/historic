@@ -1,0 +1,23 @@
+Gluster Build process
+
+* STEP 1 - Toolchain Setup
+bash# wget ftp://ftp.zresearch.com/pub/gluster/release/current/gluster-toolchain-i686.tar.gz 
+bash# tar -C /usr/local -xjf gluster-toolchain-$(ARCH).tar.bz2
+
+
+* STEP 2 - PATH setup
+
+bash# export PATH=$PATH:/usr/local/gluster-toolchain/bin
+
+* STEP 3 - Configure
+
+bash# ./configure --host=i686-gluster-linux-gnu --build=i686-pc-linux-gnu --prefix=/usr 
+
+Both --host= and --build= are mandatory
+
+* STEP 3 - Build and Burn
+
+bash# make iso
+...
+bash# cdrecord -data gluster-<version-<arch>.iso
+

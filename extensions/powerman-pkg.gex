@@ -1,0 +1,6 @@
+package-name: powerman
+package-description: LLNL's Power Manager
+package-maintainer: Amar S. Tumballi <amar@zresearch.com>
+package-contents: powerman-pkg.tgz
+package-exec: ./runme
+hpc-register: powerman

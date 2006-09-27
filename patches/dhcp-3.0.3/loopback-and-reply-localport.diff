@@ -1,0 +1,66 @@
+diff -pru dhcp-3.0.3/common/discover.c dhcp-3.0.3-h/common/discover.c
+--- dhcp-3.0.3/common/discover.c	2005-03-03 22:25:22.000000000 +0530
++++ dhcp-3.0.3-h/common/discover.c	2006-02-07 09:42:06.000000000 +0530
+@@ -253,12 +253,14 @@ void discover_interfaces (state)
+ 		   point-to-point in case an OS incorrectly marks them
+ 		   as broadcast). Also skip down interfaces unless we're
+ 		   trying to get a list of configurable interfaces. */
++#ifdef NO_GLUSTER_HACKS
+ 		if (((!(ifr.ifr_flags & IFF_BROADCAST) ||
+ 		      ifr.ifr_flags & IFF_LOOPBACK ||
+ 		      ifr.ifr_flags & IFF_POINTOPOINT) && !tmp) ||
+ 		    (!(ifr.ifr_flags & IFF_UP) &&
+ 		     state != DISCOVER_UNCONFIGURED))
+ 			continue;
++#endif
+ 		
+ 		/* If there isn't already an interface by this name,
+ 		   allocate one. */
+@@ -302,13 +304,13 @@ void discover_interfaces (state)
+ 			/* Get a pointer to the address... */
+ 			memcpy (&foo, &ifp -> ifr_addr,
+ 				sizeof ifp -> ifr_addr);
+-
++#ifdef NO_GLUSTER_HACKS
+ 			/* We don't want the loopback interface. */
+ 			if (foo.sin_addr.s_addr == htonl (INADDR_LOOPBACK) &&
+ 			    ((tmp -> flags & INTERFACE_AUTOMATIC) &&
+ 			     state == DISCOVER_SERVER))
+ 			    continue;
+-
++#endif
+ 
+ 			/* If this is the first real IP address we've
+ 			   found, keep a pointer to ifreq structure in
+@@ -398,12 +400,13 @@ void discover_interfaces (state)
+ 			 * point-to-point in case an OS incorrectly marks them
+ 			 * as broadcast).
+ 			 */
++#ifdef NO_GLUSTER_HACKS
+ 			if ((ioctl (sock, SIOCGIFFLAGS, &ifr) < 0) ||
+ 			    (!(ifr.ifr_flags & IFF_BROADCAST)) ||
+ 			    (ifr.ifr_flags & IFF_LOOPBACK ) ||
+ 			    (ifr.ifr_flags & IFF_POINTOPOINT))
+ 				continue;
+-
++#endif
+ 			/* Otherwise, allocate one. */
+ 			tmp = (struct interface_info *)0;
+ 			status = interface_allocate (&tmp, MDL);
+diff -pru dhcp-3.0.3/server/dhcp.c dhcp-3.0.3-h/server/dhcp.c
+--- dhcp-3.0.3/server/dhcp.c	2005-04-30 04:40:57.000000000 +0530
++++ dhcp-3.0.3-h/server/dhcp.c	2006-02-07 20:28:59.000000000 +0530
+@@ -2852,7 +2852,11 @@ void dhcp_reply (lease)
+ 	if (raw.giaddr.s_addr) {
+ 		to.sin_addr = raw.giaddr;
+ 		if (raw.giaddr.s_addr != htonl (INADDR_LOOPBACK))
+-			to.sin_port = local_port;
++#ifdef NO_GLUSTER_HACKS
++			to.sin_port = local_port;
++#else
++                        to.sin_port = remote_port;
++#endif /* GLUSTER_HACK */
+ 		else
+ 			to.sin_port = remote_port; /* For debugging. */
+ 
+Only in dhcp-3.0.3-h: work.--help

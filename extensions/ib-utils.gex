@@ -1,0 +1,5 @@
+package-name: Infiniband Utilities (Library + Monitoring tools)
+package-description: libibverbs, ibstats etc
+package-maintainer: Amar Tumballi <amar@zresearch.com>
+package-contents: ib-utils.tgz
+package-exec: ./runme

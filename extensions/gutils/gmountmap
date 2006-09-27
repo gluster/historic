@@ -1,0 +1,590 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+from Gluster.GFrontEnd import dialog
+from Gluster.GTmp import Dir
+import os, string, sys, getopt, copy
+from Gluster.gpartdump import *
+
+dlg = dialog.Dialog ()
+auto = False
+
+#
+#  TODO - ntfs/vfat with OS not to be put to logical partition
+#       - use du and tar outputs to validate splits for size
+#
+
+
+#
+#
+# os_dict = { 'old_os_part' : { 'FSTAB' : { 'mp1' : [ None|'new_part',
+#                                                   is_sticky, (2 mpoints)]}
+#                                'SWAP' : [ swap1, swap2 ],
+#                                'OS' : "OpSys Name" }}
+#
+# part_dict = { 'old_part' : [ { 'old_os_part_1' : 'mpoint' },
+#                              { 'old_os_part_2' : 'mpoint2'}]
+#
+#
+
+linux_group = ['ext2', 'ext3', 'reiserfs', 'jfx', 'xfs']
+windows_group = ['fat32', 'ntfs']
+
+all_commands = []
+
+def gpart_call (dest_partlist, os_dict, auto):
+    global all_commands
+    
+    d = Dir.TmpDir ()
+    inp = file (d.Name () + '/input', "w")
+    write_dump (inp, partlist_gdump (dest_partlist))
+    inp.close ()
+    
+    fmt = "gpart -c %s/commands -d %s/dump -i %s/input"
+    r = os.system (fmt % (d.Name (),
+                          d.Name (),
+                          d.Name ()))
+
+    if r != 0:
+        return (dest_partlist, os_dict)
+
+    dump_fd = file (d.Name () + '/dump')
+    new_partlist = gdump_partlist (read_gdump (dump_fd))
+    dump_fd.close ()
+    
+    if not auto:
+        cmds_fd = file (d.Name () + '/commands')
+        extra_commands = cmds_fd.readlines ()
+        cmds_fd.close ()
+        extra_commands = map (string.strip, extra_commands)
+        all_commands += extra_commands
+
+    for old_part in dest_partlist.keys ():
+        screwed = False
+        if not old_part in new_partlist.keys ():
+            screwed = True
+        else:
+            for f in ['START', 'TYPE', 'FS', 'END']:
+                if dest_partlist[old_part][f] != new_partlist[old_part][f]:
+                    screwed = True
+
+        if screwed:
+            for _os in os_dict.keys ():
+                for mp, stuff in os_dict[_os]['FSTAB'].iteritems ():
+                    if stuff[0] == old_part:
+                        os_dict[_os]['FSTAB'][mp][0] = None
+                if os_dict[_os].has_key ('SWAP'):
+                    swap_list = os_dict[_os]['SWAP']
+                    if old_part in swap_list:
+                        swap_list.pop (swap_list.index (old_part))
+    return (new_partlist, os_dict)
+
+def get_part_dict (partlist):
+    part_dict = {}
+    for part in partlist.keys ():
+        mountlist = {}
+        if partlist[part]['XFER'] == 'N':
+            continue
+        for os_part in partlist.keys ():
+            if partlist[os_part]['FSTAB'].has_key (part):
+                mountlist[os_part] = partlist[os_part]['FSTAB'][part]
+        part_dict[part] = mountlist.copy ()
+    return part_dict
+
+def get_os_dict (partlist, part_dict, is_auto):
+    os_dict = {}
+    for part in partlist.keys ():
+        if partlist[part]['XFER'] == 'N':
+            continue
+        if partlist[part]['OS'] != '':
+            os_dict[part] = {}
+            os_dict[part]['OS'] = partlist[part]['OS']
+            os_dict[part]['SWAP'] = []
+            if is_auto:
+                os_dict[part]['FSTAB'] = { '/' : [part, True] }
+            else:
+                os_dict[part]['FSTAB'] = { '/' : [None, True] }
+
+    for part in partlist.keys ():
+        if partlist[part]['XFER'] == 'N':
+            continue
+        if partlist[part]['OS'] == '':
+            
+            if not partlist[part]['TYPE'] in ['primary', 'logical']:
+                continue
+
+            if partlist[part]['FS'] in 'linux-swap':
+                if is_auto:
+                    for os_part in part_dict[part].keys ():
+                        os_dict[os_part]['SWAP'].append (part)
+                continue
+            
+            num_mounts = len (part_dict[part])
+            if num_mounts == 0:
+                os_dict[part] = {}
+                os_dict[part]['OS'] = ''
+                if is_auto:
+                    os_dict[part]['FSTAB'] = { '/' : [part, True] }
+                else:
+                    os_dict[part]['FSTAB'] = { '/' : [None, True] }
+            else:
+                for (os, mp) in part_dict[part].iteritems ():
+                    need_sticky = False
+                    if num_mounts > 1:
+                        need_sticky = True
+                    if not partlist[part]['FS'] in linux_group:
+                        need_sticky = True
+                    if is_auto:
+                        os_dict[os]['FSTAB'][mp] = [part, need_sticky]
+                    else:
+                        os_dict[os]['FSTAB'][mp] = [None, need_sticky]
+
+    return os_dict
+
+key_to_os = {}
+
+def run_map (os_dict, part_dict, source_dump, dest_dump, auto):
+    global key_to_os
+    sel = ''
+    while True:
+        idx = 0
+        choices=[('mount', 'mapped partition')]
+        key_to_os={}
+        for os in os_dict.keys ():
+            choices.append(('--------','----------------'))
+            idx = idx + 1
+            desc = ''
+            if source_dump[os]['DESC'] != '':
+                desc = '%s (%s on source) ' % (source_dump[os]['DESC'], os)
+                key = '%s%d' % (source_dump[os]['OS'], idx)
+                key_to_os[key] = os
+            else:
+                key = 'misc%d' % idx
+                key_to_os[key] = os
+                if source_dump[os]['LABEL'] != '':
+                    desc = 'LABEL=%s (%s on source)' % (source_dump[os]['LABEL'], os)
+                else:
+                    desc = '(%s on source) %s' % (os, source_dump[os]['FS'])
+            choices.append ((key,desc))
+            os_name = source_dump[os]['OS']
+            
+            for mp in os_dict[os]['FSTAB'].keys ():
+                k = '%s: %s' % (key, mp)
+                p = os_dict[os]['FSTAB'][mp][0]
+                if not p:
+                    if os_dict[os]['FSTAB'][mp][1]:
+                        p = '<unassigned>'
+                    else:
+                        p = '*merged*'
+                choices.append ((k, p))
+
+            if source_dump[os]['FSTAB'] != {}:
+                k = '%s: swap' % key
+                if len (os_dict[os]['SWAP']) > 0:
+                    choices.append ((k, string.join (os_dict[os]['SWAP'])))
+                else:
+                    choices.append ((k, 'None'))
+
+        ret = 0
+        if not auto:
+            (ret, sel) = dlg.menu ('select os and mount',
+                                   choices=choices,
+                                   default_item=sel,
+                                   ok_label='Select',
+                                   cancel='Done',
+                                   extra_label='Back',
+                                   extra_button=True)
+        else:
+            ret = 1
+
+        if ret == 4:
+            sys.exit (1)
+            break
+        if ret != 0:
+            all_fine = True
+            for _os in os_dict.keys ():
+                for (mp, stuff) in os_dict[_os]['FSTAB'].iteritems ():
+                    if stuff[0] != None:
+                        continue
+                    if not stuff[1]:
+                        continue
+                    all_fine = False
+                    break
+            if not all_fine:
+                dlg.msgbox ('you still have unassigned partitions')
+                continue
+            return (True, os_dict, dest_dump)
+
+        if sel == 'mount' or sel[0] == '-':
+            continue
+
+        pieces = sel.split (':')
+        sel_os = pieces[0]
+        if len (pieces) == 2:
+            sel_mp = pieces[1].strip ()
+        else:
+            sel_mp = None
+            
+        os = key_to_os[sel_os]
+
+        if os_dict[os]['OS'] == '' and sel_mp == None:
+            continue
+
+        if not sel_mp:
+            if source_dump[os]['FSTAB'] != {}:
+                while True:
+                    (ret, sel) = dlg.menu ('select action',
+                                           choices=[('add',
+                                                     'add a new mountpoint'),
+                                                    ('swap',
+                                                     'add a new swap')])
+                    if ret != 0:
+                        break
+
+                    if sel == 'add':
+                        while True:
+                            (ret, nmp) = dlg.inputbox ('enter new mountpoint')
+                            if ret != 0:
+                                break
+
+                            if nmp in os_dict[os]['FSTAB'].keys ():
+                                dlg.msgbox ('mount point (%s) exists.' % nmp)
+                                continue
+                            
+                            if len (nmp) == 0 or nmp[0] != '/':
+                                dlg.msgbox ('invalid mountpoint %s' % nmp)
+                                continue
+                            
+                            if nmp in ['/etc',
+                                       '/lib',
+                                       '/dev',
+                                       '/proc',
+                                       '/bin',
+                                       '/sbin',
+                                       '/lib64']:
+                                if dlg.msgbox ('mounting %s on a seperate partition will make the system not bootable. do you want to continue?' % nmp):
+                                    continue
+
+                            while True:
+                                new_parts = []
+                                for p in dest_dump.keys ():
+                                    ok = True
+                                    if dest_dump[p]['TYPE'] in ['extended',
+                                                                'disk']:
+                                        ok = False
+                                    if not dest_dump[p]['FS'] in linux_group:
+                                        ok = False
+                                    for _os in os_dict.keys ():
+                                        fstab = os_dict[_os]['FSTAB']
+                                        if p in map ((lambda x:
+                                                      x[0]),
+                                                     fstab.values ()):
+                                            ok = False
+                                    if ok:
+                                        new_parts.append ((p, ''))
+
+                                new_parts.append (('repartition',
+                                                   ''))
+                                (ret, part) = dlg.menu ('sel',
+                                                        choices=new_parts)
+                                if ret != 0:
+                                    break
+                                if part == 'repartition':
+                                    (dest_dump,
+                                     os_dict) = gpart_call (dest_dump,
+                                                            os_dict,
+                                                            auto)
+                                    continue
+
+                                if not nmp in os_dict[os]['FSTAB'].keys ():
+                                    os_dict[os]['FSTAB'][nmp] = [None, False]
+                                os_dict[os]['FSTAB'][nmp][0] = part
+
+                                # side effects to other OS mount points
+                                for dp in part_dict.values ():
+                                    if not (os, nmp) in dp.items ():
+                                        continue
+                                    for sos, snmp in  dp.iteritems ():
+                                        fstab = os_dict[sos]['FSTAB']
+                                        if not snmp in fstab.keys():
+                                            fstab[snmp] = [None, False]
+                                        fstab[snmp][0] = part
+                                break
+                            break
+                        
+                    if sel == 'swap':
+                        new_swaps = []
+                        for p in dest_dump.keys ():
+                            if dest_dump[p]['FS'] == 'linux-swap':
+                                if not p in os_dict[os]['SWAP']:
+                                    new_swaps.append (p)
+                        if len (new_swaps) == 0:
+                            dlg.msgbox ('no more swap partitions to add')
+                        else:
+                            (ret, swp) = dlg.menu ('select swap partition',
+                                                   choices=map((lambda x:
+                                                                (x, '')),
+                                                               new_swaps))
+                            if ret != 0:
+                                continue
+                            os_dict[os]['SWAP'].append (swp)
+                            dlg.msgbox ('added %s as swap' % swp)
+                            
+                    if True:
+                        continue
+            continue
+
+        if sel_mp == 'swap':
+            swap_parts = []
+            for swp in dest_dump.keys ():
+                if dest_dump[swp]['FS'] == 'linux-swap':
+                    if swp in os_dict[os]['SWAP']:
+                        swap_parts.append ((swp, '', 'on'))
+                    else:
+                        swap_parts.append ((swp, '', 'off'))
+            if len (swap_parts) == 0:
+                dlg.msgbox ('no swap partitions available')
+                continue
+            (ret, swap_parts) = dlg.checklist ('select swaps',
+                                               choices=swap_parts)
+            if ret != 0:
+                continue
+            os_dict[os]['SWAP'] = swap_parts[:]
+        else:
+            old_fs = None
+            for dp in part_dict.keys ():
+                if os in part_dict[dp].keys ():
+                    if part_dict[dp][os] == sel_mp:
+                        old_fs = source_dump[dp]['FS']
+                        break
+            fs_group = linux_group # group of os_dict[os]['FSTAB']['/']
+            if old_fs in linux_group:
+                fs_group = linux_group
+            if old_fs in windows_group:
+                fs_group = windows_group
+            while True:
+                new_parts = []
+                for p in dest_dump.keys ():
+                    ok = True
+                    if not dest_dump[p]['FS'] in fs_group:
+                        ok = False
+                    for _os in os_dict.keys ():
+                        fstab = os_dict[_os]['FSTAB']
+                        if p in map ((lambda x:
+                                      x[0]),
+                                     fstab.values ()):
+                            ok = False
+                    if ok:
+                        new_parts.append ((p, ''))
+                        
+                new_parts.append (('delete', ''))
+                new_parts.append (('repartition', ''))
+
+                (ret, part) = dlg.menu ('select',
+                                        choices=new_parts)
+
+                if ret != 0:
+                    break
+
+                if part == 'repartition':
+                    (dest_dump,
+                     os_dict) = gpart_call (dest_dump,
+                                            os_dict,
+                                            auto)
+                    continue
+
+                if part == 'delete':
+                    found = False
+                    for dp in part_dict.values ():
+                        if (os, sel_mp) in dp.items ():
+                            found = True
+                            break
+                    if found:
+                        os_dict[os]['FSTAB'][sel_mp][0] = None
+                    else:
+                        os_dict[os]['FSTAB'].pop (sel_mp)
+                    break
+                
+                os_dict[os]['FSTAB'][sel_mp][0] = part
+                for dp in part_dict.values ():
+                    if not (os, sel_mp) in dp.items ():
+                        continue
+                    for (sos, snmp) in dp.iteritems ():
+                        fstab = os_dict[sos]['FSTAB']
+                        if not snmp in fstab.keys ():
+                            fstab[snmp] = [None, False]
+                        fstab[snmp][0] = part
+                break
+    return (False, None, None)
+
+def get_key_from_os (part):
+    global key_to_os
+    for key in key_to_os.keys ():
+        if key_to_os[key] == part:
+            return key
+    return None
+    
+def fix_fstab (dest_partlist, os_dict):
+    for p in dest_partlist.keys ():
+        dest_partlist[p]['FSTAB'] = {}
+    for os in os_dict.keys ():
+        if os_dict[os]['OS'] == '':
+            continue
+        os_part = os_dict[os]['FSTAB']['/'][0]
+        for mp, stuff in os_dict[os]['FSTAB'].iteritems ():
+            if not stuff[0]:
+                continue
+            dest_partlist[os_part]['FSTAB'][stuff[0]] = mp
+            dest_partlist[os_part]['OS'] = os_dict[os]['OS']
+        if 'SWAP' in os_dict[os].keys ():
+            for sp in os_dict[os]['SWAP']:
+                dest_partlist[os_part]['FSTAB'][sp] = 'swap'
+
+def write_mount (mount_fd, os_dict):
+    for k1,v1 in os_dict.iteritems ():
+        for k2,v2 in v1['FSTAB'].iteritems ():
+            if v2[0]:
+                mount_fd.write ("%s:%s:%s\n" % (v2[0],
+                                                get_key_from_os(k1),
+                                                k2))
+
+        if 'SWAP' in v1.keys ():
+            for swap in v1['SWAP']:
+                mount_fd.write ("%s:%s:swap\n" % (swap,
+                                                  get_key_from_os(k1)))
+                                         
+           
+    return
+
+def write_map (map_fd, source_partlist, part_dict):
+    parts = source_partlist.keys ()
+    parts.sort ()
+    key_to_os_sorted = key_to_os.keys ()
+    for part in parts:
+        if source_partlist[part]['FS'] == 'linux-swap':
+            continue
+        if source_partlist[part]['XFER'] == 'N':
+            continue
+        if source_partlist[part]['TYPE'] in ['extended', 'disk']:
+            continue
+        if len (part_dict[part].keys ()) > 0:
+            for teh_part in part_dict[part].keys ():
+                for k,v in key_to_os.iteritems ():
+                    if v == teh_part:
+                        map_fd.write ("%s:%s:%s\n" % (part,
+                                                      k,
+                                                      part_dict[part][teh_part]))
+        else:
+            for k,v in key_to_os.iteritems ():
+                if v == part:
+                    map_fd.write ("%s:%s:/\n" % (part, k))
+    return
+
+def main ():
+    global auto
+    global all_commands
+    input_fd = sys.stdin
+    dump_fd = sys.stdout
+    commands_fd = sys.stdout
+    map_fd = sys.stdout
+    mount_fd = sys.stdout
+    (opt, args) = getopt.getopt (sys.argv[1:], "ai:d:c:t:m:",
+                                 ["auto",
+                                  "input=",
+                                  "dump=",
+                                  "commands=",
+                                  "transfer=",
+                                  "mount="])
+
+    for (o, val) in opt:
+        if o == '-a' or o == '--auto':
+            auto = True
+        if o == '-d' or o == '--dump':
+            try:
+                dump_fd = file (val, "w")
+            except:
+                sys.exit (1)
+        if o == '-c' or o == '--commands':
+            try:
+                commands_fd = file (val, "w")
+            except:
+                sys.exit (1)
+        if o == '-i' or o == '--input':
+            try:
+                input_fd = file (val)
+            except:
+                sys.exit (1)
+        if o == '-t' or o == '--transfer':
+            try:
+                map_fd = file (val, "w")
+            except:
+                sys.exit (1)
+        if o == '-m' or o == '--mount':
+            try:
+                mount_fd = file(val, "w")
+            except:
+                sys.exit (1)
+
+    source_dump = read_gdump (input_fd)
+    source_partlist = gdump_partlist (source_dump)
+
+    part_dict = get_part_dict (source_partlist)
+    os_dict = get_os_dict (source_partlist, part_dict, auto)
+
+    if auto:
+        dest_dump = copy.deepcopy (source_dump)
+    else:
+        gprobe_fd = os.popen ("gprobe")
+        dest_dump = read_gdump (gprobe_fd)
+        gprobe_fd.close ()
+    dest_partlist = gdump_partlist (dest_dump)
+
+    (done, os_dict, dest_partlist) = run_map (os_dict, part_dict, source_partlist, dest_partlist, auto)
+
+    if done:
+        fix_fstab (dest_partlist, os_dict)
+        
+        write_dump (dump_fd, partlist_gdump (dest_partlist))
+        
+        write_map (map_fd, source_partlist, part_dict)
+
+        write_mount (mount_fd, os_dict)
+        
+        if auto:
+            d = Dir.TmpDir ()
+            dump_file = file (d.Name () + '/input', "w")
+            write_dump (dump_file, partlist_gdump (dest_partlist))
+            dump_file.close ()
+            fmt = "gpart -a -i %s/input -d %s/dump -c %s/cmds"
+            os.system (fmt % (d.Name (), d.Name (), d.Name ()))
+            c_fd = file ('%s/cmds' % d.Name ())
+            all_commands = c_fd.readlines ()
+            all_commands = map (string.strip, all_commands)
+            c_fd.close ()
+        for cmd in all_commands:
+            commands_fd.write ('%s\n' % cmd)
+
+        dump_fd.close ()
+        map_fd.close ()
+        mount_fd.close ()
+        commands_fd.close ()
+    return
+
+main ()

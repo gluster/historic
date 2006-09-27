@@ -1,0 +1,16 @@
+diff -pruN atftp-0.7/Makefile.in atftp-0.7-mod/Makefile.in
+--- atftp-0.7/Makefile.in	2004-03-16 07:23:06.000000000 +0530
++++ atftp-0.7-mod/Makefile.in	2005-12-23 22:44:26.000000000 +0530
+@@ -848,10 +848,10 @@ uninstall-man: uninstall-man1 uninstall-
+ 
+ 
+ install-exec-hook:
+-	(cd $(DESTDIR)$(sbindir) && ln -s atftpd in.tftpd)
++	(cd $(DESTDIR)$(sbindir) && ln -fs atftpd in.tftpd)
+ 
+ install-data-hook:
+-	(cd $(DESTDIR)$(mandir)/man8 && ln -s atftpd.8 in.tftpd.8)
++	(cd $(DESTDIR)$(mandir)/man8 && ln -fs atftpd.8 in.tftpd.8)
+ 
+ uninstall-local:
+ 	rm -f $(DESTDIR)$(sbindir)/in.tftpd $(DESTDIR)$(mandir)/man8/in.tftpd.8

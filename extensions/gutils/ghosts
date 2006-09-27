@@ -1,0 +1,68 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+import os, sys, string, ConfigParser
+from Gluster import GIP, GIPv4
+
+reg = ConfigParser.ConfigParser ()
+clientinfo = '/var/gluster/clientinfo'
+reg.read (clientinfo)
+
+def get_hostname (s=''):
+    return reg.get ('global', 'hostname') + s
+
+def get_totalnodes ():
+    return int (reg.get ('global', 'totalnodes'))
+
+def main ():
+    os.system ('mkdir -p /tmp/ghosts')
+
+    all_hosts = file ('/tmp/ghosts/all_hosts', 'w')
+    known_hosts = file ('/tmp/ghosts/known_hosts', 'w')
+    all_ip = file ('/tmp/ghosts/all_ip', 'w')
+    known_ip = file ('/tmp/ghosts/known_ip', 'w')
+    
+    host_prefix = get_hostname ()
+    ipobj = GIPv4.IPv4 (reg.get ('global', 'startip'),
+                        reg.get ('global', 'netmask'))
+    offset = int (ipobj.hostpart) - 1
+
+    for index in range (string.atoi (reg.get ('global', 'totalnodes'))):
+        i_ip = ipobj[index + 1 + offset].getStrings ()[0]
+        all_ip.write ("%s\n" % i_ip)
+
+    known_macs = file ("/var/gluster/macs.txt").readlines ()
+    node_ids = map (lambda x: int (x.split ()[0]), known_macs)
+
+    for i in range (get_totalnodes ()):
+        all_hosts.write ("%s%d\n" % (host_prefix, i+1))
+        if (i+1) in node_ids:
+            known_hosts.write ("%s%d\n" % (host_prefix, i+1))
+            i_ip = ipobj[i + 1 + offset].getStrings ()[0]
+            known_ip.write ("%s\n" % i_ip)
+    all_hosts.close ()
+    known_hosts.close ()
+    all_ip.close ()
+    known_ip.close ()
+    
+    os.system ("gping -i /tmp/ghosts/known_ip | cut -f1 -d: > /tmp/ghosts/up_ip")
+    return
+
+main ()

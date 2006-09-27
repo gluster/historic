@@ -1,0 +1,239 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+try:
+    import getopt, os, sys, string
+except ImportError, msg:
+    print "customize-net: Import Error:", msg
+
+static_options = ['address', 'netmask', 'gateway']
+
+def usage():
+    print """Usage: customize-net
+
+    -h --help         Displays the help menu
+    -v --version      Displays the version of the program
+    """
+    return
+
+def version(prog):
+    """ Prints the Version of the program"""
+    print prog,": Version 1.0.0 Beta"
+    return
+
+def update_iface(_path, _iface, _flag):
+    """ Update the files depending on the interface details """
+
+    gw_addr = None
+
+    if_num = int (_iface.strip (string.lowercase + string.uppercase))
+
+    # Get the IP addr from the already assigned address
+    if _flag == 'up':
+        phandle = os.popen ("ifconfig %s | grep Mask" % _iface)
+        tmp_str = phandle.readline ().strip ().split ("  ")
+        phandle.close ()
+
+        if len (tmp_str) == 0:
+            _flag = 'down'
+        else:
+            ip_addr = tmp_str[0].split (":")[1]
+            netmask = tmp_str[2].split (":")[1]
+            
+    # Get the GateWay address using 'route'
+    
+    phandle = os.popen ("route -n | grep ^0 | awk '{print $2}'")
+    gw_addr = phandle.readline ().strip ()
+    phandle.close ()
+
+    config_file = "%s/etc/network/interfaces" % _path
+    if os.access (config_file, os.R_OK):
+        if not os.access ("%s.orig-gluster" % config_file, os.R_OK):
+            os.system ("cp %s %s.orig-gluster" % (config_file, config_file))
+        f = open ("%s" % config_file, "r")
+        tmpf = open (".tmpinterfaces", "w")
+        entry_found = False
+        auto_entry = os.system ("grep auto %s | grep -q %s" %
+                                (config_file, _iface))
+
+        for line in f.readlines ():
+            if entry_found == True and line != '\n':
+                continue
+
+            split_line = line.strip ().split (" ")
+            map (string.strip, split_line)
+            
+            if not auto_entry and split_line[0] == 'auto' and \
+                   split_line[1] == _iface:
+                continue
+
+            if split_line[0] != 'iface':
+                tmpf.write (line)
+                continue
+
+            if split_line[1] != _iface:
+                tmpf.write (line)
+                continue
+            if _flag == 'up':
+                if not auto_entry:
+                    tmpf.write ("auto %s\n" % _iface)
+                tmpf.write ("iface %s inet static\n" % _iface)
+                tmpf.write ("      address %s\n" % ip_addr)
+                tmpf.write ("      netmask %s\n" % netmask)
+                if gw_addr != '':
+                    tmpf.write ("      gateway %s\n" % gw_addr)
+                entry_found = True
+                continue
+            else:
+                entry_found = True
+                continue
+            entry_found = False
+
+        if entry_found != True:
+            if _flag == 'up':
+                tmpf.write ("auto %s\n" % _iface)
+                tmpf.write ("iface %s inet static\n" % _iface)
+                tmpf.write ("      address %s\n" % ip_addr)
+                tmpf.write ("      netmask %s\n" % netmask)
+                if gw_addr != '':
+                    tmpf.write ("      gateway %s\n" % gw_addr)
+
+        f.close ()
+        tmpf.close ()
+        os.system ("cp .tmpinterfaces %s" % config_file)
+
+    config_file = '%s/etc/rc.d/rc.inet1.conf' % _path
+    if os.access (config_file, os.R_OK):
+        if not os.access ("%s.orig-gluster" % config_file, os.R_OK):
+            os.system ("cp %s %s.orig-gluster" % (config_file, config_file))
+        os.system ("sed -i -e 's/_DHCP\[%d\]=\"yes\"/_DHCP\[%d\]=\"\"/' %s"
+                   % (if_num, if_num, config_file))
+        if _flag == 'up':
+            os.system ("sed -i -e 's/ADDR\[%d\]=\".*\"/ADDR\[%d\]=\"%s\"/' %s"
+                       % (if_num, if_num, ip_addr, config_file))
+            os.system ("sed -i -e 's/MASK\[%d\]=\".*\"/MASK\[%d\]=\"%s\"/' %s"
+                       % (if_num, if_num, netmask, config_file))
+            os.system ("sed -i -e 's/GATEWAY=\".*\"/GATEWAY=\"%s\"/' %s"
+                       % (gw_addr, config_file))
+        else:
+            os.system ("sed -i -e 's/ADDR\[%d\]=\".*\"/ADDR\[%d\]=\"\"/' %s"
+                       % (if_num, if_num, config_file))
+            os.system ("sed -i -e 's/MASK\[%d\]=\".*\"/MASK\[%d\]=\"\"/' %s"
+                       % (if_num, if_num, config_file))
+
+    config_file = "%s/etc/sysconfig/network-scripts/ifcfg-%s" % (_path, _iface)
+    if os.access (config_file, os.R_OK):
+        if not os.access ("%s.orig-gluster" % config_file, os.R_OK):
+            os.system ("cp %s %s.orig-gluster" % (config_file, config_file))
+        if _flag != 'up':
+            os.system ("sed -i -e 's/ONBOOT=.*/ONBOOT=no/' %s" % config_file)
+        else:
+            file (config_file, 'w').write ("DEVICE=%s\n" % _iface +
+                                           "BOOTPROTO=static\n" +
+                                           "IPADDR=%s\n" % ip_addr +
+                                           "NETMASK=%s\n" % netmask +
+                                           "ONBOOT=yes\n")
+
+    config_file = '%s/etc/sysconfig/network' % _path
+    if os.access (config_file, os.R_OK):
+        if not os.access ("%s.orig-gluster" % config_file, os.R_OK):
+            os.system ("cp %s %s.orig-gluster" % (config_file, config_file))
+        os.system ("grep -q GATEWAY %s || echo GATEWAY= >> %s" %
+                   (config_file, config_file))
+        os.system ("sed -i -e 's/GATEWAY=.*/GATEWAY=%s/' %s" %
+                   (gw_addr, config_file))
+
+    return
+
+
+def main():
+    """ Main function """
+    try:
+        opt, args = getopt.gnu_getopt (sys.argv[1:], "hv",
+                                   ["help",
+                                    "version"])
+    except getopt.GetoptError, msg:
+        print msg
+        usage ()
+        sys.exit (1)
+
+    for (option, value) in opt:
+        if option == "-h" or option == "--help":
+            usage ()
+            return
+        elif option == "-v" or option == "--version":
+            print version (sys.argv[0])
+            return
+
+    if not len(args):
+        return
+    
+    os_path = args[0]
+
+    all_ifaces = os.popen ("ip link list | sed -n -e \'s/^[0-9]*:\ \([^:]*\):.*$/\\1/p\' ").readlines ()
+
+    up_ifaces = os.popen ("route -n | tail -n +3 | awk '{print $NF}' | sort | uniq").readlines ()
+
+    for iface in up_ifaces:
+        if iface.strip () == 'lo':
+            continue
+        update_iface (os_path, iface.strip (), 'up')
+        continue
+
+    for iface in all_ifaces:
+        if iface.strip () == 'lo':
+            continue
+        if iface in up_ifaces:
+            continue
+        update_iface (os_path, iface.strip (), 'down')
+        continue
+
+    hostname = os.popen ("hostname").readline ().strip ()
+    domainname = os.popen ("hostname -d").readline ().strip ()
+
+    if os.access ('%s/etc/hostname' % os_path, os.R_OK):
+        if not os.access ("%s/etc/hostname.orig-gluster" % os_path, os.R_OK):
+            os.system ("cp %s/etc/hostname %s/etc/hostname.orig-gluster" %
+                       (os_path, os_path))
+        os.system ("echo '%s.%s' > %s/etc/hostname" %
+                   (hostname, domainname, os_path))
+    
+    if os.access ('%s/etc/HOSTNAME' % os_path, os.R_OK):
+        if not os.access ("%s/etc/HOSTNAME.orig-gluster" % os_path, os.R_OK):
+            os.system ("cp %s/etc/HOSTNAME %s/etc/HOSTNAME.orig-gluster" %
+                       (os_path, os_path))
+        os.system ("echo '%s.%s' > %s/etc/HOSTNAME" %
+                   (hostname, domainname, os_path))
+
+    if os.access ('%s/etc/sysconfig/network' % os_path, os.R_OK):
+        if not os.access ("%s/etc/sysconfig/network.orig-gluster" % os_path, os.R_OK):
+            os.system ("cp %s/etc/sysconfig/network %s/etc/sysconfig/network.orig-gluster" %
+                       (os_path, os_path))
+        os.system ("sed -i -e 's/NAME=.*/NAME=%s/' %s/etc/sysconfig/network" %
+                   (hostname, os_path))
+
+    if not os.access ("%s/etc/resolv.conf.orig-gluster" % os_path, os.R_OK):
+        os.system ("cp %s/etc/resolv.conf %s/etc/resolv.conf.orig-gluster" %
+                   (os_path, os_path))
+    os.system ("cp -af /etc/resolv.conf %s/etc/" % os_path)
+
+    return
+
+main()

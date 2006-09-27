@@ -1,0 +1,5 @@
+package-name: File System Utilities
+package-description: mkfs,fsck etc. for ext2,ext3,reiserfs,xfs and jfs
+package-maintainer: Amar Tumballi <amar@80x25.org>
+package-contents: fs-utils.tgz
+package-exec: ./runme

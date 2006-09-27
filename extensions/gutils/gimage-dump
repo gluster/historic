@@ -1,0 +1,147 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+from Gluster.GFrontEnd import dialog
+from Gluster.gpartdump import *
+from Gluster import gmap
+import os, sys, string, getopt, errno, time
+
+#
+# Usage:
+# step1 - gimage-dump -o cookie_file -s spec_file
+# step2 - gimage-dump --recv -i cookie_file -s spec_file -c cmds_file
+#
+
+
+dlg = dialog.Dialog ()
+commands = []
+
+def xfer_fn ((part, cmd)):
+    fmt = '%s | gzip -c - > system-images/%s/%s.tgz'
+    os.system (fmt % (cmd,
+                      cookie,
+                      os.path.basename (part)))
+    return
+
+def main ():
+    cookie = None
+    global commands
+    do_xfer = False
+    output_fd = sys.stdout
+    input_fd = sys.stdin
+    spec_fd = sys.stdin
+    partlist = {}
+    
+    (opt, args) = getopt.getopt (sys.argv[1:], "ro:i:c:s:",
+                                 ["recv",
+                                  "spec=",
+                                  "commands=",
+                                  "output=",
+                                  "input="])
+    for (o, val) in opt:
+        if o == '-r' or o == '--recv':
+            do_xfer = True
+
+        if o == '-s' or o == '--spec':
+            try:
+                spec_fd = file (val)
+                partlist = gdump_partlist (read_gdump (spec_fd))
+            except:
+                sys.exit (1)
+                
+        if o == '-o' or o == '--output':
+            try:
+                output_fd = file (val, "w")
+            except:
+                sys.exit (1)
+                
+        if o == '-i' or o == '--input':
+            try:
+                input_fd = file (val)
+            except:
+                sys.exit (1)
+            cookie = input_fd.readline ().strip ()
+            input_fd.close ()
+            
+        if o == '-c' or o == '--commands':
+            try:
+                commands_fd = file (val)
+            except:
+                sys.exit (1)
+            commands = commands_fd.readlines ()
+            commands = map (string.strip, commands)
+            commands_fd.close ()
+
+    if do_xfer:
+        parts = partlist.keys ()
+        parts.sort ()
+        parts = filter ((lambda x:
+                         partlist[x]['XFER'] == 'Y' and partlist[x]['FS'] != 'linux-swap'),
+                        parts)
+        gmap.gmap (xfer_fn, map (None, parts, commands))
+    else:
+        i = 1
+        dirname = None
+        while i < 999:
+            dirname = ('system-images/img.%03d' % i)
+            try:
+                os.mkdir (dirname)
+                break
+            except OSError, e:
+                if e.errno == errno.EEXIST:
+                    i = i + 1
+                    continue
+                else:
+                    dlg.msgbox ('FATAL: Cannot create directories in system-images on master node')
+                    sys.exit (1)
+            except:
+                dlg.msgbox ('FATAL: Cannot create directories in system-images on master node')
+                sys.exit (1)
+
+        namelist = []
+        for p in partlist.keys ():
+            if partlist[p]['OS'] != '' and partlist[p]['XFER'] == 'Y':
+                namelist.append (partlist[p]['OS'])
+        namelist.append (time.strftime ('%Y-%m-%d-%H%M%S'))
+        name = string.join (namelist, '-')
+        while True:
+            (ret, newname) = dlg.inputbox ('Enter a tagname for the image to be captured',
+                                           init=name)
+            if ret != 0:
+                os.rmdir (dirname)
+                sys.exit (1)
+
+            if newname == '':
+                continue
+            break
+                
+        namefile = file ('%s/name' % dirname, "w")
+        namefile.write ('%s\n' % newname)
+        namefile.close ()
+        
+        specfile = file ('%s/provision.spec' % dirname, "w")
+        write_dump (specfile, partlist_gdump (partlist))
+        specfile.close ()
+        
+        output_fd.write ('%s\n' % os.path.basename (dirname))
+        output_fd.close ()
+    return True
+
+main ()

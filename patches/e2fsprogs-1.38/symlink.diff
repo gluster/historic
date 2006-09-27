@@ -1,0 +1,13 @@
+diff -pru e2fsprogs-1.38/lib/Makefile.elf-lib e2fsprogs-1.38-fixed/lib/Makefile.elf-lib
+--- e2fsprogs-1.38/lib/Makefile.elf-lib	2004-12-15 22:00:39.000000000 +0530
++++ e2fsprogs-1.38-fixed/lib/Makefile.elf-lib	2006-02-21 12:38:34.663817088 +0530
+@@ -47,7 +47,7 @@ install-shlibs install:: $(ELF_LIB) inst
+ 	@echo "	SYMLINK $(ELF_INSTALL_DIR)/$(ELF_SONAME)"
+ 	@$(LN_S) -f $(ELF_LIB) $(DESTDIR)$(ELF_INSTALL_DIR)/$(ELF_SONAME)
+ 	@echo "	SYMLINK $(libdir)/$(ELF_IMAGE).so"
+-	@$(LN_S) -f $(ELF_INSTALL_DIR)/$(ELF_SONAME) \
++	@$(LN_S) -f $(ELF_SONAME) \
+ 		$(DESTDIR)$(libdir)/$(ELF_IMAGE).so
+ 	@echo "	LDCONFIG"
+ 	@-$(LDCONFIG)
+Only in e2fsprogs-1.38-fixed/lib: Makefile.elf-lib~

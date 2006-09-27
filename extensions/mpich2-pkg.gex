@@ -1,0 +1,6 @@
+package-name: MPICH2 HPC Bundle
+package-description: MPICH version 2 includes, libs and executables
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: mpich2-pkg.tgz
+package-exec: ./runme
+hpc-register: mpich2

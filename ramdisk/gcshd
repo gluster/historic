@@ -1,0 +1,37 @@
+#!/bin/sh
+# Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+#  
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#  
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#  
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#  
+
+while :; do
+    sleep 1
+    state=$(cat /tmp/.gping.in 2>/dev/null)
+    if [ "$state" = "die" ]; then
+	exit 0
+    fi
+    if [ "$state" != "slave" ]; then
+	continue
+    fi
+    echo "Started listening on port 10000";
+    udp-receiver --nokbd --portbase 10000 2>/dev/null | { 
+	read cmd; 
+	echo "Evaluating $cmd";
+	eval "$cmd";
+    }
+    echo -n "Barrier ... ";
+    udp-receiver --nokbd --portbase 10002 --file /dev/null 2>/dev/null;
+    echo "done."
+done

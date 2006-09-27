@@ -1,0 +1,11 @@
+DEFAULT gluster-client
+PROMPT 1
+NOESCAPE 1
+TIMEOUT 10
+ALLOWOPTIONS 1
+MENU TITLE Gluster PXE Boot
+LABEL gluster-client
+    MENU LABEL
+    KERNEL linux.slave
+    APPEND initrd=initrd.slave.gz quiet gluster_bootp=yes
+

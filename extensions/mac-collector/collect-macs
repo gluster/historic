@@ -1,0 +1,106 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+import os, string, sys
+from Gluster.GFrontEnd import dialog;
+from Gluster import GArgs;
+
+
+mac_list = [];
+mac_db = {};
+mac_cache = "/var/tmp/mac.list";
+d = dialog.Dialog ();
+g = GArgs.GArgp ();
+
+_opt = [
+    { 'keys' : [ '-i' ],
+      'dest' : 'iface',
+      'type' : 'string',
+      'default' : 'eth0',
+      'help' : 'interface to capture MACs on' }];
+
+g.AddOpt (_opt);
+g.Process ();
+
+def arr_to_str (arr):
+    _str = "";
+    for key in arr:
+        _str = _str + " " + key;
+    return _str;
+
+def print_status (list):
+    _str = "Registered MACs on " + g.GetOpt ("iface") + " for" + arr_to_str (g.GetArgs ()) + ":\n";
+    _cnt = 1;
+    for mac in list:
+        _str = _str + repr (_cnt) + ") " + mac + "\n";
+        _cnt = _cnt + 1;
+    _str = _str + "\n (Probing ... Ctrl-C to end)";
+    d.infobox (_str, title="[ Registered MACs ]");
+    return
+
+def init_mac_db (cache_file):
+    os.system ("> " + mac_cache);
+    return
+
+def update_mac_db (mac, cache_file):
+    os.system ("echo " + mac + " >> " + cache_file);
+    return
+
+def i_like (mac):
+    return not d.yesno ( mac, title="[ Register MAC ? ]");
+
+def main ():
+    init_mac_db (mac_cache);
+    print "interface = " + g.GetOpt ("iface");
+    print "expr = " + arr_to_str (g.GetArgs ());
+    print_status (mac_list);
+    try:
+        hnd = os.popen ("tcpdump -nle -i " + g.GetOpt ("iface")
+                        + " "
+                        + arr_to_str (g.GetArgs ())
+                        + "  2>/dev/null", "r", 1);
+        while True:
+
+            line = hnd.readline().strip();
+            if line == "": break
+            if line is None: break
+        
+            mac = string.splitfields (line, ' ')[1];
+            try:
+                if mac_db[mac] is not None:
+                    True;
+            except KeyError:
+                if i_like (mac) :
+                    mac_db[mac] = 'Y';
+                    mac_list.append (mac);
+                    update_mac_db (mac, mac_cache)
+                else:
+                    mac_db[mac] = 'N';
+                print_status (mac_list);
+    except KeyboardInterrupt:
+        "nothing"
+
+    ret = hnd.close ();
+    if ret is not None:
+        sys.exit (os.WEXITSTATUS(ret))
+    os.system ("cat " + mac_cache + " >&2")
+    sys.exit (0)
+
+main ()

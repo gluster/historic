@@ -1,0 +1,6 @@
+package-name: Gluster Enterprise Provisioning
+package-description: Enables OS Provisioning in enterprise environment
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: GlusterEP.tgz
+package-exec: ./runme
+application-register: GlusterEP

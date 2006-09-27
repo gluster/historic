@@ -1,0 +1,72 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+from Gluster.GFrontEnd import dialog
+from Gluster.gpartdump import *
+from Gluster import GExtension
+import os, string, sys, getopt, socket
+
+dlg = dialog.Dialog ()
+#my_ip = file ('/etc/my-ip').readline ().strip ()
+#my_ip = socket.gethostname ()
+my_ip = os.popen ("ifconfig -a | sed -n -e 's/.*HWaddr //p' | head -n -1").readline ().strip () + os.popen ("sed -n -e 's/user//p' /.ssh/config").readline ().strip ()
+port_base = 13370
+
+def source_config ():
+    if os.system ('gprobe | gpart-sel -o /tmp/gc.spec -m /tmp/gc_approx_max -c /tmp/gc.tar.cmds') == 0:
+        return
+    else:
+        sys.exit (1)
+        return
+
+def dest_config ():
+    os.system ('ssh master-node mkdir -p /var/tmp/%s' % my_ip)
+    os.system ('scp /tmp/gc.spec master-node:/var/tmp/%s' % my_ip)
+    if os.system ("ssh -t master-node 'gimage-dump -s /var/tmp/%s/gc.spec -o /var/tmp/%s/cookie'" % (my_ip, my_ip)) != 0:
+        sys.exit (1)
+        return
+    return
+
+def source_action ():
+    partlist = gdump_partlist (read_gdump (file ('/tmp/gc.spec')))
+    parts = partlist.keys ()
+    parts = filter ((lambda x:
+                     partlist[x]['FS'] != 'linux-swap' and partlist[x]['XFER'] == 'Y'),
+                    parts)
+    parts.sort ()
+    no_parts = len (parts)
+    cmd_for_source = file ('/tmp/gc.dest.cmds', "w")
+    for i in range (no_parts):
+        cmd_for_source.write ("ssh master-node 'gzip -c - > system-images/`cat /var/tmp/%s/cookie`/%s.tgz'\n" % (my_ip, parts[i].split ('/')[-1]))
+    cmd_for_source.flush ()
+    cmd_for_source.close ()
+
+    os.system ("gstream -t 'GlusterEP System Image Capture' -f -i /tmp/gc.tar.cmds -o /tmp/gc.dest.cmds -m `cat /tmp/gc_approx_max`")
+                                
+    return
+
+def main ():
+    source_config ()
+    dest_config ()
+    source_action ()
+    #dest_action ()
+    return
+
+main ()

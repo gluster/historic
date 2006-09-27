@@ -1,0 +1,11 @@
+diff -pru powerman-1.0.20_orig/src/parse.y powerman-1.0.20/src/parse.y
+--- powerman-1.0.20_orig/src/parse.y	2004-02-20 04:31:26.000000000 +0530
++++ powerman-1.0.20/src/parse.y	2006-07-05 13:14:59.000000000 +0530
+@@ -754,6 +754,7 @@ static void makeNode(char *nodestr, char
+         case EPL_NONODES:
+             _errormsg("more plugs than nodes");
+         default:
++	  break;
+     }
+ 
+     if (!conf_addnodes(nodestr))

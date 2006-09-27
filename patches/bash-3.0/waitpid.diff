@@ -1,0 +1,12 @@
+diff -pruN bash-3.0/jobs.c bash-3.0-p/jobs.c
+--- bash-3.0/jobs.c	2004-04-24 01:58:25.000000000 +0530
++++ bash-3.0-p/jobs.c	2005-07-10 23:10:28.000000000 +0530
+@@ -2480,7 +2480,7 @@ waitchld (wpid, block)
+       /* We don't want to be notified about jobs stopping if job control
+ 	 is not active.  XXX - was interactive_shell instead of job_control */
+       waitpid_flags = (job_control && subshell_environment == 0)
+-			? (WUNTRACED|WCONTINUED)
++			? (WUNTRACED)
+ 			: 0;
+       if (sigchld || block == 0)
+ 	waitpid_flags |= WNOHANG;

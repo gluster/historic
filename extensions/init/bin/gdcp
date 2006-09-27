@@ -1,0 +1,95 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+# gdcp: Gluster Distributed Copy
+# Author: Vikas Gorur <vikas@80x25.org>
+# Date: Sun Jan 22 00:44:15 IST 2006
+
+try:
+    import getopt, os, sys
+    from Gluster import gmap
+except ImportError, msg:
+    print "gdcp: Import error:", msg
+    sys.exit (1)
+
+def rcopy (host, path, dest, verbose=False, recurse=False):
+    if verbose: sys.stdout.write ("%s:%s" % (host, path))
+    if recurse:
+        options = "-r"
+    else:
+        options = ""
+
+    if dest == None:
+        dest = path
+        
+    ret = os.system("scp %s %s %s:%s" %
+                    (options, path, host, dest))
+    if verbose: sys.stdout.write (".\n")
+    return ret
+
+def usage ():
+    print """Usage: gdcp [-v] [-r] [-d n] src [dest]
+
+    -v, --verbose        be verbose
+    -r                   copy recursively
+    -d, --degree n       set degree of parallelism to n
+"""    
+def main ():
+        try:
+            opt, args = getopt.gnu_getopt (sys.argv[1:], "rvd:",
+                                           ["verbose", "degree="])
+        except getopt.GetoptError, (msg, opt):
+            print msg
+            usage ()
+            sys.exit (1)
+
+        if len (args) < 1:
+            usage ()
+            sys.exit (1)
+            
+        verbose = False
+        degree = -1
+        recurse = False
+        
+        for (o, val) in opt:
+            if o == "-v" or o == "--verbose":
+                verbose = True
+            elif o == "-d" or o == "--degree":
+                degree = int (val)
+            elif o == "-r":
+                recurse = True
+
+        try:
+            hosts = sys.stdin.readlines ()
+        except IOError, (errno, msg):
+            print "gdcp: Could not read list of hosts:", msg
+            sys.exit (2)
+
+        if len (args) == 1:
+            dest = None
+        else:
+            dest = args[1]
+            
+        hosts = map (lambda s: s[:-1], hosts)
+        rets = gmap.gmap (lambda host: rcopy (host, args[0], dest,
+                                              verbose, recurse),
+                          hosts, degree)
+
+main ()

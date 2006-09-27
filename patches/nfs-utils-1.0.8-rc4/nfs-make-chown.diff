@@ -1,0 +1,12 @@
+diff -pruN nfs-utils-1.0.8-rc4/Makefile.in nfs-utils-1.0.8-rc4-h/Makefile.in
+--- nfs-utils-1.0.8-rc4/Makefile.in	2006-03-28 09:52:44.000000000 +0530
++++ nfs-utils-1.0.8-rc4-h/Makefile.in	2006-05-25 05:01:44.000000000 +0530
+@@ -681,7 +681,7 @@ install-data-hook:
+ 	mkdir -p $(DESTDIR)$(statedir)/sm $(DESTDIR)$(statedir)/sm.bak
+ 	touch $(DESTDIR)$(statedir)/state
+ 	chmod go-rwx $(DESTDIR)$(statedir)/sm $(DESTDIR)$(statedir)/sm.bak $(DESTDIR)$(statedir)/state
+-	chown $(statduser) $(DESTDIR)$(statedir)/sm $(DESTDIR)$(statedir)/sm.bak $(DESTDIR)$(statedir)/state
++	-chown $(statduser) $(DESTDIR)$(statedir)/sm $(DESTDIR)$(statedir)/sm.bak $(DESTDIR)$(statedir)/state
+ 
+ uninstall-hook:
+ 	rm $(DESTDIR)$(statedir)/xtab

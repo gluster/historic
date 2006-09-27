@@ -1,0 +1,44 @@
+diff -pruN hotplug-2004_03_29/etc/hotplug/blacklist hotplug-2004_03_29-mod/etc/hotplug/blacklist
+--- hotplug-2004_03_29/etc/hotplug/blacklist	2004-03-12 05:02:59.000000000 +0530
++++ hotplug-2004_03_29-mod/etc/hotplug/blacklist	2005-09-26 02:23:43.000000000 +0530
+@@ -21,3 +21,40 @@ dmfe
+ 
+ #evbug is a debug tool and should be loaded explicitly
+ evbug
++shpchp
++aty128fb
++atyfb
++radeonfb
++backlight
++lcd
++cirrusfb
++mdacon
++cyber2000fb
++gx1fb
++hgafb
++i810fb
++intelfb
++kyrofb
++macmodes
++g450_pll
++i2c-matroxfb
++matroxfb_DAC1064
++matroxfb_Ti3026
++matroxfb_accel
++matroxfb_base
++matroxfb_crtc2
++matroxfb_g450
++matroxfb_maven
++matroxfb_misc
++neofb
++nvidiafb
++pm2fb
++rivafb
++s1d13xxxfb
++savagefb
++sisfb
++sstfb
++tdfxfb
++tridentfb
++vga16fb
++vgastate

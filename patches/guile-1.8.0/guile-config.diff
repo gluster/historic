@@ -1,0 +1,12 @@
+diff -pru guile-1.8.0/guile-config/guile-config.in guile-1.8.0-h/guile-config/guile-config.in
+--- guile-1.8.0/guile-config/guile-config.in	2006-02-12 18:59:09.000000000 +0530
++++ guile-1.8.0-h/guile-config/guile-config.in	2006-03-14 09:49:01.967751984 +0530
+@@ -152,7 +152,7 @@
+ 	      (list
+ 	       (get-build-info 'CFLAGS)
+ 	       "-lguile -lltdl" 
+-	       (if (string=? libdir "/usr/lib/")
++	       (if (string=? libdir "/usr/lib")
+ 		   ""
+ 		   (string-append "-L" (get-build-info 'libdir)))
+ 	       (string-join other-flags)

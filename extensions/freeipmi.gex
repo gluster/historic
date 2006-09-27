@@ -1,0 +1,5 @@
+package-name: FreeIPMI and dependency
+package-description: freeipmi
+package-maintainer: Harshavardhana
+package-contents: freeipmi.tgz
+package-exec: ./runme 

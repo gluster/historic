@@ -1,0 +1,39 @@
+#!/bin/sh
+# Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+#  
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#  
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#  
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#  
+
+[ -z "$1" ] || exec 1>$1
+
+hostname=$(hostname)
+ifaces=$(ip l l | grep UP | grep -v NO-CARRIER | cut -f2 -d: | grep -v lo)
+
+echo "#!/bin/sh"
+echo "exec 2>/dev/null"
+echo "hostname $hostname"
+
+for i in $ifaces; do
+    # Reset all the interfaces
+    echo ip addr flush dev $i;
+    echo ip route flush dev $i;
+    echo ip link set down dev $i;
+    [ -f /var/state/dhcp/dhclient.leases ] && grep -q $i /var/state/dhcp/dhclient.leases && echo dhclient $i && continue
+    echo ip link set up dev $i;
+    # Set addresses 
+    ip addr list dev $i | sed -n -e "s/inet //p" | sed -e "s/$i/dev $i/" | sed -e 's/^/ip addr add /'
+    # Set routes
+    ip route list dev $i | sed -e 's/^/ip route add /' | sed -e "s/$/dev $i/"
+done;

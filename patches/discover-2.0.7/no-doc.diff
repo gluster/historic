@@ -1,0 +1,12 @@
+diff -pru discover-2.0.7/Makefile.in discover-2.0.7-f/Makefile.in
+--- discover-2.0.7/Makefile.in	2004-05-14 02:07:41.000000000 +0530
++++ discover-2.0.7-f/Makefile.in	2006-02-23 13:18:56.217125264 +0530
+@@ -5,7 +5,7 @@
+ 
+ distdir=		${builddir}/${distname}
+ 
+-SUBDIR=			buildtools doctools portability etc doc scripts \
++SUBDIR=			buildtools doctools portability etc scripts \
+ 			sysdeps include lib discover tests discover-xml
+ 
+ all:

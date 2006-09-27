@@ -1,0 +1,6 @@
+package-name: ganglia
+package-description: Distributed monitoring system
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: ganglia-pkg.tgz
+package-exec: ./runme
+hpc-register: ganglia

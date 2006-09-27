@@ -1,0 +1,6 @@
+package-name: c3
+package-description: Cluster Control & Command
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: c3-pkg.tgz
+package-exec: ./runme
+hpc-register: c3

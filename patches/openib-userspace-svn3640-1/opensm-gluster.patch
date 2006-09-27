@@ -1,0 +1,38 @@
+diff -pru userspace/management/osm/complib/Makefile.am userspace-h/management/osm/complib/Makefile.am
+--- userspace/management/osm/complib/Makefile.am	2005-09-14 23:18:18.000000000 +0530
++++ userspace-h/management/osm/complib/Makefile.am	2006-04-05 23:30:10.000000000 +0530
+@@ -97,6 +97,5 @@ dist-hook: libosmcomp.spec
+ # that it will mark it with an alias... 
+ # we find the new lib by traversing the links
+ install-exec-hook:
+-	if test -L $(libdir)/libosmcomp-$(VERSION).so; then rm $(libdir)/libosmcomp-$(VERSION).so; fi; \
+-	lname=`\ls -l $(libdir)/libosmcomp.so | awk '{print $$NF}'`; \
+-	ln -s $$lname $(libdir)/libosmcomp-$(VERSION).so
++	lname=`\ls -l $(DESTDIR)/$(libdir)/libosmcomp.so | awk '{print $$NF}'`; \
++	ln -sf $$lname $(DESTDIR)/$(libdir)/libosmcomp-$(VERSION).so
+diff -pru userspace/management/osm/libvendor/Makefile.am userspace-h/management/osm/libvendor/Makefile.am
+--- userspace/management/osm/libvendor/Makefile.am	2005-09-14 23:18:18.000000000 +0530
++++ userspace-h/management/osm/libvendor/Makefile.am	2006-04-06 01:09:34.000000000 +0530
+@@ -91,6 +91,6 @@ dist-hook: libosmvendor.spec
+ # that it will mark it with an alias... 
+ # we find the new lib by traversing the links
+ install-exec-hook:
+-	if test -L $(libdir)/libosmvendor-$(VERSION).so; then rm $(libdir)/libosmvendor-$(VERSION).so; fi; \
+-	lname=`\ls -l $(libdir)/libosmvendor.so | awk '{print $$NF}'`; \
+-	ln -s $$lname $(libdir)/libosmvendor-$(VERSION).so
++	if test -L $(DESTDIR)/$(libdir)/libosmvendor-$(VERSION).so; then rm $(DESTDIR)/$(libdir)/libosmvendor-$(VERSION).so; fi; \
++	lname=`\ls -l $(DESTDIR)/$(libdir)/libosmvendor.so | awk '{print $$NF}'`; \
++	ln -s $$lname $(DESTDIR)/$(libdir)/libosmvendor-$(VERSION).so
+diff -pru userspace/management/osm/opensm/Makefile.am userspace-h/management/osm/opensm/Makefile.am
+--- userspace/management/osm/opensm/Makefile.am	2005-09-28 21:19:32.000000000 +0530
++++ userspace-h/management/osm/opensm/Makefile.am	2006-04-06 01:10:28.000000000 +0530
+@@ -102,6 +102,6 @@ EXTRA_DIST = $(srcdir)/libopensm.map $(s
+ # that it will mark it with an alias... 
+ # we find the new lib by traversing the links
+ install-exec-hook:
+-	if test -L $(libdir)/libopensm-$(VERSION).so; then rm $(libdir)/libopensm-$(VERSION).so; fi; \
+-	lname=`\ls -l $(libdir)/libopensm.so | awk '{print $$NF}'`; \
+-	ln -s $$lname $(libdir)/libopensm-$(VERSION).so
++	if test -L $(DESTDIR)/$(libdir)/libopensm-$(VERSION).so; then rm $(DESTDIR)/$(libdir)/libopensm-$(VERSION).so; fi; \
++	lname=`\ls -l $(DESTDIR)/$(libdir)/libopensm.so | awk '{print $$NF}'`; \
++	ln -s $$lname $(DESTDIR)/$(libdir)/libopensm-$(VERSION).so

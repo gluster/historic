@@ -1,0 +1,76 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+from Gluster.GFrontEnd import dialog
+import os, sys, string, dircache
+
+dlg = dialog.Dialog ()
+
+def file_to_dict (filename):
+    _dict = {};
+    for line in open (filename).readlines ():
+        line = line.strip ()
+        if not line.strip():
+            continue
+        pieces = line.strip ().split (":", 1)
+        if len(pieces) == 2:
+            if not (pieces[0].strip() and pieces[1].strip()):
+                print " Warning: invalid key or value in line `" + line + "'";
+                continue
+            _dict[pieces[0]] = pieces[1]
+        else:
+            print " Warning: at `" + line + "' \":\" not specified ";
+    return _dict;
+
+def main ():
+    host = 'master-node'
+    if len (sys.argv) > 1:
+        host = sys.argv[1]
+    all_files = dircache.opendir ('/stage3')
+    all_gex = filter (lambda name: len (name) > 5 and name[-4:] == '.gex',
+                      all_files)
+    menu_dict = {}
+    for gex in all_gex:
+        gex_file = '/stage3/%s' % gex
+        gex_dict = file_to_dict (gex_file)
+        if 'hpc-register' in gex_dict.keys ():
+            menu_dict[gex_dict['hpc-register'].strip ()] = [gex, gex_dict['package-description'].strip ()]
+
+    choices = map ((lambda (k, v):
+                    (k, v[1], 'on')), menu_dict.items ())
+    (ret, sel_list) = dlg.checklist ('Select HPC application or packages to install\n',
+                                     title="[ HPC Extensions ]",
+                                     choices=choices)
+    if ret != 0:
+        sys.exit (1)
+        return
+    pkg_count = 0
+    pkg_total = len (sel_list)
+    dlg.infobox ("Loading HPC base on all nodes\n")
+    os.system ("gex --install /stage3/hpc-base-pkg.gex")
+    for sel_item in sel_list:
+        pkg_count += 1
+        dlg.infobox ("Loading \"%s\" (%d of %d)\n" %
+                     (menu_dict[sel_item][0], pkg_count, pkg_total))
+        os.system ("gex --install /stage3/%s" % menu_dict[sel_item][0])
+
+    return
+
+main ()

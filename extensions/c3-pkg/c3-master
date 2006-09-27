@@ -1,0 +1,10 @@
+#!/bin/sh
+
+os_base=$1;
+
+exec 1>$os_base/opt/gluster/etc/c3.conf
+echo "cluster gluster-new {"
+cat $os_base/opt/gluster/etc/nodes
+echo "}"
+
+ln -sf /opt/gluster/etc/c3.conf $os_base/etc/c3.conf

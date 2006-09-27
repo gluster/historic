@@ -1,0 +1,6 @@
+package-name: conman
+package-description: LLNL's Console manager
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: conman-pkg.tgz
+package-exec: ./runme
+hpc-register: conman

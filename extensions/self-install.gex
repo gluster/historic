@@ -1,0 +1,6 @@
+package-name: self-install
+package-description: Install Gluster to hardisk
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: self-install.tgz
+package-exec: ./runme
+application-register: self-install

@@ -1,0 +1,297 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+from Gluster.GFrontEnd import dialog
+from Gluster.gpartdump import *
+from Gluster import GExtension
+import os, string, sys, getopt
+
+dlg = dialog.Dialog ()
+
+def get_images (user):
+    image_arr = []
+    # Search for the images
+    images = os.popen ('ls /home/%s/system-images/' % user).readlines ()
+    for image in images:
+        name = os.popen ('cat /home/%s/system-images/%s/name' %
+                         (user, image.strip ())).readline ().strip ()
+        image_arr.append ((image.strip (), name))
+    if image_arr == []:
+        image_arr.append (('<no image>',''))
+    return image_arr
+
+def get_usernames ():
+    users_arr = []
+    # Can open the file, and parse each line, but this is nice :)
+    fd = os.popen ("cat /etc/passwd | cut -d':' -f1,4 | grep 1337 | cut -d':' -f1")
+    users = fd.readlines ()
+    fd.close ()
+    for user in users:
+        users_arr.append ((user.strip (), ''))
+    if users_arr == []:
+        users_arr.append (('<no users>', ''))
+    return users_arr
+
+def image_management ():
+    (r, user) = dlg.menu ('Select the user',
+                          title='[ Image Manager ]',
+                          choices=get_usernames (),
+                          cancel='Back')
+    if r != 0:
+        return
+
+    if user == '<no users>':
+        dlg.msgbox ("No Users found, returning\n",
+                    title='[ Warning ]')
+        return
+
+    while True:
+        (ret, sel) = dlg.menu ('Select the options',
+                               title='[ Image Manager ]',
+                               choices=[('view', 'View the current images'),
+                                        ('del', 'Delete the image'),
+                                        ('user', 'Select Different User')],
+                               cancel='Back')
+
+        if ret != 0:
+            break
+
+        if sel == 'view':
+            dlg.menu ('Images in the repository',
+                      title='[ View Image ]',
+                      choices=get_images (user),
+                      no_cancel=True)
+            continue
+
+        if sel == 'del':
+            (tmp, image) = dlg.menu ('Select the image to delete',
+                                     title='[ Delete Image ]',
+                                     choices=get_images (user),
+                                     cancel='Back')
+            if tmp != 0:
+                continue
+
+            os.system ('rm -rf /home/%s/system-images/%s' % (user, image))
+            continue
+
+        if sel == 'user':
+            (jnk, user) = dlg.menu ('Select the user',
+                                    title='[ Change User ]',
+                                    choices=get_usernames (),
+                                    cancel='Back')
+            continue
+        continue                                
+    return
+
+def config_client ():
+    os.system ("rm /var/gluster/EP/bootp.iface -f")
+    os.system ("/etc/stage2/config_network.sh")
+    os.system ("gdump-netstate /var/gluster/EP/rc.local")
+    os.system ("chmod +x /var/gluster/EP/rc.local")
+    GExtension.run ('bootp-manager', '--allow 2>>/var/log/proglog')
+    return
+
+def master ():
+    # Run gstate-sel first
+    # Later create a directory for EP inside /var/gluster
+    # symlink /etc/passwd and /home to a directory inside this
+    # Provide a interface to 'user management' and 'image management'
+    # 'image management' is per user (so ask for username)
+
+    # Assuming user selects some partition for /var/gluster
+    if os.system ("gstate-sel") != 0:
+        return
+    
+    # If its the first time, then create all the required files and dirs
+    if not os.path.isdir ('/var/gluster/EP'):
+        #os.system ("rm -rf /var/gluster/EP")
+        os.system ("mkdir -p /var/gluster/EP")
+        os.system ("mkdir -p /var/gluster/EP/home")
+        os.system ("cp -f /etc/passwd /var/gluster/EP/")
+    
+    os.system ("rm -f /home")
+    os.system ("ln -sf /var/gluster/EP/home /home")
+    os.system ("cp -f /var/gluster/EP/passwd /etc/")
+
+    # need a stage3 dir in /tftpboot
+    os.system ("rm -f /tftpboot/stage3 2>/dev/null")
+    os.system ("mkdir -p /tftpboot/stage3")
+    os.system ("umount /tftpboot/stage3 2>/dev/null")
+    os.system ("mount --bind /stage3 /tftpboot/stage3")
+
+    if not os.access ("/var/gluster/EP/rc.local", os.X_OK):
+        os.system ("/etc/stage2/config_network.sh")
+        os.system ("gdump-netstate /var/gluster/EP/rc.local")
+        os.system ("chmod +x /var/gluster/EP/rc.local")
+    else:
+        os.system ("/var/gluster/EP/rc.local")
+    
+    # GExtension.run ('client-reg')
+    while True:
+        if GExtension.run ('bootp-manager', '--allow 2>>/var/log/proglog') != 1:
+            break
+        os.system ("/etc/stage2/config_network.sh")
+        os.system ("gdump-netstate /var/gluster/EP/rc.local")
+        os.system ("chmod +x /var/gluster/EP/rc.local")
+
+    first_time = True
+    while ('<no users>', '') in get_usernames ():
+        if first_time:
+            if dlg.yesno ("GlusterEP requires at least one user before using its service.\n\nPress [Select] to add a user account now or [Skip] and create one or more accounts later through the main console.",
+                          title='[ First Account ]',
+                          yes_label='Select',
+                          no_label='Skip'):
+                break
+            first_time = False
+        (r, user) = dlg.inputbox ("Enter the username:",
+                                  title='[ Add User ]',
+                                  no_cancel=True)
+        if r != 0:
+            continue
+        if user == '':
+            continue
+        if user in map (string.strip, os.popen ("cat /etc/passwd | cut -d: -f1").readlines ()):
+            dlg.msgbox ("User %s already exists\n" % user,
+                        title='[ Warning ]')
+            continue
+        os.system ('useradd -g 1337 -m %s' % user)
+        os.system ('passwd %s' % user)
+        os.system ('cp -f /etc/passwd /var/gluster/EP/passwd')
+        os.system ('mkdir -p /home/%s/.ssh && chmod 700 /home/%s/.ssh' %
+                   (user, user))
+        os.system ("rm -f /home/%s/.ssh/*" % user)
+        os.system ("ssh-keygen -t dsa -f /home/%s/.ssh/id_dsa -N \"\""
+                   % user)
+        os.system ("cd /home/%s/.ssh && mv id_dsa.pub authorized_keys2" %
+                   user)
+        os.system ("mkdir -p /home/%s/system-images" % user)
+        os.system ("chmod 700 /home/%s/system-images" % user)
+        os.system ("chown -R %s.gluster /home/%s/." % (user, user))
+
+    while True:
+        (ret, sel) = dlg.menu ('Select an management utility',
+                               title='[ GlusterEP Management Menu ]',
+                               choices=[('user', 'User Management'),
+                                        ('image', 'Image Management'),
+                                        ('config', 'Cluster Configuration')],
+                               cancel='Exit')
+        if ret != 0:
+            if dlg.yesno ("Are you sure of exiting GlusterEP?"):
+                continue
+            os.system ("umount /var/state-mount")
+            break
+        if sel == 'config':
+            config_client ()
+            continue
+        if sel == 'image':
+            image_management ()
+            continue
+        if sel == 'user':
+            os.system ("gmanage-user")
+            os.system ("cp -f /etc/passwd /var/gluster/EP/")
+            continue
+
+    return
+
+def user_login ():
+    while True:
+        (ret, sel) = dlg.inputbox ('Username :',
+                                   title='[ GlusterEP login ]',
+                                   cancel='Shutdown')
+
+        if ret != 0:
+            if not dlg.yesno ('Are you sure?'):
+                os.system ('halt && sleep 50')
+                while True:
+                    os.system ("sleep 100")
+            continue
+
+        if sel == '':
+            dlg.msgbox ('No username entered',
+                        title='[ Error ]')
+            continue
+        os.system ("mkdir -p /.ssh")
+        if not os.system ("scp %s@master-node:.ssh/id_dsa ~/.ssh/" % sel):
+            cfg = file ('/.ssh/config','w')
+            cfg.write ("Host master-node\n")
+            cfg.write ("\tuser %s\n" % sel)
+            cfg.close ()
+            os.system ("chmod 600 ~/.ssh/config")
+            break
+
+        dlg.msgbox ('Authentication failed... Try again',
+                    title='[ Error ]')
+    return
+    
+def client ():
+    # Ask for the user name and passwd
+    user_login ()
+    
+    # Client operations
+    while True:
+        (ret, sel) = dlg.menu ('Select an operation',
+                               choices=[('capture',
+                                         'Capture current system image'),
+                                        ('provision',
+                                         'Provision system from a previously captured image'),
+                                        ('passwd',
+                                         'Change the passwd')],
+                               title='[ GlusterEP Client ]',
+                               cancel='Logout')
+        if ret != 0:
+            if not dlg.yesno ('Are you sure of logout?'):
+                os.system ("rm /.ssh/*")
+                user_login ()
+                continue
+            continue
+
+        if sel == 'capture':
+            if os.system ('GCapture') == 0:
+                dlg.msgbox ('Successfully captured')
+            continue
+
+        if sel == 'provision':
+            if os.system ('GProvision') == 0:
+                #dlg.msgbox ('Successfully provisioned') # GProvision will be handling this status inside
+                continue
+            continue
+        if sel == 'passwd':
+            os.system ("ssh -t master-node passwd")
+            os.system ("ssh -t master-node 'ssh-keygen -t dsa -f ~/.ssh/id_dsa -N \'\''")
+            os.system ("ssh master-node 'cp ~/.ssh/id_dsa.pub ~/.ssh/authorized_keys2'")
+            os.system ("rm /.ssh/*")
+            user_login ()
+            continue
+    return
+
+def main ():
+    is_client = False
+    (opt, args) = getopt.getopt (sys.argv[1:], "c",
+                                 ["client"])
+    for (o, val) in opt:
+        if o == '-c' or o == '--client':
+            is_client = True
+
+    if is_client:
+        client ()
+    else:
+        master ()
+        
+main ()

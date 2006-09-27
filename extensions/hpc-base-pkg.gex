@@ -1,0 +1,5 @@
+package-name: hpc base
+package-description: HPC Base environment files etc
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: hpc-base-pkg.tgz
+package-exec: ./runme

@@ -1,0 +1,81 @@
+diff -pru userspace/libsdp/configure.in userspace-gluster/libsdp/configure.in
+--- userspace/libsdp/configure.in	2005-07-26 04:31:55.000000000 +0530
++++ userspace-gluster/libsdp/configure.in	2006-03-07 15:23:11.000000000 +0530
+@@ -23,7 +23,7 @@ AC_CHECK_HEADERS([arpa/inet.h netinet/in
+ AC_C_CONST
+ 
+ # Checks for library functions.
+-AC_REPLACE_FNMATCH
++#AC_REPLACE_FNMATCH
+ AC_PROG_GCC_TRADITIONAL
+ AC_FUNC_MALLOC
+ AC_FUNC_VPRINTF
+diff -pru userspace/management/osm/complib/configure.in userspace-gluster/management/osm/complib/configure.in
+--- userspace/management/osm/complib/configure.in	2005-09-22 01:12:27.000000000 +0530
++++ userspace-gluster/management/osm/complib/configure.in	2006-03-07 15:13:16.000000000 +0530
+@@ -28,7 +28,7 @@ AC_HEADER_STDC
+ AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/ioctl.h sys/time.h syslog.h unistd.h])
+ 
+ dnl Checks for library functions
+-AC_FUNC_MALLOC
++#AC_FUNC_MALLOC
+ AC_FUNC_MEMCMP
+ AC_CHECK_FUNCS([gettimeofday memset strerror])
+ 
+diff -pru userspace/mstflint/Makefile userspace-gluster/mstflint/Makefile
+--- userspace/mstflint/Makefile	2005-09-06 23:32:51.000000000 +0530
++++ userspace-gluster/mstflint/Makefile	2006-03-07 15:13:16.000000000 +0530
+@@ -3,9 +3,9 @@ CFLAGS += -O2
+ CFLAGS += -g
+ CFLAGS += -Wall
+ CXXFLAGS += -fno-exceptions
+-CFLAGS += -I.
++CFLAGS += -I. $(GLUSTER_EXTRA_CFLAGS)
+ LD=$(CXX)
+-EXTRA_LOADLIBES=-lz
++EXTRA_LOADLIBES=-lz $(GLUSTER_EXTRA_LDFLAGS)
+ LOADLIBES+=${EXTRA_LOADLIBES}
+ 
+ all: default
+@@ -18,12 +18,12 @@ shared: bin
+ .PHONY: all bin clean static shared default
+ .DELETE_ON_ERROR:
+ 
+-default: EXTRA_LOADLIBES="$(shell $(CXX) -print-file-name=libz.a)" "$(shell $(CXX) -print-file-name=libstdc++.a)" 
+-default: LD=$(CC)
++#default: EXTRA_LOADLIBES="$(shell $(CXX) -print-file-name=libz.a)" "$(shell $(CXX) -print-file-name=libstdc++.a)" 
++#default: LD=$(CC)
+ static: CFLAGS+=-static
+ 
+ mstflint: mstflint.o
+-	$(LD) ${LDFLAGS} ${CFLAGS} ${CXXFLAGS} mstflint.o -o mstflint ${LOADLIBES}
++	$(CXX) ${LDFLAGS} ${CFLAGS} ${CXXFLAGS} mstflint.o -o mstflint ${LOADLIBES}
+ 
+ mstflint.o: flint.cpp mtcr.h
+ 	$(CXX) ${CFLAGS} -c  flint.cpp -o mstflint.o
+diff -pru userspace/mstflint/mtcr.h userspace-gluster/mstflint/mtcr.h
+--- userspace/mstflint/mtcr.h	2005-07-26 04:31:47.000000000 +0530
++++ userspace-gluster/mstflint/mtcr.h	2006-03-07 15:13:16.000000000 +0530
+@@ -39,7 +39,7 @@
+ //use memory mapped /dev/mem for access
+ #define CONFIG_ENABLE_MMAP 1
+ //mmap /dev/mem for memory access (does not work on sparc)
+-#define CONFIG_USE_DEV_MEM 0
++#define CONFIG_USE_DEV_MEM 1
+ //mmap sysfs resource for memory access (needs kernel 2.6.11 or up)
+ #define CONFIG_ENABLE_SYSFS 1
+ 
+diff -pru userspace/perftest/Makefile userspace-gluster/perftest/Makefile
+--- userspace/perftest/Makefile	2005-07-26 04:31:55.000000000 +0530
++++ userspace-gluster/perftest/Makefile	2006-03-07 15:13:16.000000000 +0530
+@@ -2,8 +2,8 @@ TESTS = rdma_lat rdma_bw
+ 
+ all: ${TESTS}
+ 
+-CFLAGS += -Wall -O2 -g -D_GNU_SOURCE 
+-LOADLIBES += -libverbs
++CFLAGS += -Wall -O2 $(GLUSTER_EXTRA_CFLAGS) -g -D_GNU_SOURCE 
++LOADLIBES += -libverbs $(GLUSTER_EXTRA_LDFLAGS)
+ EXTRA_FILES = get_clock.c
+ 
+ 

@@ -1,0 +1,400 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+from Gluster.GFrontEnd import dialog
+from Gluster import GExtension, GIPv4, GRegistry
+import os, string, ConfigParser, sys, getopt
+
+#globals required
+bootp_port = 67
+dhcpd_port = 6767
+
+dlg = dialog.Dialog ()
+
+clientinfo = '/var/gluster/clientinfo'
+state_dir = '/var/gluster'
+maclist = '/var/gluster/macs.txt'
+
+reg = ConfigParser.ConfigParser ()
+reg.read (clientinfo)
+macs = {}
+ipstruct = None
+offset = None
+
+# All general functions
+def port_used (number):
+    ret = os.system ("lsof -i4UDP:"
+                  + repr (number) + " >/dev/null") / 256
+    return ret == 0
+
+def get_bootp_state ():
+    if port_used (bootp_port):
+        return "UP"
+    else:
+        return "DOWN"
+
+def get_dhcpd_state ():
+    if port_used (dhcpd_port):
+        return "UP"
+    else:
+        return "DOWN"
+
+def bootp_stop ():
+    ret = os.system ("lsof -i4UDP:" + repr (bootp_port) + " " +
+               "| awk '{print $2}' " +
+               "| tail -n +2 | xargs kill -9 2>/dev/null") / 256
+
+    return get_bootp_state () == "DOWN"
+
+def bootp_start (iface):
+    os.system ("mkdir -p /var/run")
+    ret = os.system ("dhcp-helper -i " + iface + \
+                     " -s 127.0.0.1:" + repr (dhcpd_port)) / 256;
+
+    return get_bootp_state () == "UP"
+
+
+def dhcpd_stop ():
+    ret = os.system ("lsof -i4UDP:" + repr (dhcpd_port) + " " +
+               "| awk '{print $2}' " +
+               "| tail -n +2 | xargs kill -9 2>/dev/null") / 256
+
+    return get_dhcpd_state () == "DOWN"
+
+def dhcpd_start (iface):
+    GRegistry.SetValue ('dhcp.lease', "")
+    ret = os.system ("dhcpd -p " + repr (dhcpd_port) +
+                     " -cf " + state_dir + "/dhcpd.conf " +
+                     "-lf " + state_dir + "/dhcp.lease lo " + iface) / 256
+    os.system ("rm -f /var/run/dhcpd.pid")
+    return get_dhcpd_state () == "UP"
+
+def host_entry (idx):
+    if idx in macs.keys ():
+        return "\n\thost %s%d {\n\t\thardware ethernet %s;\n\t\tfixed-address %s;\n\t\toption host-name \"%s%d\";\n\t}\n" % (
+            reg.get ('global', 'hostname'),
+            idx,
+            macs[idx],
+            ipstruct[idx+offset].getStrings ()[0],
+            reg.get ('global', 'hostname'), idx)
+    else:
+        return ""
+
+def write_config (domainname, ip, option, extra):
+    dhcpd_conf = "\n\
+allow booting;\n\
+allow bootp;\n\
+\n\
+ddns-update-style ad-hoc;\n\
+option domain-name \"" + domainname + "\";\n\
+option subnet-mask " + ip.getStrings ()[1] + ";\n\
+option broadcast-address " + ip.getStrings ()[2] + ";\n\
+option domain-name-servers " + ip.getStrings ()[0] + ";\n\
+option routers " + ip.getStrings ()[0] + ";\n\
+default-lease-time 604800;\n\
+max-lease-time 604800;\n\
+\n\
+\n\
+group { \n\
+    next-server " + ip.getStrings ()[0] + ";\n\
+    filename \"pxelinux.0\";\n\
+\n\
+    subnet 127.0.0.0 netmask 255.255.255.0 { \n\
+        deny unknown-clients;\n\
+    } \n\
+    subnet " + ip.network.getStrings ()[0] + " netmask " + ip.getStrings()[1] + " {\n\
+       " + option + " unknown-clients;\n\
+       range " + ip[1].getStrings ()[0] + " " + ip[-2].getStrings()[0] + ";\n\
+    "  + extra + " }\n}\n"
+    
+    GRegistry.SetValue ('dhcpd.conf',
+                        dhcpd_conf)
+    return True
+
+def build_config (mac=True):
+    ip = None
+    option = ''
+    domain = ''
+    extra_opts = ''
+    if mac:
+        # Assume its GlusterHPC (or say you have clientinfo file
+        global ipstruct
+        global offset
+        option = 'deny'
+        hnd = os.popen ("cat %s 2>/dev/null | awk '{printf \"%%s %%s\\n\", $1, $2}' " %
+                        maclist, "r", 1)
+        while True:
+            line = hnd.readline ().strip ()
+            if not line:
+                break
+            if len (line.split (' ')) != 2:
+                return False
+            macs[string.atoi(line.split (' ')[0])] = line.split (' ')[1]
+        hnd.close ()
+
+        no_hosts = string.atoi(reg.get ('global', 'totalnodes'))
+        
+        ip = GIPv4.IPv4 (reg.get ('global', 'startip'),
+                         reg.get ('global', 'netmask'))
+        offset = int (ip.hostpart) - 1
+        ipstruct = ip
+        domain = reg.get ('global', 'domain')
+        extra_opts = "%s   " % string.join (map (host_entry, range (no_hosts + 1)), '')
+    else:
+        # Now.. I have to get all the info from the current system status
+        option = 'allow'
+        while True:
+            up_ifaces = os.popen ("ip link list | grep UP | grep -v NO-CARRIER | sed -n -e 's/^[0-9]*:\\ \\([^:]*\\):.*$/\\1/p' | grep -v lo").readlines ()
+            if up_ifaces == '':
+                dlg.infobox ("None of network interfaces are configured, configure n/w before progressing.",
+                             title='[ Error ]')
+                sys.exit (1)
+
+            up_ifaces = map (string.strip, up_ifaces)
+        
+            #down_ifaces = os.popen ("").readlines () # <- Not needed now
+            domain = "gluster.org"
+            # Through a dailog asking in which all interfaces, he wants to run dhcpd
+            choices = map ((lambda x:
+                            (x,
+                             string.join (map (string.strip,
+                                               os.popen ("ip a l dev %s | sed -n -e 's/.*inet \\([^ ]*\\).*/\\1/p'" % x).readlines ()),
+                                          ','),
+                             "on")),
+                           up_ifaces)
+            (ret, ifaces) = dlg.checklist ("Select one or more network interfaces on which you want to enable remote booting of GlusterEP clients",
+                                           title='[ Remote Boot Interfaces ]',
+                                           choices=choices,
+                                           ok_label='Select',
+                                           cancel='Refresh')
+            if ret != 0:
+                continue
+
+            if len (ifaces) == 0:
+                sys.exit (0)
+                return False
+            break
+
+        for iface in ifaces:
+            os.system ("echo %s >> /var/gluster/EP/bootp.iface" % iface)
+            ip_addr = os.popen ("ip address list dev %s | sed -n -e 's/^.*inet \\([^ ]*\\).*$/\\1/p'" % iface).readline ().split ('/')[0]
+            netmask = os.popen ("ifconfig %s | sed -n -e 's/.*Mask://p'" % iface).readline ().strip ()
+            if not ip:
+                ip = GIPv4.IPv4 (ip_addr, netmask)
+            else:
+                ip_tmp = GIPv4.IPv4 (ip_addr, netmask)
+                extra_opts += "}\n    subnet " + ip_tmp.network.getStrings ()[0] + " netmask " + ip_tmp.getStrings()[1] + " {\n\
+        allow unknown-clients;\n\
+        range " + ip_tmp[1].getStrings ()[0] + " " + ip_tmp[-2].getStrings()[0] + ";\n   "
+
+    # Write the dhcpd.conf taking the options
+    write_config (domain, ip, option, extra_opts)
+    return True
+
+def auto_option (need_mac=True):
+    iface = ''
+
+    if not need_mac:
+        os.system ("rm /var/gluster/EP/bootp.iface -f")
+        
+    if not os.access ("/var/gluster/EP/bootp.iface", os.R_OK):
+        if not build_config (need_mac):
+            dlg.msgbox ("could not acquire mac addresses")
+            sys.exit (1)
+
+    if need_mac:
+        need_bootp = reg.get ('global', 'bootp')
+        iface = reg.get ('global', 'interface')
+    else:
+        # Ask user on which interface he requires bootp to run
+        ifaces = ['']
+        need_bootp = 'yes'
+        a = file ("/var/gluster/EP/bootp.iface").readlines ()
+        ifaces = map (strip, a);
+        iface = ifaces[0]
+        if iface == '':
+            os.system ("rm /var/gluster/EP/bootp.iface -f")
+            return
+
+    if need_bootp == 'yes':
+        if not bootp_start (iface):
+            dlg.msgbox ("could NOT start bootp")
+            sys.exit (1)
+    else:
+        if not bootp_stop ():
+            dlg.msgbox ("could NOT stop bootp")
+            sys.exit (1)
+            
+    if not dhcpd_stop ():
+        dlg.msgbox ("could NOT restart dhcpd")
+        sys.exit (1)
+        
+    if not dhcpd_start (iface):
+        dlg.msgbox ("could NOT start dhcpd")
+        sys.exit (1)
+
+    sys.exit (0)
+    return
+
+def allow_option ():
+    auto_option (False)
+    return
+
+# Re-Think the need for this :)
+def general_option ():
+    allow_option ()
+    return
+
+def bootp_option (iface=''):
+    if port_used (bootp_port):
+        (ret, action) = dlg.menu ("Choice",
+                                  choices=[('stop',
+                                            'Stop the running BOOTP'),
+                                           ('restart',
+                                            'Restart BOOTP')])
+        if ret != 0:
+            return
+        if action == 'stop':
+            if not bootp_stop ():
+                dlg.msgbox ("Could NOT stop bootp")
+            else:
+                dlg.msgbox ("stopped bootp")
+        if action == 'restart':
+            if config_if_needed ():
+                if build_config (False):
+                    if not bootp_stop ():
+                        dlg.msgbox ("Could NOT stop bootp")
+                    if not bootp_start (iface):
+                        dlg.msgbox ("Could NOT start bootp")
+                    else:
+                        dlg.msgbox ("bootp restarted")
+                else:
+                    dlg.msgbox ("ERROR: Bad configuration")
+            else:
+                dlg.msgbox ("ERROR: Could not configure")
+    else:
+        (ret, action) = dlg.menu ("Choice",
+                                  choices=[('start',
+                                            'Start BOOTP')])
+        if ret != 0:
+            return
+        if config_if_needed ():
+            if build_config (False):
+                if not bootp_start (iface):
+                    dlg.msgbox ("Could NOT start bootp")
+                else:
+                    dlg.msgbox ("bootp started")
+            else:
+                dlg.msgbox ("ERROR: Bad configuration")
+        else:
+            dlg.msgbox ("ERROR: Could not configure")
+            
+    return
+
+def dhcpd_option (iface=''):
+    if port_used (dhcpd_port):
+        (ret, action) = dlg.menu ("Choice",
+                                  choices=[('stop',
+                                            'Stop the running DHCPD'),
+                                           ('restart',
+                                            'Restart DHCPD')])
+        if ret != 0:
+            return
+        if action == 'stop':
+            if not dhcpd_stop ():
+                dlg.msgbox ("could NOT stop dhcpd")
+            else:
+                dlg.msgbox ("dhcpd stopped")
+        if action == 'restart':
+            if config_if_needed ():
+                if build_config (True):
+                    if not dhcpd_stop ():
+                        dlg.msgbox ("could NOT stop dhcpd")
+                    if not dhcpd_start (iface):
+                        dlg.msgbox ("could NOT start dhcpd")
+                    else:
+                        dlg.msgbox ("restarted dhcpd")
+                else:
+                    dlg.msgbox ("ERROR: Bad configuration")
+            else:
+                dlg.msgbox ("ERROR: Could not configure")
+    else:
+        (ret, action) = dlg.menu ("Choice",
+                                  choices=[('start',
+                                            'Start DHCPD')])
+        if ret != 0:
+            return
+        if config_if_needed ():
+            if build_config (True):
+                if not dhcpd_start (iface):
+                    dlg.msgbox ("could NOT start dhcp")
+                else:
+                    dlg.msgbox ("started dhcpd")
+            else:
+                dlg.msgbox ("ERROR: Bad configuration")
+        else:
+            dlg.msgbox ("ERROR: Could not configure")
+
+    return
+
+
+def main ():
+    (o, args) = getopt.getopt (sys.argv[1:], "adhv",
+                                ['auto', 'allow', 'help', 'version'])
+
+    for (opt, val) in o:
+        if opt == '-a' or opt == '--auto':
+            auto_option ()
+            return
+        if opt == '-d' or opt == '--allow':
+            allow_option ()
+            return
+        if opt == '-h' or opt == '--help':
+            # Print help msg
+            return
+        if opt == '-v' or opt == '--version':
+            # Print version info
+            return
+
+    
+    while True:
+        (ret, ch) = dlg.menu ( "Select",
+                               choices=[ ('dhcpd',
+                                          'currently ' + get_dhcpd_state ()),
+                                         ('bootp',
+                                          'currently ' + get_bootp_state ()),
+                                         ('mac',
+                                          'collect MAC addresses')])
+        
+        if ret != 0:
+            break
+    
+        if choice == 'bootp':
+            bootp_option ()
+            continue
+        if choice == 'dhcpd':
+            dhpcd_option ()
+            continue
+        if choice == 'mac':
+            GExtension.run ('mac-collector')
+            auto_work ()
+    return
+
+main ()

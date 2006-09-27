@@ -1,0 +1,111 @@
+#!/bin/sh
+# Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+#  
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#  
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#  
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#  
+
+_init ()
+{
+    exec 3>&1
+    
+    GLUSTER_IFACE="$(cat /proc/cmdline | sed -n 's/.*gluster_iface=\([^ ]*\).*/\1/p')"
+    GLUSTER_PORT="$(cat /proc/cmdline | sed -n 's/.*gluster_port=\([^ ]*\).*/\1/p')"
+    IFACE=${GLUSTER_IFACE:-"$(ip link list | grep BROADCAST | cut -f2 -d:)"}
+    PORT=${GLUSTER_PORT:-"6767"}
+
+    GLUSTER_BOOTP="$(cat /proc/cmdline | sed -n 's/.*gluster_bootp=\([^ ]*\).*/\1/p')"
+    found="n"
+    return 0
+}
+
+main ()
+{
+    [ -z "$GLUSTER_BOOTP" ] || try_gluster
+
+    while [ $found = "n" ]
+    do
+	dialog --pause 'Gluster master node probe will begin in 10 seconds, Hit EXIT to enter manual configuration' 10 40 10
+	RET=$?
+	
+	if [ $RET == 0 ] ; then
+	    try_gluster
+	else
+	    /etc/stage2/config_network.sh
+	    #method=$(dialog --no-cancel --menu \
+		#'Select method to reach Gluster master node' 0 0 0 \
+		#"dhcp" "Run dhcp and enter Gluster master node IP manually" \
+		#"manual" "Enter IP and Gluster master node IP manually" \
+		#"probe" "Probe for Gluster master node on this network" \
+		#2>&1 >&3) || continue
+
+	    [ -z "$MN" ] && MN=$(ip route list | grep default | cut -f3 -d' ')
+	    headnodeIP=$(dialog --inputbox 'Enter Master node IP' 0 0 $MN 2>&1 >&3) || continue
+	    MN=$headnodeIP
+	    gping $headnodeIP || {
+		dialog --msgbox "Cannot reach Master node $headnodeIP"  0 0
+		continue
+	    }
+
+	    iface=$(ip route list | grep default | cut -f5 -d' ')
+	    IP=$(ip address list dev ${iface} | sed -nr -e 's/.*inet ([0-9.]+).*/\1/p')
+	    echo " * Considering MY IP as ${IP}"
+	    
+	    hname=$(grep ' host-name ' /var/state/dhcp/dhclient.leases | tail -n -1 | cut -f2 -d\")
+	    domain=$(grep ' domain-name ' /var/state/dhcp/dhclient.leases | tail -n -1 | cut -f2 -d\")
+	    echo " * Setting hostname as ${hname}.${domain}"
+	    hostname ${hname}
+
+	    echo 127.0.0.1 localhost.localdomain localhost > /etc/hosts
+	    echo ${headnodeIP} master-node.${domain} master-node >> /etc/hosts
+	    echo ${IP} $(hostname).${domain} ${hname} >> /etc/hosts
+
+	    break
+	fi
+    done
+
+    atftp --get --remote-file client-init --local-file /tmp/client-init ${headnodeIP};
+    chmod +x /tmp/client-init
+}
+
+try_gluster ()
+{
+    ifaces=${1:-${IFACE}}
+    port=${2:-${PORT}}
+    echo " * Attempting DHCP on ${iface} from port ${port}"
+    dhclient -p $(expr ${port} + 1) -sf /etc/dhclient-script ${ifaces}
+    [ -s /var/state/dhcp/dhclient.leases ] || return 1
+    GW=$(ip route list | grep default | cut -f3 -d' ')
+    echo " * Considering master node as ${GW}"
+
+    iface=$(ip route list | grep default | cut -f5 -d' ')
+    IP=$(ip address list dev ${iface} | sed -nr -e 's/.*inet ([0-9.]+).*/\1/p')
+    echo " * Considering MY IP as ${IP}"
+
+    hname=$(grep ' host-name ' /var/state/dhcp/dhclient.leases | tail -n -1 | cut -f2 -d\")
+    domain=$(grep ' domain-name ' /var/state/dhcp/dhclient.leases | tail -n -1 | cut -f2 -d\")
+    echo " * Setting hostname as ${hname}.${domain}"
+    hostname ${hname}
+
+    echo 127.0.0.1 localhost.localdomain localhost > /etc/hosts
+    echo ${GW} master-node.${domain} master-node >> /etc/hosts
+    echo ${IP} $(hostname).${domain} ${hname} >> /etc/hosts
+
+    headnodeIP=${GW};
+    found="y"
+    return 0
+}
+
+_init "$@" && main "$@"
+

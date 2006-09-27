@@ -1,0 +1,65 @@
+diff -pru LVM2.2.02.06_orig/Makefile.in LVM2.2.02.06/Makefile.in
+--- LVM2.2.02.06_orig/Makefile.in	2006-04-19 21:03:05.000000000 +0530
++++ LVM2.2.02.06/Makefile.in	2006-06-21 20:08:52.000000000 +0530
+@@ -16,7 +16,7 @@ srcdir = @srcdir@
+ top_srcdir = @top_srcdir@
+ VPATH = @srcdir@
+ 
+-SUBDIRS = doc include man 
++SUBDIRS = doc include
+ 
+ ifeq ("@INTL@", "yes")
+   SUBDIRS += po
+diff -pru LVM2.2.02.06_orig/doc/Makefile.in LVM2.2.02.06/doc/Makefile.in
+--- LVM2.2.02.06_orig/doc/Makefile.in	2004-06-15 22:55:04.000000000 +0530
++++ LVM2.2.02.06/doc/Makefile.in	2006-06-21 20:18:12.000000000 +0530
+@@ -22,8 +22,9 @@ include $(top_srcdir)/make.tmpl
+ 
+ install:
+ 	@if [ ! -e $(confdir)/$(CONFDEST) ]; then \
++		mkdir -p $(confdir) \
+ 		echo "Installing $(CONFSRC) as $(confdir)/$(CONFDEST)"; \
+-		@INSTALL@ -D $(OWNER) $(GROUP) -m 644 $(CONFSRC) \
++		@INSTALL@ $(CONFSRC) \
+ 			$(confdir)/$(CONFDEST); \
+ 	fi
+ 
+diff -pru LVM2.2.02.06_orig/tools/Makefile.in LVM2.2.02.06/tools/Makefile.in
+--- LVM2.2.02.06_orig/tools/Makefile.in	2006-05-10 02:53:51.000000000 +0530
++++ LVM2.2.02.06/tools/Makefile.in	2006-06-21 20:08:52.000000000 +0530
+@@ -137,21 +137,21 @@ cflow: lvm.cflow lvm.xref lvm.tree lvm.r
+ endif
+ 
+ install_cmdlib_dynamic: liblvm2cmd.so
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 555 $(STRIP) liblvm2cmd.so \
++	$(INSTALL) $(STRIP) liblvm2cmd.so \
+ 		$(libdir)/liblvm2cmd.so.$(LIB_VERSION)
+ 	$(LN_S) -f liblvm2cmd.so.$(LIB_VERSION) $(libdir)/liblvm2cmd.so
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 444 lvm2cmd.h \
++	$(INSTALL) lvm2cmd.h \
+ 		$(includedir)/lvm2cmd.h
+ 
+ install_cmdlib_static: liblvm2cmd.a
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 555 $(STRIP) liblvm2cmd.a \
++	$(INSTALL) $(STRIP) liblvm2cmd.a \
+ 		$(libdir)/liblvm2cmd.a.$(LIB_VERSION)
+ 	$(LN_S) -f liblvm2cmd.a.$(LIB_VERSION) $(libdir)/liblvm2cmd.a
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 444 lvm2cmd.h \
++	$(INSTALL) lvm2cmd.h \
+ 		$(includedir)/lvm2cmd.h
+ 
+ install_tools_dynamic: lvm .commands
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 555 $(STRIP) lvm \
++	$(INSTALL) $(STRIP) lvm \
+ 		$(sbindir)/lvm
+ 	@echo Creating symbolic links for individual commands in $(sbindir)
+ 	@( \
+@@ -162,7 +162,7 @@ install_tools_dynamic: lvm .commands
+ 	)
+ 
+ install_tools_static: lvm.static
+-	$(INSTALL) -D $(OWNER) $(GROUP) -m 555 $(STRIP) lvm.static \
++	$(INSTALL) $(STRIP) lvm.static \
+ 		$(staticdir)/lvm.static
+ 
+ install: $(INSTALL_TARGETS)

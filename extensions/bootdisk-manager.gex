@@ -1,0 +1,5 @@
+package-name: Bootdisk Manager
+package-description: Build PXE/BOOTP or Kernel bootdisks
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: bootdisk-manager.tgz
+package-exec: ./runme

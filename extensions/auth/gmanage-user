@@ -1,0 +1,118 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+import sys, os, string
+from Gluster.GFrontEnd import dialog
+
+dlg = dialog.Dialog ()
+
+def get_usernames ():
+    users_arr = []
+    # Can open the file, and parse each line, but this is nice :)
+    fd = os.popen ("cat /etc/passwd | cut -d':' -f1,4 | grep 1337 | cut -d':' -f1")
+    users = fd.readlines ()
+    fd.close ()
+    for user in users:
+        users_arr.append ((user.strip (), ''))
+    if users_arr == []:
+        users_arr.append (('<no users>', ''))
+    return users_arr
+
+def main ():
+    # 'add'
+    # 'del'
+    # 'view'
+    # 'passwd'
+    
+    while True:
+        (ret, sel) = dlg.menu ("Select an operation",
+                               title='[ User Management ]',
+                               choices=[('add', 'Add User'),
+                                       ('del', 'Delete User'),
+                                       ('view', 'View the current user list'),
+                                       ('passwd', 'Change password')],
+                               cancel='Exit')
+        if ret != 0:
+            break
+
+        if sel == 'add':
+            while True:
+                (r, user) = dlg.inputbox ("Enter the username:",
+                                          title='[ Add User ]')
+                if r != 0:
+                    break
+                if user == '':
+                    continue
+                if user in map (string.strip, os.popen ("cat /etc/passwd | cut -d: -f1").readlines ()):
+                    dlg.msgbox ("User %s already exists\n" % user,
+                                title='[ Warning ]')
+                    continue
+                os.system ('useradd -g 1337 -m %s' % user)
+                os.system ('passwd %s' % user)
+                os.system ('mkdir -p /home/%s/.ssh && chmod 700 /home/%s/.ssh' %
+                           (user, user))
+                os.system ("rm -f /home/%s/.ssh/*" % user)
+                os.system ("ssh-keygen -t dsa -f /home/%s/.ssh/id_dsa -N ''"
+                           % user)
+                os.system ("cd /home/%s/.ssh && mv id_dsa.pub authorized_keys2" %
+                           user)
+                os.system ("mkdir -p /home/%s/system-images" % user)
+                os.system ("chmod 700 /home/%s/system-images" % user)
+                os.system ("chown -R %s.gluster /home/%s" % (user, user))
+                # Add more user specific things here (if you find any need for any)
+                break
+            continue
+
+        if sel == 'del':
+            (r, user) = dlg.menu ('Select the user to delete',
+                                  title='[ Delete User ]',
+                                  choices=get_usernames ())
+            if r != 0:
+                continue
+
+            os.system ('userdel %s' % user)
+            continue
+            
+        if sel == 'view':
+            (r, user) = dlg.menu ('List of Existing Users',
+                                  title='[ View Users ]',
+                                  choices=get_usernames (),
+                                  no_cancel=True)
+            continue
+
+        if sel == 'passwd':
+            (r, user) = dlg.menu ('Select the user',
+                                  title='[ Change Password ]',
+                                  choices=get_usernames ())
+            if r != 0:
+                continue
+
+            os.system ('passwd %s' % user)
+            os.system ("rm -f /home/%s/.ssh/*" % user)
+            os.system ("ssh-keygen -t dsa -f /home/%s/.ssh/id_dsa -N \"\""
+                       % user)
+            os.system ("cd /home/%s/.ssh && mv id_dsa.pub authorized_keys2" %
+                       user)
+            os.system ("chown -R %s.gluster /home/%s" % (user, user))
+            continue
+
+    return
+
+main ()

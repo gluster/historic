@@ -1,0 +1,6 @@
+package-name: Shutdown
+package-description: Reboot or shutdown the master node
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: shutdown.tgz
+package-exec: ./runme
+application-register: shutdown

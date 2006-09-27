@@ -1,0 +1,49 @@
+#!/bin/sh
+# Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+#  
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#  
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#  
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#  
+
+
+echo " * Importing SSH host key pairs"
+atftp --get --remote-file etc-ssh.tar --local-file /tmp/etc-ssh.tar master-node
+mkdir -p /etc/ssh
+tar -C /etc/ssh -xf /tmp/etc-ssh.tar
+
+echo " * Importing SSH auth keys and pre-initialized known_hosts"
+atftp --get --remote-file dot-ssh.tar --local-file /tmp/dot-ssh.tar master-node
+mkdir -p /.ssh
+tar -C /.ssh -xf /tmp/dot-ssh.tar 
+
+echo " * Starting SSH daemon"
+/usr/sbin/sshd
+
+echo " * Synchronizing system time"
+date $(ssh master-node date '+%m%d%H%M%Y.%S')
+date
+
+echo " * Importing HOSTS file"
+atftp --get --remote-file hosts --local-file /tmp/hosts master-node
+cat /tmp/hosts > /etc/hosts
+
+echo " * Starting GPing daemon"
+echo up > /tmp/.status.in
+gpingd /tmp/.status.in
+echo up > /tmp/.gping.in
+gpingd -p 1332 /tmp/.gping.in
+
+gcshd
+
+exec /bin/bash --login

@@ -1,0 +1,168 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+import os, sys, string
+from Gluster.GFrontEnd import dialog
+
+dlg = dialog.Dialog ()
+
+def get_parts ():
+    retlist = []
+    all_devs = os.popen ("cat /proc/partitions | tail -n +3 | awk '{print $2,$4}' | grep -v '^0' | cut -f2 -d' '").readlines ()
+    all_devs = map (string.strip, all_devs)
+    os.system ("mkdir -p /tmp/.mounttest")
+    for dev in all_devs:
+        ret = os.system ("mount /dev/%s /tmp/.mounttest 2>/dev/null" % dev)
+        if ret != 0:
+            continue
+        size=os.popen ("df -h /dev/%s | tail -n -1 | awk '{print $4}'" % dev).readline().strip ()
+        total=os.popen ("df -h /dev/%s | tail -n -1 | awk '{print $2}'" % dev).readline().strip ()
+        type=os.popen ("mount | grep '/dev/%s on /tmp/.mounttest' | awk '{print $5}'" % dev).readline().strip ()
+        found=False
+        if os.path.isdir ('/tmp/.mounttest/gluster-state'):
+            found=True
+        os.system ('umount /tmp/.mounttest')
+        retlist.append ((dev, size, total, type, found))
+    return retlist
+
+def set_part (part, fresh=False):
+    os.system ("umount /var/state-mount 2>/dev/null")
+    os.system ("mkdir -p /var/state-mount 2>/dev/null")
+    os.system ("mount /dev/%s /var/state-mount 2>/dev/null" % part)
+    if fresh:
+        if os.path.isdir ("/var/state-mount/gluster-state"):
+            i = 0
+            oldstate = None
+            while True:
+                oldstate = '/var/state-mount/gluster-state.%d' % i
+                if not os.path.isdir (oldstate):
+                    break
+                i = i + 1
+            if os.system ("mkdir -p %s" % oldstate):
+                dlg.msgbox ('Could not create directory in %s' % part)
+                return False
+            os.system ("mv /var/state-mount/gluster-state/* %s" % oldstate)
+
+    os.system ("mkdir -p /var/state-mount/gluster-state 2>/dev/null")
+    os.system ("rm -f /var/gluster 2>/dev/null")
+    os.system ("ln -sf /var/state-mount/gluster-state /var/gluster")
+    return True
+
+def get_cmdline_state ():
+    # gluster_state=/dev/sda1 should return 'sda1'
+    cmdline = file ('/proc/cmdline').readline ().strip ()
+    pieces = cmdline.split ()
+    for piece in pieces:
+        sub_pieces = piece.split ('=')
+        if len (sub_pieces) > 1:
+            if sub_pieces[0] == 'gluster_state':
+                return sub_pieces[1].split ('/')[-1]
+    return None
+
+def init_fix (parts):
+    found_parts = filter (lambda (d, s, to, ty, f): f, parts)
+    
+    if get_cmdline_state () in map (lambda (d, s, to, ty, f): d, parts):
+        return get_cmdline_state ()
+    
+    if len (found_parts) == 0:
+        os.system ('umount /var/state-mount 2>/dev/null')
+        os.system ('mkdir -p /var/gluster-state')
+        os.system ('rm -rf /var/gluster')
+        return None
+    
+    choices=map (lambda (d, s, to, ty, f):
+                 (d, '%6s free | %6s total | type %s' % (s, to, ty)),
+                 found_parts)
+    
+    (ret, choice) = dlg.menu ("The following partitions were found to have Gluster state preserved from previous sessions.\n\nSelect one of them or [New] to start freshely.",
+                              title='[ Gluster Partition ]',
+                              choices=choices,
+                              ok_label='Select',
+                              cancel='Back',
+                              extra_button=True,
+                              extra_label='New')
+    if ret == 4:
+        os.system ('umount /var/state-mount 2>/dev/null')
+        os.system ('mkdir -p /var/gluster-state')
+        os.system ('rm -rf /var/gluster')
+        os.system ('ln -s gluster-state /var/gluster')
+        return None
+    if ret != 0:
+        sys.exit (1)
+        return None
+    return choice
+
+def main ():
+    parts = get_parts ()
+    p = init_fix (parts)
+    if p and set_part (p):
+        sys.exit (0)
+
+    sel='manual'
+    while True:
+        choices=map (lambda (d, s, to, ty, f):
+                     (d, '%6s free | %6s total | type %s' % (s, to, ty)),
+                     parts)
+#        choices.append (('manual',
+#                         'Specify directory to save configuration and state manually'))
+        choices.append (('skip',
+                         'Do not use persistant storage (FOR EVALUATION ONLY!)'))
+
+        (ret, sel) = dlg.menu ("Select a partition for Gluster to store configuration and data permanently\n\nNOTE:\nGluster will only create a directory named '/gluster-state' in the selected partition. It is SAFE to choose any of your existing OS partitions",
+                               title='[ Gluster Partition Select ]',
+                               choices=choices,
+                               default_item=sel,
+                               ok_label='Select',
+                               cancel='Probe again',
+                               extra_button=True,
+                               extra_label='Back')
+        if ret == 4: # 'back'
+            sys.exit (1)
+            return
+        
+        if ret != 0:
+            parts = get_parts ()
+            continue
+
+        if sel == 'manual':
+            (ret,
+             path) = dlg.inputbox ('Enter directory to store Gluster state')
+            if ret != 0:
+                continue
+
+            if not os.path.isdir (path):
+                dlg.msgbox ('%s is not a directory',
+                            title='[ Error ]')
+                continue
+            os.system ("rm -rf /var/gluster")
+            os.system ("ln -s %s /var/gluster" % path)
+            break
+        if sel == 'skip':
+            os.system ("rm -fr /var/gluster")
+            os.system ("ln -sf /var/gluster-state /var/gluster")
+            break
+
+        if not set_part (sel, True):
+            dlg.msgbox ('Could not set %s as persistant storage' % sel)
+            continue
+        break
+
+main ()

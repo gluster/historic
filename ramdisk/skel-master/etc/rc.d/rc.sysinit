@@ -1,0 +1,107 @@
+#!/bin/sh
+# Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+#  
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#  
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#  
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#  
+
+echo "   -= Gluster Stage-2 (continue from /sbin/init) =-"
+
+echo " * Sanitizing environment "
+rm -f /bin/sh
+#cp /usr/bin/bash /bin/bash
+ln -s bash /bin/sh
+cd /
+mkdir -p /var/gluster-state
+ln -sf /var/gluster-stage /var/gluster
+depmod -a
+mkdir -p /var/tmp/session
+chown -R root / 2>/dev/null
+chmod 777 /var/tmp
+mkdir -p /tmp
+chmod 777 /tmp
+mkdir -p /mnt
+cp -f /usr/bin/dialog /usr/bin/dialog.bin
+cat > /usr/bin/dialog <<EOF
+#!/bin/sh
+/usr/bin/dialog.bin --backtitle 'Gluster v1.0-rc3 (bulde)                    Copyright (c) 2006 Z RESEARCH Inc.' --aspect 32 "\$@"
+EOF
+touch /var/log/proglog
+
+
+echo " * Mounting /proc"
+mkdir -p /proc
+mount -v -t proc none /proc
+
+echo " * Initializing /sys"
+mkdir -p /sys
+mount -v -t sysfs sysfs /sys
+
+echo " * Unmounting old /initrd"
+killall -9 udevd >/dev/null 2>&1
+umount /initrd
+
+echo " * Starting udev"
+/sbin/udevstart
+ln -snf /proc/self/fd /dev/fd
+ln -snf /proc/self/fd/0 /dev/stdin
+ln -snf /proc/self/fd/1 /dev/stdout
+ln -snf /proc/self/fd/2 /dev/stderr
+mkdir -p /dev/pts
+mkdir -p /dev/shm
+
+echo " * Hostname -> master-node"
+hostname master-node
+
+echo " * loopback interface lo"
+ip link set up dev lo
+#ip address add 127.0.0.1/8 brd + dev lo
+
+echo " * Starting Hotplug"
+for RC in /etc/hotplug/*.rc
+do
+  echo -n " ${RC}"
+  ${RC} start >/dev/null 2>&1
+done
+echo " done."
+
+echo " * Loading kernel modules ..."
+/etc/rc.d/rc.modules
+
+echo " * Disabling console blanking ..."
+setterm -blank 0
+
+echo " * Starting OpenSSH server"
+/etc/rc.d/rc.sshd start
+
+#echo " * Exporting SSH host key pairs"
+#tar -C /etc/ssh -cf /tftpboot/etc-ssh.tar .
+
+echo " * Creating and exporting SSH auth keys and pre-initialized known_hosts"
+mkdir -p /.ssh
+ssh-keygen -t dsa -f /.ssh/id_dsa -N ''
+mv /.ssh/id_dsa.pub /.ssh/authorized_keys2
+#( echo -n '* '; cat /etc/ssh/ssh_host_rsa_key.pub ) > /.ssh/known_hosts
+#tar -C /.ssh -cf /tftpboot/dot-ssh.tar .
+
+
+echo " * Starting TFTPd"
+chmod 777 /tftpboot
+chown nobody -R /tftpboot
+/usr/sbin/atftpd --daemon
+
+echo " * Starting GPing daemon"
+echo up > /tmp/.gping.in
+/usr/bin/gpingd /tmp/.gping.in
+sleep 1

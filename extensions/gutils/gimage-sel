@@ -1,0 +1,124 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+from Gluster.GFrontEnd import dialog
+from Gluster.gpartdump import *
+from Gluster import gmap
+import os, sys, string, getopt
+
+
+#
+# Usage:
+# step1 - gimage-sel -o cookie_file
+# step2 - gimage-sel --send -i cookie_file -c commands_file
+#
+
+xfer_img = None
+
+dlg = dialog.Dialog ()
+commands = []
+cookie = None
+
+def xfer_fn ((part, cmd)):
+    fmt = 'cat system-images/%s/%s.tgz | gzip -d - | %s'
+    os.system (fmt % (cookie,
+                      os.path.basename (part),
+                      cmd))
+    return
+
+def main ():
+    global cookie
+    do_xfer = False
+    output_fd = sys.stdout
+    input_fd = sys.stdin
+    
+    (opt, args) = getopt.getopt (sys.argv[1:], "so:i:c:",
+                                 ["send",
+                                  "commands=",
+                                  "output=",
+                                  "input="])
+    for (o, val) in opt:
+        if o == '-s' or o == '--send':
+            do_xfer = True
+            
+        if o == '-o' or o == '--output':
+            try:
+                output_fd = file (val, "w")
+            except:
+                sys.exit (1)
+                
+        if o == '-i' or o == '--input':
+            try:
+                input_fd = file (val)
+            except:
+                sys.exit (1)
+            cookie = input_fd.readline ().strip ()
+            input_fd.close ()
+            
+        if o == '-c' or o == '--commands':
+            try:
+                commands_fd = file (val)
+            except:
+                sys.exit (1)
+            commands = commands_fd.readlines ()
+            commands = map (string.strip, commands)
+
+    if do_xfer:
+        try:
+            spec_fd = file ('system-images/%s/provision.spec' % cookie)
+        except:
+            sys.exit (1)
+        partlist = gdump_partlist (read_gdump (spec_fd))
+        parts = partlist.keys ()
+        parts.sort ()
+        parts = filter ((lambda x:
+                         partlist[x]['XFER'] == 'Y' and partlist[x]['FS'] != 'linux-swap'),
+                        parts)
+        print map (None, parts, commands)
+        sys.stdout.flush ()
+        gmap.gmap (xfer_fn, map (None, parts, commands))
+    else:
+        fd = os.popen ("find system-images -name provision.spec -type f")
+        specfiles = fd.readlines ()
+        fd.close ()
+        specfiles = map (string.strip, specfiles)
+        choices = []
+        for specfile in specfiles:
+            cookie = os.path.basename (os.path.dirname (specfile))
+            name_fd = file (os.path.dirname (specfile) + '/name')
+            name = name_fd.readline ().strip ()
+            name_fd.close ()
+            if name == '':
+                name = 'unset'
+            choices.append ((cookie, name))
+        if len (choices) == 0:
+            dlg.msgbox ('No images are captured yet. Cannot provision without one')
+            return
+
+        (ret, sel) = dlg.menu ('Select an image to provision your system with',
+                               choices=choices)
+        if ret != 0:
+            return
+
+        output_fd.write ('%s\n' % sel)
+        output_fd.close ()
+    return
+
+main ()

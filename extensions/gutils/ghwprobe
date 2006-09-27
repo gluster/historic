@@ -1,0 +1,52 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+import sys, os, string
+
+def get_cpu_info ():
+    info = os.popen ("cat /proc/cpuinfo | grep '^cpu MHz' | cut -d: -f2")
+    lines = info.readlines ()
+    info.close ()
+    single_line = string.join (map (string.strip, lines), ",")
+    return ("cpu=%s" % single_line)    
+
+def get_memory_info ():
+    info = os.popen ("cat /proc/meminfo | grep -E 'MemTotal|MemFree' | awk '{print $2}'")
+    lines = info.readlines ()
+    info.close ()
+    single_line = string.join (map (string.strip, lines), ":")
+    return ("mem=%s" % single_line)
+
+def get_disk_info ():
+    info = os.popen ("cat /proc/partitions| tail -n +3 | awk '{print $2\":\"$4\":\"$3}' | grep ^0: | cut -d: -f2,3")
+    lines = info.readlines ()
+    info.close ()
+    single_line = string.join (map (string.strip, lines), ",")
+    return ("disk=%s" % single_line)
+
+def main ():
+    info_file = sys.stdout
+    info_file.write ("%s\n" % string.join ([get_cpu_info (),
+                                          get_memory_info (),
+                                          get_disk_info ()], " "))
+    info_file.close ()
+    return
+
+main ()

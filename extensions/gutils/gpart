@@ -1,0 +1,673 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+from Gluster.GFrontEnd import dialog
+import os, string, sys, copy, dircache, getopt
+from Gluster.gpartdump import *
+
+dlg = dialog.Dialog ()
+
+
+capa = { 'resize' : [],
+         'mkpart' : { 'ext2' : 'mkfs.ext2 %s%d\n',
+                      'ext3' : 'mkfs.ext3 %s%d\n',
+                      'reiserfs' : 'mkreiserfs -f %s%d\n',
+                      'xfs' : 'mkfs.xfs %s%d\n',
+                      'jfs' : 'mkfs.jfs %s%d\n',
+                      'linux-swap' : 'mkswap %s%d\n' },
+
+         'name' : { 'ext3' : 'tune2fs -L "%s" %s%d\n',
+                    'ext2' : 'e2label -L "%s" %s%d\n',
+                    'reiserfs' : 'reiserfstune -l "%s" %s%d\n',
+                    'xfs' : 'xfs_admin -L "%s" %s%d\n',
+                    'jfs' : 'jfs_tune -L "%s" %s%d\n',
+                    'linux-swap' : 'mkswap -L "%s" %s%d\n' },
+         'inspect' : [ 'ext3', 'ext2', 'reiserfs', 'fat32', 'fat16',
+                       'xfs', 'jfs']
+         }
+
+
+dump_fd = sys.stdout
+commands_fd = sys.stdout
+commands = []
+auto = False
+
+hole_start = None
+hole_size = None
+
+def reduce_for_hole ((s1,e1), (s2,e2)):
+    global hole_start, hole_size
+
+    if e1 < s2 and hole_start==None:
+        hole_start = e1
+        hole_size = s2 - e1
+    return (s2, e2)
+
+def get_next_part (partlist, p_type, disk):
+    global hole_start
+    global hole_size
+    hole_start = None
+    hole_size = None
+
+    pairs = []
+    min_start = 0.0
+    max_end = 100.0
+
+    if p_type in ['primary', 'extended']:
+        for part,stuff in partlist.iteritems ():
+            (d, p) = get_disk_part (part)
+            if not d == disk:
+                continue
+            if p == 0 or p > 4:
+                continue
+            pairs.append ((unit_p (stuff['START']),
+                           unit_p (stuff['END'])))
+
+    if p_type == 'logical':
+        for part, stuff in partlist.iteritems ():
+            (d, p) = get_disk_part (part)
+            if not d == disk:
+                continue
+            if stuff['TYPE'] == 'extended':
+                min_start = unit_p (stuff['START'])
+                max_end = unit_p (stuff['END'])
+            if p <= 4:
+                continue
+            pairs.append ((unit_p (stuff['START']),
+                           unit_p (stuff['END'])))
+
+    pairs.sort ()
+    pairs = [(min_start, min_start)] + pairs + [(max_end, max_end)]
+    reduce (reduce_for_hole, pairs)
+
+    return (hole_start, hole_size)
+
+def validate (partlist):
+    dump = partlist_gdump (partlist)
+    for (disk_name, disk) in dump.items ():
+        ext_start = 0
+        ext_end = 0
+        part_nums = disk.keys ()
+        part_nums.sort ()
+        for part_num in part_nums:
+            if part_num == 0:
+                continue
+            part = disk[part_num]
+            
+            start = unit_p (part['START'])
+            end = unit_p (part['END'])
+
+            if end < start or end > 100 or start < 0:
+                dlg.msgbox ('%s%d has bad geometry' % (disk_name, part_num))
+                return False
+
+            if part['TYPE'] == 'extended':
+                ext_start = start
+                ext_end = end
+            if part_num <= 4:
+                for check_part_num, check_part in disk.items ():
+                    if check_part_num > 4:
+                        continue
+                    check_start = unit_p (check_part['START'])
+                    check_end = unit_p (check_part['END'])
+                    if check_start > start and check_start < end:
+                        dlg.msgbox ('%s%d has overlapping region with %s%d' %
+                                    (disk_name,
+                                     part_num,
+                                     disk_name,
+                                     check_part_num))
+                        return False
+                    if check_end > start and check_end < end:
+                        dlg.msgbox ('%s%d has overlapping region with %s%d' %
+                                    (disk_name,
+                                     part_num,
+                                     disk_name,
+                                     check_part_num))
+                        return False
+            if part_num > 4:
+                if start < ext_start or end > ext_end:
+                    dlg.msgbox ('%s%d logical partition is crossing extended boundry' % (disk_name, part_num))
+                    return False
+                for check_part_num, check_part in disk.items ():
+                    if check_part_num <= 4:
+                        continue
+                    check_start = unit_p (check_part['START'])
+                    check_end = unit_p (check_part['END'])
+                    if check_start > start and check_start < end:
+                        dlg.msgbox ('%s%d has overlapping region with %s%d' %
+                                    (disk_name,
+                                     part_num,
+                                     disk_name,
+                                     check_part_num))
+                        return False
+                    if check_end > start and check_end < end:
+                        dlg.msgbox ('%s%d has overlapping region with %s%d' %
+                                    (disk_name,
+                                     part_num,
+                                     disk_name,
+                                     check_part_num))
+                        return False
+    return True
+
+def unit_p (str):
+    try:
+        return float (str.strip ('%%'))
+    except:
+        return None
+
+def unit_b (str):
+    unit_str = str.strip ('0123456789')
+    unit_no = string.atoi (str.strip (unit_str))
+    if unit_str == 'B':
+        return unit_no
+    if unit_str == 'kB':
+        return unit_no * 1000
+    if unit_str == 'MB':
+        return unit_no * 1000 * 1000
+    if unit_str == 'GB':
+        return unit_no * 1000 * 1000 * 1000
+    if unit_str == 'TB':
+        return unit_no * 1000 * 1000 * 1000 * 1000
+    return unit_no
+
+def auto_out (dump):
+    for disk_name in dump.keys ():
+        disk = dump[disk_name]
+        disk_parts = disk.keys ()
+        commands_fd.write ("parted -s -- %s mklabel msdos\n" % disk_name)
+        disk_parts.sort ()
+
+        active_part = None
+        part_not_there = []
+        start_val = 0.00
+        for disk_part in [1, 2, 3, 4]:
+            if not disk.has_key (disk_part):
+                if disk_part == 4:
+                    continue
+                commands_fd.write ("parted -s -- %s mkpart primary ext2 %.2f%% %.2f%%\n" %
+                               (disk_name, start_val, start_val))
+                part_not_there.append (disk_part)
+                start_val += 0.01
+                continue
+
+            if disk[disk_part]['TYPE'] == 'primary':
+                active_part = disk_part
+            start_str = disk[disk_part]['START']
+            size_str = disk[disk_part]['SIZE']
+            end_str = disk[disk_part]['END']
+            fs_str = disk[disk_part]['FS']
+            label = disk[disk_part]['LABEL']
+
+            commands_fd.write ("parted -s -- %s mkpart %s %s %s %s\n" %
+                               (disk_name, disk[disk_part]['TYPE'],
+                                fs_str, start_str, end_str))
+            start_val = float (end_str.strip ('%'))
+            if capa['mkpart'].has_key (fs_str):
+                commands_fd.write ('sleep 10\n')
+                commands_fd.write (capa['mkpart'][fs_str] %
+                                   (disk_name, disk_part))
+            if disk[disk_part]['LABEL'] != '':
+                commands_fd.write (capa['name'][fs_str] %
+                                   (label, disk_name, disk_part))
+        
+        for i in part_not_there:
+             commands_fd.write ("parted -s -- %s rm %d\n" % (disk_name, i))
+             continue
+                
+        if active_part:
+            commands_fd.write ("parted -s -- %s set %d boot on\n" %
+                               (disk_name, active_part))
+                               
+        for disk_part in disk_parts:
+            start_str = disk[disk_part]['START']
+            size_str = disk[disk_part]['SIZE']
+            end_str = disk[disk_part]['END']
+            fs_str = disk[disk_part]['FS']
+            label = disk[disk_part]['LABEL']
+
+            if disk[disk_part]['TYPE'] in ['disk', 'primary', 'extended']:
+                continue
+
+            if disk[disk_part]['TYPE'] == 'logical':
+                commands_fd.write ("parted -s -- %s mkpart logical %s %s %s\n" %
+                                   (disk_name, fs_str, start_str, end_str))
+                commands_fd.write ('sleep 10\n')
+                commands_fd.write (capa['mkpart'][fs_str] %
+                                   (disk_name, disk_part))
+            if disk[disk_part]['LABEL'] != '':
+                commands_fd.write (capa['name'][fs_str] %
+                                   (label, disk_name, disk_part))
+            
+    return
+
+def gpart_out (dump):
+    global dump_fd
+    if not dump:
+        return
+    write_dump (dump_fd, dump)
+    map (commands_fd.write, commands)
+    return
+
+def do_inspect (part, partlist):
+    (need_umount, mpoint) = get_mpoint (part)
+    if not mpoint:
+        dlg.msgbox ('cannot read format of %s' % part)
+        return
+
+    dirname = mpoint
+    
+    while True:
+        my_choices=[]
+        if dirname != mpoint:
+            my_choices = [('..', 'parent directory')]
+        all_files = dircache.opendir (dirname)
+        all_files.sort ()
+        for a_file in all_files:
+            if os.path.isdir (dirname + '/' + a_file):
+                my_choices.append ((a_file, 'directory'))
+            else:
+                my_choices.append ((a_file, 'file'))
+                
+        (ret, sel) = dlg.menu ('select file/dir',
+                               choices=my_choices)
+        if ret != 0:
+            break
+        
+        if sel == '..':
+            dirname = os.path.dirname (dirname)
+            continue
+        if os.path.isdir (dirname + '/' + sel):
+            if dirname[len(dirname)-1] != '/':
+                dirname = dirname + '/' + sel
+            else:
+                dirname = dirname + sel
+            continue
+        dlg.msgbox ('cannot change directory into a file')
+    unget_mpoint (need_umount, mpoint)
+
+def context_menu (part, partlist):
+    p_type = None
+    if partlist[part]['TYPE'] == 'extended':
+        p_type = 'extended'
+    else:
+        p_type = partlist[part]['FS']
+    sel=''
+
+    (d, p) = get_disk_part (part)
+    while True:
+        choices = []
+
+        if p_type in capa['inspect']:
+            choices.append (('inspect', 'view contents of partition'))
+            
+        if p_type in capa['name'].keys ():
+            choices.append (('name', 'set filesystem label'))
+
+        if  p_type in  capa['resize'] + ['extended']:
+            choices.append (('resize', 'resize the partition'))
+
+        if not p_type == 'extended':
+            choices.append (('fs', 'change filesystem type'))
+        choices.append (('delete', 'delete the partition'))
+        
+        (ret, sel) = dlg.menu ('select operation',
+                               choices=choices,
+                               default_item=sel)
+        if ret != 0:
+            break
+        
+        if sel == 'resize':
+            start = partlist[part]['START']
+            #(ret, start) = dlg.inputbox ('enter partition begin',
+            #                             init=partlist[part]['START'])
+            #if ret != 0:
+            #    continue
+            (ret, size) = dlg.inputbox ('enter partition size',
+                                       init=partlist[part]['SIZE'])
+            if ret != 0:
+                continue
+            start_p = unit_p (start)
+            size_p = unit_p (size)
+            if not size_p:
+                dlg.msgbox ('ERROR: Invalid Size')
+                continue
+            end_p = start_p + size_p
+            end = '%.2f%%' % end_p
+            testlist = copy.deepcopy (partlist)
+            testlist[part]['SIZE'] = size
+            testlist[part]['END'] = end
+            if not validate (testlist):
+                continue
+            partlist = copy.deepcopy (testlist)
+            commands.append ('parted -s -- %s resize %d %s %s\n' %
+                             (d, p, start, end))
+            break
+        
+        if sel == 'fs':
+            if dlg.yesno ('this will result in loss of ALL data on %s; are you sure you want to continue?' % part, defaultno=True):
+                continue
+            all_fs = capa['mkpart'].keys ()
+            all_fs.sort ()
+            (ret, fs) = dlg.menu ('select filesystem',
+                                  choices=map (lambda x: (x, ''), all_fs),
+                                  default_item=partlist[part]['FS'])
+            if ret != 0:
+                continue
+            if partlist[part]['FS'] != fs:
+                partlist[part]['TAINTED'] = True
+                partlist[part]['FS'] = fs
+
+            commands.append (capa['mkpart'][fs] %
+                             (d, p))
+            break
+
+        if sel == 'name':
+            (ret, name) = dlg.inputbox ('enter label for %s' % part,
+                                        init=partlist[part]['LABEL'])
+            if ret != 0:
+                continue
+            partlist[part]['LABEL'] = name[:16]
+            commands.append (capa['name'][partlist][part]['FS'] %
+                             (name, d, p))
+            break
+
+        if sel == 'delete':
+            msg = 'are you SURE you want to delete %s?' % part
+            if partlist[part]['TYPE'] == 'extended':
+                msg = '%s is an extended partition. deleting it will result in deletion of ALL logical partitions within it. are you SURE you want to delete %s?' % (part, part)
+            if dlg.yesno (msg):
+                break
+            if partlist[part]['TYPE'] == 'extended':
+                (my_d, my_p) = get_disk_part (part)
+                delparts = []
+                for l_part in partlist:
+                    (l_d, l_p) = get_disk_part (l_part)
+                    if partlist[l_part]['TYPE'] == 'logical':
+                        if l_d == my_d:
+                            delparts.append (l_part)
+                map (partlist.pop, delparts)
+                partlist.pop (part)
+                commands.append ('parted -s -- %s rm %d\n' %
+                                 (d, p))
+                break
+            if partlist[part]['TYPE'] == 'logical':
+                (d, p) = get_disk_part (part)
+                while True:
+                    this_part = '%s%d' % (d, p)
+                    next_part = '%s%d' % (d, p+1)
+                    if partlist.has_key (next_part):
+                        partlist[this_part] = partlist[next_part]
+                        p = p + 1
+                    else:
+                        break
+                partlist.pop (this_part)
+                commands.append ('parted -s -- %s rm %d\n' %
+                                 (d, p))
+                break
+            partlist.pop (part)
+            commands.append ('parted -s -- %s rm %d\n' %
+                             (d, p))
+            break
+
+        if sel == 'inspect':
+            if 'TAINTED' in partlist[part].keys ():
+                dlg.msgbox ('this partition has been altered. cannot view contents')
+            else:
+                do_inspect (part, partlist)
+            continue
+    return partlist
+
+def alter_parts (partlist):
+    global commands
+    item = 'done'
+    backup = copy.deepcopy (partlist)
+    while True:
+        label_len = max (map (lambda x: len (partlist[x]['LABEL']), partlist))
+        if label_len < 6:
+            label_len = 6
+        choices = [('parts',
+                    '%s %s %s %s' % (string.rjust ('type', 10),
+                                     string.rjust ('start', 6),
+                                     string.rjust ('size', 6),
+                                     string.rjust ('label', label_len)))]
+        choices.append (('---------',
+                         '------------------------------------'))
+        list_parts = partlist.keys ()
+        list_parts.sort ()
+        for _part in list_parts:
+            if partlist[_part]['TYPE'] == 'disk':
+                continue
+            p_type = None
+            if partlist[_part]['TYPE'] == 'extended':
+                p_type = 'extended'
+            else:
+                if partlist[_part]['FS'] != '':
+                    p_type = partlist[_part]['FS']
+                else:
+                    p_type = 'unknown'
+            size = partlist[_part]['SIZE']
+            start = partlist[_part]['START']
+            label = partlist[_part]['LABEL']
+            choices.append ((_part,
+                             '%s %s %s %s' %
+                             (p_type.rjust (10),
+                              start.rjust (6),
+                              size.rjust (6),
+                              label.rjust (label_len))))
+        choices.append (('--------',''))
+        choices.append (('add', 'add a new partition'))
+        choices.append (('undo', 'undo all changes'))
+        choices.append (('done', 'apply changes'))
+        (ret, item) = dlg.menu ('select option',
+                                choices=choices,
+                                ok_label='select',
+                                cancel='cancel',
+                                default_item=item)
+
+        if ret != 0:
+            return {}
+
+        if item[0] == '-' or item == 'parts':
+            continue
+
+        if item == 'add':
+            all_disks = uniq (map (lambda p: p.strip ('0123456789'),
+                                   partlist))
+            disk = all_disks[0]
+            if len (all_disks) > 1:
+                (ret, disk) = dlg.menu ('select disk to add partition',
+                                        choices=map (lambda d: (d, ''),
+                                                     all_disks))
+                if ret != 0:
+                    continue
+                
+            need_primary = False
+            need_logical = False
+            
+            for num in [1, 2, 3, 4]:
+                num_part = '%s%d' % (disk, num)
+                if not num_part in partlist.keys ():
+                    need_primary = True
+                if num_part in partlist.keys ():
+                    if partlist[num_part]['TYPE'] == 'extended':
+                        need_logical = True
+                        
+            choices=[]
+            
+            if need_primary:
+                choices.append (('primary',''))
+                if not need_logical:
+                    choices.append (('extended', ''))
+            if need_logical:
+                choices.append (('logical',''))
+
+            if len (choices) == 0:
+                dlg.msgbox ('cannot add more partitions')
+                continue
+            
+            (ret, p_type) = dlg.menu ('select type of partition to add',
+                                      choices=choices)
+            if ret != 0:
+                continue
+            
+            if p_type in ['primary', 'extended']:
+                for num in [1, 2, 3, 4]:
+                    part_num = '%s%d' % (disk, num)
+                    if not part_num in partlist:
+                        break
+            if p_type == 'logical':
+                num = 5
+                while True:
+                    part_num = '%s%d' % (disk, num)
+                    if not part_num in partlist:
+                        break
+                    num = num + 1
+                    
+            new_part = '%s%d' % (disk, num)
+
+            (hole_start, hole_size) = get_next_part (partlist, p_type, disk)
+            if hole_start == None:
+                dlg.msgbox ('No free space to create %s partition' % p_type)
+                continue
+            
+            if p_type in ['primary', 'logical']:
+                (ret,
+                 fs_type) = dlg.menu ('select file system type',
+                                      choices=map (lambda fs: (fs, ''),
+                                                   capa['mkpart'].keys ()))
+                if ret != 0:
+                    continue
+            else:
+                fs_type = ''
+
+
+            
+            #(ret, start) = dlg.inputbox ('enter starting point',
+            #                             init='%d%%' % hole_start)
+            #if ret != 0:
+            #    continue
+
+            start_p = hole_start
+            start = '%.2f%%' % start_p
+
+            (ret, 
+             size) = dlg.inputbox ('enter size for new partition %s' %
+                                   (new_part),
+                                   init='%.2f%%' % hole_size)
+            if ret != 0:
+                continue
+            size_p = unit_p (size)
+            if not size_p:
+                dlg.msgbox ('ERROR: Invalid input')
+                continue
+            end_p = start_p + size_p
+
+            label = ''
+            if fs_type in capa['name']:
+                (ret, label) = dlg.inputbox ('enter a label',
+                                                 init=label)
+                if ret != 0:
+                    continue
+
+            testlist = copy.deepcopy (partlist)
+            testlist[new_part] = { 'TYPE' : p_type,
+                                   'FS' : fs_type,
+                                   'LABEL' : label[:16],
+                                   'START' : start,
+                                   'SIZE' : size,
+                                   'END' : '%.2f%%' % end_p,
+                                   'OS' : '',
+                                   'DESC' : '',
+                                   'XFER' : 'N',
+                                   'FSTAB' : {},
+                                   'BLOADER' : {},
+                                   'TAINTED' : True}
+            if not validate (testlist):
+                continue
+            partlist = copy.deepcopy (testlist)
+            commands.append ('parted -s -- %s mkpart %s %s %s %s\n' %
+                             (disk, p_type, fs_type, start, size))
+            commands.append ('sleep 10\n')
+            commands.append (capa['mkpart'][fs_type] % (disk, num))
+            commands.append (capa['name'][fs_type] %
+                             (label, disk, num))
+            continue
+
+        if item == 'undo':
+            if not dlg.yesno ('are you sure you want to undo ALL changes?',
+                              defaultno=True,
+                              ok_label='yes',
+                              cancel='no'):
+                partlist = copy.deepcopy (backup)
+                commands = []
+            continue
+        
+        if item == 'done':
+            if validate (partlist):
+                break
+            else:
+                continue
+
+        partlist = context_menu (item, partlist)
+    return partlist
+
+def main ():
+    global commands_fd
+    global dump_fd
+    global auto
+    input_fd = sys.stdin
+    
+    try:
+        (opt, args) = getopt.getopt (sys.argv[1:], "c:d:ai:",
+                                     ["commands=",
+                                      "dump=",
+                                      "input="
+                                      "auto"])
+    except getopt.GetoptError, (msg, opt):
+        print msg
+        sys.exit (1)
+
+    for (o, val) in opt:
+        if o == '-c' or o == '--commands':
+            try:
+                commands_fd = file (val, "w")
+            except:
+                sys.exit (1)
+        if o == '-d' or o == '--dump=':
+            try:
+                dump_fd = file (val, "w")
+            except:
+                sys.exit (1)
+        if o == '-a' or o == '--auto':
+            auto = True
+        if o == '-i' or o == '--input':
+            try:
+                input_fd = file (val)
+            except:
+                sys.exit (1)
+
+    dump = read_gdump (input_fd)
+    if auto:
+        auto_out (dump)
+    else:
+        gpart_out (partlist_gdump (alter_parts (gdump_partlist (dump))))
+    return
+
+main ()

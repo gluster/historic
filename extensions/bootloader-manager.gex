@@ -1,0 +1,5 @@
+package-name: Bootloader manager
+package-description: Bootloader (grub for ia32)
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: bootloader-manager.tgz
+package-exec: ./runme

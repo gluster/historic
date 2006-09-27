@@ -1,0 +1,6 @@
+package-name: genders
+package-description: LLNL's static cluster configuration database management
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: genders-pkg.tgz
+package-exec: ./runme
+hpc-register: genders

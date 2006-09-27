@@ -1,0 +1,6 @@
+package-name: torque
+package-description: Tera-scale Open source Resource and QUEue manager
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: torque-pkg.tgz
+package-exec: ./runme
+hpc-register: torque

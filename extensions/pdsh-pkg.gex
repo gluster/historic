@@ -1,0 +1,6 @@
+package-name: pdsh
+package-description: LLNL's Parallel and distributed shell
+package-maintainer: Anand V. Avati <avati@zresearch.com>
+package-contents: pdsh-pkg.tgz
+package-exec: ./runme
+hpc-register: pdsh
