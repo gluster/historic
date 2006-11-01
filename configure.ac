@@ -54,22 +54,67 @@ AC_PROG_RANLIB
 # check for dirname
 AC_CHECK_PROG([DIRNAME], [dirname], [dirname])
 # check for tar
-AC_CHECK_PROG([TAR], [tar], [tar])  
+AC_CHECK_PROG(TAR, [tar], [tar], none)
+if test "$TAR" = "none"
+then
+AC_MSG_ERROR([no suitable tar found. Please install the 'tar' package.])
+fi
 # check for gzip
-AC_CHECK_PROG([GZIP], [gzip], [gzip])  
+AC_CHECK_PROG(GZIP, [gzip], [gzip], none)  
+if test "$GZIP" = "none"
+then
+AC_MSG_ERROR([no suitable gzip found. Please install the 'gzip' package.])
+fi
 # check for bzip2
-AC_CHECK_PROG([BZIP2], [bzip2], [bzip2])
+AC_CHECK_PROG(BZIP2, [bzip2], [bzip2], none)
+if test "$BZIP2" = "none"
+then
+AC_MSG_ERROR([no suitable bzip2 found. Please install the 'bzip2' package.])
+fi
 # check for patch
-AC_CHECK_PROG([PATCH], [patch], [patch])  
+AC_CHECK_PROG(PATCH, [patch], [patch], none)  
+if test "$PATCH" = "none"
+then
+AC_MSG_ERROR([no suitable "patch" found. Please install the 'patch' package.])
+fi
+AC_CHECK_PROG(LEX, [lex], [lex], none)
+if test "$LEX" = "none"
+then
+AC_MSG_ERROR([no suitable lex/flex found. Please install the 'flex' package.])
+fi
+#
+AC_CHECK_PROG(YACC, [yacc], [yacc], none)
+if test "$YACC" = "none"
+then
+AC_MSG_ERROR([no suitable bison/yacc found. Please install the 'bison' package.])
+fi
+#
+AC_CHECK_PROG(LIBTOOL, [libtool], [libtool], none)
+if test "$LIBTOOL" = "none"
+then
+AC_MSG_ERROR([no suitable libtool found. Please install the 'libtool' package.])
+fi
 # check for make
 #AC_CHECK_PROG([MAKE], [make], [make])  
 # check for wget
-AC_CHECK_PROG([WGET], [wget], [wget])  
+AC_CHECK_PROG(WGET, [wget], [wget], none)  
+if test "$WGET" = "none"
+then
+AC_MSG_ERROR([no suitable wget found. Please install the 'wget' package.])
+fi
 # check for cat
 # check for cpio
-AC_CHECK_PROG([CPIO], [cpio], [cpio])  
+AC_CHECK_PROG(CPIO, [cpio], [cpio], none)  
+if test "$CPIO" = "none"
+then
+AC_MSG_ERROR([no suitable cpio found. Please install the 'cpio' package.])
+fi
 # check for file
-AC_CHECK_PROG([FILE], [file], [file])
+AC_CHECK_PROG(FILE, [file], [file], none)
+if test "$FILE" = "none"
+then
+AC_MSG_ERROR([no suitable "file" found. Please install the 'file' package.])
+fi
 
 # check for mkisofs, build cdrtools.native optionally
 AC_CHECK_PROG([CDRTOOLS_NATIVE], [mkisofs], [] , [cdrtools.native])
