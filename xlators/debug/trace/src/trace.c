@@ -197,7 +197,7 @@ trace_symlink (struct xlator *this,
 {
   int32_t ret = 0;
   
-  ERR_EINVAL_NORETURN (!this || !oldpath || *newpath);
+  ERR_EINVAL_NORETURN (!this || !oldpath || !newpath);
   
   gf_log ("trace", GF_LOG_DEBUG, "trace_symlink (*this=%p, oldpath=%s, newpath=%s, uid=%d, gid=%d)",
 	  this, oldpath, newpath, uid, gid);
@@ -216,7 +216,7 @@ trace_rename (struct xlator *this,
 {
   int32_t ret = 0;
   
-  ERR_EINVAL_NORETURN (!this || !oldpath || *newpath);
+  ERR_EINVAL_NORETURN (!this || !oldpath || !newpath);
   
   gf_log ("trace", GF_LOG_DEBUG, "trace_rename (*this=%p, oldpath=%s, newpath=%s, uid=%d, gid=%d)",
 	  this, oldpath, newpath, uid, gid);
@@ -235,7 +235,7 @@ trace_link (struct xlator *this,
 {
   int32_t ret = 0;
   
-  ERR_EINVAL_NORETURN (!this || !oldpath || *newpath);
+  ERR_EINVAL_NORETURN (!this || !oldpath || !newpath);
   
   gf_log ("trace", GF_LOG_DEBUG, "trace_link (*this=%p, oldpath=%s, newpath=%s, uid=%d, gid=%d)",
 	  this, oldpath, newpath, uid, gid);

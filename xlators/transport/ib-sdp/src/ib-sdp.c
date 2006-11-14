@@ -207,12 +207,15 @@ try_connect (struct xlator *xl)
     priv->sock = socket (AF_INET_SDP, SOCK_STREAM, 0);
 
   if (priv->sock == -1) {
-    gf_log ("transport/ib-sdp", GF_LOG_ERROR, "try_connect: error: %s", strerror (errno));
+    gf_log ("transport/ib-sdp",
+	    GF_LOG_ERROR,
+	    "try_connect: socket() error: %s",
+	    strerror (errno));
     return -errno;
   }
 
   while (try_port){ 
-    sin_src.sin_family = PF_INET;
+    sin_src.sin_family = AF_INET_SDP;
     sin_src.sin_port = htons (try_port); //FIXME: have it a #define or configurable
     sin_src.sin_addr.s_addr = INADDR_ANY;
     
@@ -224,7 +227,10 @@ try_connect (struct xlator *xl)
   }
   
   if (ret != 0){
-      gf_log ("transport/ib-sdp", GF_LOG_ERROR, "try_connect: error: %s", strerror (errno));
+      gf_log ("transport/ib-sdp",
+	      GF_LOG_ERROR,
+	      "try_connect: bind loop error: %s",
+	      strerror (errno));
       close (priv->sock);
       return -errno;
   }
@@ -234,7 +240,10 @@ try_connect (struct xlator *xl)
   sin.sin_addr.s_addr = priv->addr;
 
   if (connect (priv->sock, (struct sockaddr *)&sin, sizeof (sin)) != 0) {
-    gf_log ("transport/ib-sdp", GF_LOG_ERROR, "try_connect: error: %s", strerror (errno));
+    gf_log ("transport/ib-sdp",
+	    GF_LOG_ERROR,
+	    "try_connect: connect() error: %s",
+	    strerror (errno));
     close (priv->sock);
     priv->sock = -1;
     return -errno;
@@ -2194,7 +2203,7 @@ init (struct xlator *xl)
   if (port_data)
     port_str = data_to_str (port_data);
 
-  _private->addr_family = PF_INET;
+  _private->addr_family = AF_INET_SDP;
   if (addr_family_data) {
     if (strcasecmp (data_to_str (addr_family_data), "inet") == 0)
       _private->addr_family = PF_INET;
