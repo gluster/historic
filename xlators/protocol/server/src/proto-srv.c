@@ -2002,7 +2002,6 @@ fop_lk (call_frame_t *frame,
   lock.l_len = (int64_t) data_to_int (len_data);
   lock.l_pid = (int32_t) data_to_int (pid_data);
 
-
   STACK_WIND (frame, 
 	      fop_lk_cbk, 
 	      bound_xl,
