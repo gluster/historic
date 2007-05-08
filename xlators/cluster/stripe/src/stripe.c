@@ -40,6 +40,12 @@ struct stripe_private {
   int32_t child_count;
 };
 
+struct readv_replies {
+  struct iovec *vector;
+  int32_t count; //count of vector
+  int32_t len;   //op_ret of readv
+};
+
 struct stripe_local {
   struct stripe_local *next;
   call_frame_t *orig_frame; //
@@ -53,7 +59,7 @@ struct stripe_local {
   int32_t unwind;
   struct stat stbuf;
   struct flock lock;
-  struct iovec *read_vec;
+  struct readv_replies *reply_vec;
   struct statvfs statvfs_buf;
   dir_entry_t *entry;
   struct xlator_stats stats;
@@ -97,14 +103,15 @@ stripe_setxattr_cbk (call_frame_t *frame,
 {
   stripe_local_t *local = (stripe_local_t *) frame->local;
   int32_t callcnt;
-  LOCK(&frame->mutex);
-  callcnt = ++local->call_count;
-  UNLOCK (&frame->mutex);
 
   if (op_ret == -1) {
     local->op_ret = -1;
     local->op_errno = op_errno;
   }
+
+  LOCK(&frame->mutex);
+  callcnt = ++local->call_count;
+  UNLOCK (&frame->mutex);
 
   if (callcnt == ((stripe_private_t *)xl->private)->child_count) {
     LOCK_DESTROY(&frame->mutex);
@@ -209,15 +216,16 @@ stripe_removexattr_cbk (call_frame_t *frame,
 {
   stripe_local_t *local = frame->local;
   int32_t callcnt;
-  LOCK(&frame->mutex);
-  callcnt = ++local->call_count;
-  UNLOCK (&frame->mutex);
 
   if (op_ret == -1) {
     local->op_ret = -1;
     local->op_errno = op_errno;
   }
   
+  LOCK(&frame->mutex);
+  callcnt = ++local->call_count;
+  UNLOCK (&frame->mutex);
+
   if (callcnt == ((stripe_private_t *)xl->private)->child_count) {
     LOCK_DESTROY(&frame->mutex);
     STACK_UNWIND (frame, local->op_ret, local->op_errno);
@@ -370,70 +378,70 @@ stripe_readv_cbk (call_frame_t *frame,
 {
   stripe_local_t *local = frame->local;
   stripe_local_t *main_local = local->orig_frame->local;
+  call_frame_t *orig_frame = local->orig_frame;
   int32_t callcnt;
+
+  local->orig_frame = NULL;
+
   if (op_ret == -1) {
-    LOCK(&frame->mutex);
+    LOCK(&orig_frame->mutex);
     main_local->op_ret = -1;
     main_local->op_errno = op_errno;
-    UNLOCK(&frame->mutex);
+    UNLOCK(&orig_frame->mutex);
   }
+  /* This frame's return value is positive, and all the striped reads 
+     till now are successful, then consider this frame */
   if (op_ret >= 0) {
-    LOCK(&frame->mutex);
-    local->next = main_local->next;
-    main_local->next = local;
-    UNLOCK(&frame->mutex);
-    frame->local = NULL;
-    local->op_ret = op_ret;
-    local->count = count;
-    local->read_vec = iov_dup (vector, count);
-    dict_copy (frame->root->rsp_refs, local->orig_frame->root->rsp_refs);
+    LOCK (&orig_frame->mutex);
+    main_local->reply_vec[local->node_index].len    = op_ret;
+    main_local->reply_vec[local->node_index].count  = count;
+    main_local->reply_vec[local->node_index].vector = iov_dup (vector, count);
+    UNLOCK (&orig_frame->mutex);
+    dict_copy (frame->root->rsp_refs, orig_frame->root->rsp_refs);
   }
 
-  LOCK(&frame->mutex);
+  LOCK(&orig_frame->mutex);
   callcnt = ++main_local->call_count;
-  UNLOCK(&frame->mutex);
-
+  UNLOCK(&orig_frame->mutex);
+  
   if ((callcnt == main_local->wind_count) && main_local->unwind) {
-    int32_t index = 0;
-    struct iovec *final_vec;
-    int32_t final_count = 0;
+    dict_t *refs;
     int32_t ret = 0;
-    local = main_local->next;
-    for (index = 0 ; index < main_local->call_count; index ++) {
-      final_count += local->count;
-      local = local->next;
-    }
-    final_vec = calloc (final_count, sizeof (struct iovec));
-    final_count = 0;
-    index = 0;
-    local = main_local->next;
-    while (index != main_local->call_count) {
-      if (local->node_index == index) {
-	memcpy (final_vec + final_count, local->read_vec, local->count * sizeof (struct iovec));
-	final_count += local->count;
-	if (local->op_ret != -1) 
-	  ret += local->op_ret;
-	index++;
-	local = main_local->next;
-	continue;
+    int32_t index = 0;
+    int32_t final_count = 0;
+    struct iovec *final_vec = NULL;
+
+    if (main_local->op_ret != -1) {
+      final_vec = calloc (main_local->count, sizeof (struct iovec));
+      for (index = 0; index < main_local->call_count; index++) {
+	memcpy (final_vec + final_count, 
+		main_local->reply_vec[index].vector,  
+		main_local->reply_vec[index].count * sizeof (struct iovec));
+	final_count += main_local->reply_vec[index].count;
+	/*if (index != (main_local->count -1) && 
+	    main_local->reply_vec[index].len < main_local->stripe_size) {
+	    ret = -1;
+	    main_local->op_errno = EIO;
+	    break;
+	  } */
+	ret += main_local->reply_vec[index].len;
       }
-      local = local->next;
+    } else {
+      free (final_vec);
+      final_vec = NULL;
+      ret = -1;
+      main_local->op_errno = EIO;
     }
-    local->orig_frame->local = NULL;
-    dict_t *refs = local->orig_frame->root->rsp_refs;
-
-    STACK_UNWIND(local->orig_frame, ret, 0, final_vec, final_count);
-
-    dict_unref (refs);
-    local = main_local->next;
-    stripe_local_t *prev = local;
-    while (local) {
-      prev = local;
-      local = local->next;
-      free (prev);
-    }
-    free (main_local);
+    
+    gf_log ("", 1, "ret %d, errno %d, count %d", ret, main_local->op_errno, final_count);
+    refs = orig_frame->root->rsp_refs;
+    LOCK_DESTROY (&orig_frame->mutex);
+    STACK_UNWIND(orig_frame, ret, main_local->op_errno, final_vec, final_count);
+    gf_log ("", 1, "after ret %d, errno %d, count %d", ret, main_local->op_errno, final_count);
+    //if (ret >= 0)
+    //  dict_unref (refs);
   }
+
   STACK_DESTROY (frame->root);
   return 0;
 }
@@ -447,20 +455,30 @@ stripe_readv (call_frame_t *frame,
 {
   stripe_local_t *local = calloc (1, sizeof (stripe_local_t));
   stripe_private_t *priv = (stripe_private_t *)xl->private;
-  
+
+  int32_t num_stripe = 1;
   int32_t remaining_size = size;
   int32_t offset_offset = 0;
   int32_t fill_size = size;
+  int32_t idx = 0;
   frame->local = local;
+  gf_log ("", 1, "entered readv");
 
   LOCK_INIT (&frame->mutex);
   local->orig_frame = frame;
   local->stripe_size = data_to_int (dict_get (file_ctx, frame->this->name));
   frame->root->rsp_refs = dict_ref (get_new_dict ());
+
+  if (local->stripe_size)
+    num_stripe = (size /local->stripe_size) + 1;
+
+  /* This is where all the vectors should be copied. */
+  local->reply_vec = calloc (1, num_stripe * sizeof (struct readv_replies));
+
   while (1) {
     xlator_list_t *trav = xl->children;    
     if (local->stripe_size) {
-      int32_t idx = ((offset + offset_offset) / local->stripe_size) % priv->child_count;
+      idx = ((offset + offset_offset) / local->stripe_size) % priv->child_count;
       while (idx) {
 	trav = trav->next;
 	idx--;
@@ -478,14 +496,17 @@ stripe_readv (call_frame_t *frame,
     
     call_frame_t *rframe = copy_frame (frame);
     stripe_local_t *rlocal = calloc (1, sizeof (stripe_local_t));
+
     rlocal->node_index = local->wind_count;
     local->wind_count++; //use it for unwinding
+
     rframe->local = rlocal;
     rlocal->offset = offset + offset_offset;
     rlocal->orig_frame = frame;
-    if (remaining_size == 0)
+
+    if (remaining_size == 0) 
       local->unwind = 1;
-    
+      
     STACK_WIND (rframe, 
 		stripe_readv_cbk,
 		trav->xlator,
@@ -493,6 +514,7 @@ stripe_readv (call_frame_t *frame,
 		ctx,
 		fill_size,
 		offset + offset_offset);
+
     offset_offset += fill_size;
     if (remaining_size == 0) {
       break;
@@ -722,14 +744,15 @@ stripe_flush_cbk (call_frame_t *frame,
 {
   stripe_local_t *local = frame->local;
   int32_t callcnt;
-  LOCK(&frame->mutex);
-  callcnt = ++local->call_count;
-  UNLOCK (&frame->mutex);
 
   if (op_ret == -1) {
     local->op_ret = -1;
     local->op_errno = op_errno;
   }
+
+  LOCK(&frame->mutex);
+  callcnt = ++local->call_count;
+  UNLOCK (&frame->mutex);
 
   if (callcnt == ((stripe_private_t*)xl->private)->child_count) {
     LOCK_DESTROY(&frame->mutex);
@@ -749,6 +772,11 @@ stripe_flush (call_frame_t *frame,
   LOCK_INIT (&frame->mutex);
   while(trav) {
     data_t *ctx_data = dict_get (file_ctx, trav->xlator->name);
+    if (!ctx_data) {
+      gf_log ("", 1, "yaake");
+      trav = trav->next;
+      continue;
+    }
     dict_t *ctx = (void *)((long)data_to_int(ctx_data));
     STACK_WIND (frame,
 		stripe_flush_cbk,
@@ -769,15 +797,16 @@ stripe_release_cbk (call_frame_t *frame,
 {
   stripe_local_t *local = frame->local;
   int32_t callcnt;
-  LOCK(&frame->mutex);
-  callcnt = ++local->call_count;
-  UNLOCK (&frame->mutex);
 
   if (op_ret == -1) {
     local->op_ret = -1;
     local->op_errno = op_errno;
   }
     
+  LOCK(&frame->mutex);
+  callcnt = ++local->call_count;
+  UNLOCK (&frame->mutex);
+
   if (callcnt == ((stripe_private_t *)xl->private)->child_count) {
     LOCK_DESTROY(&frame->mutex);
     STACK_UNWIND (frame, local->op_ret, local->op_errno);
