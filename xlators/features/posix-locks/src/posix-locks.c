@@ -283,16 +283,6 @@ delete_unlck_locks (posix_inode_t *inode)
 static posix_lock_t *
 add_locks (posix_lock_t *l1, posix_lock_t *l2)
 {
-  off_t min (off_t x, off_t y)
-  {
-    return x < y ? x : y;
-  }
-
-  off_t max (off_t x, off_t y)
-  {
-    return x > y ? x : y;
-  }
-
   posix_lock_t *sum = calloc (1, sizeof (posix_lock_t));
   sum->fl_start = min (l1->fl_start, l2->fl_start);
   sum->fl_end   = max (l1->fl_end, l2->fl_end);
