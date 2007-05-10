@@ -89,7 +89,7 @@ ra_wait_on_page (ra_page_t *page,
 
 static int32_t
 fault_cbk (call_frame_t *frame,
-	   call_frame_t *prev_frame,
+	   void *cookie,
 	   xlator_t *this,
 	   int32_t op_ret,
 	   int32_t op_errno,
@@ -190,7 +190,7 @@ ra_frame_fill (ra_page_t *page,
   ra_fill_t *fill = &local->fill;
   off_t src_offset = 0;
   off_t dst_offset = 0;
-  size_t copy_size;
+  ssize_t copy_size;
 
   if (local->op_ret != -1 && page->size) {
     if (local->offset > page->offset)
@@ -199,6 +199,12 @@ ra_frame_fill (ra_page_t *page,
       dst_offset = page->offset - local->offset;
     copy_size = min (page->size - src_offset,
 		     local->size - dst_offset);
+
+    if (copy_size < 0) {
+      /* if page contains fewer bytes and the required offset
+	 is beyond the page size in the page */
+      copy_size = src_offset = 0;
+    }
 
     fill = fill->next;
     while (fill != &local->fill) {
@@ -274,6 +280,9 @@ ra_frame_unwind (call_frame_t *frame)
   }
 
   frame->root->rsp_refs = dict_ref (refs);
+
+  if ((*(long *)vector[0].iov_base) == 0)
+    trap ();
 
   STACK_UNWIND (frame,
 		local->op_ret,
