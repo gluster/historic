@@ -305,7 +305,8 @@ stripe_open_cbk (call_frame_t *frame,
     UNLOCK (&frame->mutex);
   }
 
-  if (callcnt == ((stripe_private_t *)xl->private)->child_count) {
+  if ((callcnt == ((stripe_private_t *)xl->private)->child_count) ||
+      (!local->stripe_size)) {
     if (!local->failed) {
       dict_set (ctx, frame->this->name, int_to_data (local->stripe_size));
       LOCK_DESTROY(&frame->mutex);
@@ -355,16 +356,39 @@ stripe_open (call_frame_t *frame,
   local->ctx = get_new_dict ();
   local->stripe_size = stripe_get_matching_bs (path, priv->pattern);
   LOCK_INIT (&frame->mutex);
-  while (trav) {
+  if (local->stripe_size) {
+    while (trav) {
+      STACK_WIND (frame,
+		  stripe_open_cbk,
+		  trav->xlator,
+		  trav->xlator->fops->open,
+		  path,
+		  flags,
+		  mode);
+      trav = trav->next;
+    }
+  } else {
     STACK_WIND (frame,
 		stripe_open_cbk,
-		trav->xlator,
-		trav->xlator->fops->open,
+		xl->children->xlator,
+		xl->children->xlator->fops->open,
 		path,
 		flags,
 		mode);
-    trav = trav->next;
   }
+  return 0;
+}
+
+static int32_t 
+stripe_single_readv_cbk (call_frame_t *frame,
+			 call_frame_t *prev_frame,
+			 xlator_t *xl,
+			 int32_t op_ret,
+			 int32_t op_errno,
+			 struct iovec *vector,
+			 int32_t count)
+{
+  STACK_UNWIND (frame, op_ret, op_errno, vector, count);
   return 0;
 }
 
@@ -458,8 +482,19 @@ stripe_readv (call_frame_t *frame,
 
   off_t stripe_size = data_to_int (dict_get (file_ctx,
 					     frame->this->name));
-  if (!stripe_size)
-    stripe_size = (offset+size);
+  if (!stripe_size) {
+    /* Send the readv request to only first node. */
+    data_t *ctx_data = dict_get (file_ctx, xl->children->xlator->name);
+    dict_t *ctx = (void *)((long)data_to_int(ctx_data));
+    STACK_WIND (frame,
+		stripe_single_readv_cbk,
+		xl->children->xlator,
+		xl->children->xlator->fops->readv,
+		ctx,
+		size,
+		offset);
+    return 0;
+  }
 
   off_t rounded_start = floor (offset, stripe_size);
   off_t rounded_end = roof (offset+size, stripe_size);
@@ -513,6 +548,17 @@ stripe_readv (call_frame_t *frame,
 }
 
 static int32_t
+stripe_single_writev_cbk (call_frame_t *frame,
+			  call_frame_t *prev_frame,
+			  xlator_t *xl,
+			  int32_t op_ret,
+			  int32_t op_errno)
+{
+  STACK_UNWIND (frame, op_ret, op_errno);
+  return 0;
+}
+
+static int32_t
 stripe_writev_cbk (call_frame_t *frame,
 		   call_frame_t *prev_frame,
 		   xlator_t *xl,
@@ -558,6 +604,20 @@ stripe_writev (call_frame_t *frame,
   stripe_private_t *priv = xl->private;
 
   local->stripe_size = data_to_int (dict_get (file_ctx, frame->this->name));
+  if (!local->stripe_size) {
+    /* File exists only on first node */
+    data_t *ctx_data = dict_get (file_ctx, xl->children->xlator->name);
+    dict_t *ctx = (void *)((long)data_to_int(ctx_data));
+    STACK_WIND (frame,
+		stripe_single_writev_cbk,
+		xl->children->xlator,
+		xl->children->xlator->fops->writev,
+		ctx,
+		vector,
+		count,
+		offset);
+    return 0;
+  }
 
   for (i = 0; i< count; i++) {
     total_size += tmp_vec[i].iov_len;
@@ -1442,7 +1502,8 @@ stripe_create_cbk (call_frame_t *frame,
     local->op_ret = op_ret;
   }
   
-  if (callcnt == ((stripe_private_t *)xl->private)->child_count) {
+  if ((callcnt == ((stripe_private_t *)xl->private)->child_count) || 
+      (!local->stripe_size)) {
     if (!local->failed) {
       dict_set (ctx, frame->this->name, int_to_data (local->stripe_size));
       LOCK_DESTROY(&frame->mutex);
@@ -1491,14 +1552,23 @@ stripe_create (call_frame_t *frame,
   local->ctx = get_new_dict (); 
   local->stripe_size = stripe_get_matching_bs (path, priv->pattern);
   LOCK_INIT (&frame->mutex);
-  while (trav) {
+  if (local->stripe_size) {
+    while (trav) {
+      STACK_WIND (frame,
+		  stripe_create_cbk,
+		  trav->xlator,
+		  trav->xlator->fops->create,
+		  path,
+		  mode);
+      trav = trav->next;
+    }
+  } else {
     STACK_WIND (frame,
 		stripe_create_cbk,
-		trav->xlator,
-		trav->xlator->fops->create,
+		xl->children->xlator,
+		xl->children->xlator->fops->create,
 		path,
 		mode);
-    trav = trav->next;
   }
   return 0;
 }
