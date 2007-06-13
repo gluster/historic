@@ -180,7 +180,7 @@ iot_readv_cbk (call_frame_t *frame,
   local->op_errno = op_errno;
   local->vector = iov_dup (vector, count);
   local->count = count;
-  local->frame_size = iov_length (vector, count);
+  local->frame_size = 0;//iov_length (vector, count);
 
   if (op_ret != -1)
     dict_ref (frame->root->rsp_refs);

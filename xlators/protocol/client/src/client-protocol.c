@@ -219,6 +219,7 @@ call_bail (void *trans)
   transport_bail (trans);
 }
 
+//#if 0
 #define BAIL(frame, sec) do {                                  \
     struct timeval tv;                                         \
     tv.tv_sec = sec;                                           \
@@ -228,6 +229,9 @@ call_bail (void *trans)
 					call_bail,	       \
 					frame->this->private); \
 } while (0)
+//#endif
+
+//#define BAIL(frame, sec)
 
 static int32_t 
 client_create (call_frame_t *frame,
