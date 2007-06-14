@@ -63,6 +63,7 @@ struct stripe_local {
   struct readv_replies *replies;
   struct statvfs statvfs_buf;
   dir_entry_t *entry;
+  dir_entry_t *last;
   struct xlator_stats stats;
   /* For File I/O fops */
   dict_t *ctx;
@@ -1096,32 +1097,32 @@ stripe_getattr_cbk (call_frame_t *frame,
   stripe_local_t *local = frame->local;
   int32_t callcnt;
   LOCK(&frame->mutex);
-  callcnt = ++local->call_count;
-  UNLOCK (&frame->mutex);
-
-  if (op_ret == -1 && op_errno != ENOENT) {
-    local->op_ret = op_ret;
-    local->op_errno = op_errno;
-  } 
-  if (op_ret == 0) {
-    if (local->op_ret == -1)
-      local->stbuf = *stbuf;
-    local->op_ret = 0;
-    LOCK (&frame->mutex);
-    if (local->stbuf.st_size < stbuf->st_size)
-      local->stbuf.st_size = stbuf->st_size;
-    local->stbuf.st_blocks += stbuf->st_blocks;
-    if (local->stbuf.st_blksize != stbuf->st_blksize) {
-      //TODO: add to blocks in terms of original block size 
+  {
+    callcnt = ++local->call_count;
+    
+    if (op_ret == -1 && op_errno != ENOENT) {
+      local->op_ret = op_ret;
+      local->op_errno = op_errno;
+    } 
+    if (op_ret == 0) {
+      if (local->stbuf.st_blksize == 0)
+	local->stbuf = *stbuf;
+      local->op_ret = 0;
+      if (local->stbuf.st_size < stbuf->st_size)
+	local->stbuf.st_size = stbuf->st_size;
+      local->stbuf.st_blocks += stbuf->st_blocks;
+      if (local->stbuf.st_blksize != stbuf->st_blksize) {
+	//TODO: add to blocks in terms of original block size 
+      }
     }
-    UNLOCK (&frame->mutex);
   }
-
+  UNLOCK (&frame->mutex);
+    
   if (callcnt == ((stripe_private_t *)xl->private)->child_count) {
     LOCK_DESTROY(&frame->mutex);
     STACK_UNWIND (frame, local->op_ret, local->op_errno, &local->stbuf);
   }
-  
+
   return 0;
 }
 
@@ -1368,6 +1369,8 @@ stripe_readdir_cbk (call_frame_t *frame,
      having file info in same order in all the nodes. If its not, then 
      this wont work. */
   stripe_local_t *local = frame->local;
+  dir_entry_t *trav = NULL;
+  dir_entry_t *prev = NULL;
   int32_t callcnt;
   LOCK(&frame->mutex);
   callcnt = ++local->call_count;
@@ -1376,46 +1379,81 @@ stripe_readdir_cbk (call_frame_t *frame,
   if (op_ret == -1 && op_errno != ENOTCONN && op_errno != ENOENT) {
     local->op_errno = op_errno;
   } 
-  if (op_ret == 0) {
+  if (op_ret >= 0) {
     LOCK (&frame->mutex);
     local->op_ret = op_ret;
+    trav = entry->next;
+    prev = entry;
     if (!local->entry) {
-      dir_entry_t *trav = entry->next;
       local->entry = calloc (1, sizeof (dir_entry_t));
       entry->next = NULL;
       local->entry->next = trav;
+      while (trav->next)
+	trav = trav->next;
+      /* Keep the last entry at 'last', in next _cbk use it to append new entries */
+      local->last = trav;
       local->count = count;
     } else {
       /* update stat of all the entries */
-      dir_entry_t *trav = entry->next;
-      dir_entry_t *trav_local = local->entry->next;
-      while (trav_local) {
-	while (trav) {
-	  if (strcmp (trav->name, trav_local->name) == 0) {
-	    trav_local->buf.st_size += trav->buf.st_size;
-	    trav_local->buf.st_blocks += trav->buf.st_blocks;
-	    trav_local->buf.st_blksize += trav->buf.st_blksize;
+      int32_t tmp_count = count;
+      dir_entry_t *tmp = NULL;
+      while (trav) {
+	int32_t flag = 0;
+	dir_entry_t *sh_trav = local->entry->next;
+	tmp = trav;
+	while (sh_trav) {
+	  if (strcmp (sh_trav->name, tmp->name) == 0) {
+	    /* Found the directory name in earlier entries. */
+	    flag = 1;
+	    if (sh_trav->buf.st_size < tmp->buf.st_size)
+	      sh_trav->buf.st_size = tmp->buf.st_size;
+	    sh_trav->buf.st_blocks += tmp->buf.st_blocks;
+	    if (sh_trav->buf.st_blksize != tmp->buf.st_blksize) {
+	    }
 	    break;
 	  }
-	  trav = trav->next;
+	  sh_trav = sh_trav->next;
 	}
-	trav_local = trav_local->next;
+	if (flag) {
+	  /* if its set, it means entry is already present, so remove entries
+	   * from current list.   
+	   */
+	  prev->next = tmp->next;
+	  trav = tmp->next;
+	  free (tmp->name);
+	  free (tmp);
+	  tmp_count--;
+	  continue;
+	}
+	
+	prev = trav;
+	trav = trav->next;
       }
+      /* Append the 'entries' from this call at the end of the previously
+       * stored entry
+       */
+      local->last->next = entry->next;
+      local->count += tmp_count;
+      while (local->last->next)
+	local->last = local->last->next;
     }
+    entry->next = NULL;
     UNLOCK (&frame->mutex);
   }
   if (callcnt == ((stripe_private_t *)xl->private)->child_count) {
-    dir_entry_t *prev = local->entry;
+    prev = local->entry;
     LOCK_DESTROY(&frame->mutex);
     STACK_UNWIND (frame, local->op_ret, local->op_errno, local->entry, local->count);
-    dir_entry_t *trav = prev->next;
-    while (trav) {
-      prev->next = trav->next;
-      free (trav->name);
-      free (trav);
+    if (prev) {
       trav = prev->next;
+      while (trav) {
+	prev->next = trav->next;
+	free (trav->name);
+	free (trav);
+	trav = prev->next;
+      }
+      free (prev);
     }
-    free (prev);
   }
 
   return 0;
@@ -1553,12 +1591,12 @@ stripe_rmdir_cbk (call_frame_t *frame,
   int32_t callcnt;
   LOCK(&frame->mutex);
   callcnt = ++local->call_count;
-  UNLOCK (&frame->mutex);
 
   if (op_ret == -1) {
     local->op_ret = -1;
     local->op_errno = op_errno;
   }
+  UNLOCK (&frame->mutex);
 
   if (callcnt == ((stripe_private_t*) xl->private)->child_count) {
     LOCK_DESTROY(&frame->mutex);
