@@ -144,7 +144,7 @@ unify_getxattr_cbk (call_frame_t *frame,
   }
 
   if (op_ret >= 0) {
-    char *tmp_value = calloc (1, sizeof (op_ret));
+    char *tmp_value = calloc (1, (op_ret));
     memcpy (tmp_value, value, op_ret);
     if (local->buf)
       /* if file existed in two places by corruption */
@@ -218,8 +218,9 @@ unify_listxattr_cbk (call_frame_t *frame,
   }
 
   if (op_ret >= 0) {
-    char *tmp_value = calloc (1, sizeof (op_ret));
-    memcpy (tmp_value, value, op_ret);
+    char *tmp_value = calloc (1, (op_ret));
+    if (value)
+      memcpy (tmp_value, value, op_ret);
     if (local->buf)
       free (local->buf);
     local->buf = tmp_value;    
