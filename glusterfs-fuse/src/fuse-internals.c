@@ -1650,6 +1650,9 @@ fuse_create_cbk (call_frame_t *frame,
   else
     fi.fh = (long) fd;
 
+  if (state->flags & 1)
+      fi.direct_io = 1; /* TODO: This is fixing the "fixdep: mmap: No such device" error */
+
   if (!err) {
     if (f->conf.debug) {
       printf ("CREATE[%"PRIu64"] flags: 0x%x %s\n",
