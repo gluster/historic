@@ -17,7 +17,7 @@
 
 pcre.%: PACKAGE_NAME=pcre-6.3
 pcre.%: LIVE_CONFIGURE_CMD=./configure --prefix=/usr \
-+               --disable-cpp --host=$(CROSS) --build=$(GLUSTER_BUILD)
+               --disable-cpp --host=$(CROSS) --build=$(GLUSTER_BUILD)
 
 ## NOTE : pcre-config is used by apps which depend on pcre for determining
 ##  the library and include paths of PCRE. The system's /usr/bin/pcre-config

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+os_base=$1
+
+ARCH=$(uname -m)
+slfld=$os_base/opt/gluster/torque/conf.d
+echo "master-node" > $slfld/server_name
+echo "\$pbsserver     master-node" > $slfld/mom_priv/config
+
+## sysv init
+chroot $os_base chkconfig --add pbs_mom

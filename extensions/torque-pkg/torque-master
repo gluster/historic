@@ -1,0 +1,28 @@
+#!/bin/sh
+
+os_base=$1
+
+ARCH=$(uname -m)
+nodfil=$os_base/opt/gluster/torque/conf.d/server_priv/nodes
+
+rm -f $nodfil
+touch $nodfil
+
+## this step is integrated into pbs_server sysv init script
+#chroot $os_base /opt/gluster/setup/torque-setup
+
+cd $os_base/opt/gluster/state/hw-profiles
+for node in *; do
+   no_procs=$(grep cpu $node | wc -l)
+   nodename=$(cat $os_base/etc/hosts | grep $node | cut -f2 | cut -d . -f1)
+   echo "$nodename np=$no_procs" >> $nodfil
+done
+
+slfld=$os_base/opt/gluster/torque/conf.d
+echo "master-node" > $slfld/server_name
+echo "\$pbsserver     master-node" > $slfld/mom_priv/config
+
+## sysv init
+chroot $os_base chkconfig --add pbs_mom
+chroot $os_base chkconfig --add pbs_sched
+chroot $os_base chkconfig --add pbs_server

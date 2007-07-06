@@ -37,6 +37,7 @@ done
 /sbin/modprobe cdrom
 /sbin/modprobe iso9660
 /sbin/modprobe isofs
+/sbin/modprobe mii
 } >/dev/null 2>&1
 
 # add acpi modules like button, power etc

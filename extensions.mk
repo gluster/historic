@@ -19,20 +19,22 @@ APPLICATIONS = GlusterHPC GlusterEP self-install shutdown
 
 HPC_PACKAGES = \
 	mpich2-pkg \
-	openib-pkg \
-	mvapich-gen2-pkg \
 	torque-pkg \
 	slurm-pkg \
 	autologin-pkg \
 	pdsh-pkg \
 	c3-pkg \
-	cerebro-pkg \
-	genders-pkg \
-	conman-pkg \
 	ganglia-pkg \
 	hpc-base-pkg \
 	lam-pkg
-#	powerman-pkg
+#	cerebro-pkg \
+#	genders-pkg \
+#	conman-pkg \
+#	powerman-pkg \
+#	openib-pkg \
+#	mvapich-gen2-pkg
+
+
 
 EXTENSIONS= \
 	init \

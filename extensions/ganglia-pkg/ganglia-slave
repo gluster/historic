@@ -1,0 +1,7 @@
+#!/bin/sh
+
+os_base=$1
+
+ln -fs /opt/gluster/etc/gmond.conf $os_base/etc/gmond.conf
+
+chroot $os_base chkconfig --add gmond

@@ -33,7 +33,7 @@ mkdir -p /mnt
 cp -f /usr/bin/dialog /usr/bin/dialog.bin
 cat > /usr/bin/dialog <<EOF
 #!/bin/sh
-/usr/bin/dialog.bin --backtitle 'Gluster v1.0-rc3 (bulde)                    Copyright (c) 2006 Z RESEARCH Inc.' --aspect 32 "\$@"
+/usr/bin/dialog.bin --backtitle 'Gluster v1.0-rc4 (bulde)               Copyright (c) 2006,2007 Z RESEARCH Inc.' --aspect 32 "\$@"
 EOF
 killall -9 udevd
 
@@ -56,6 +56,7 @@ ln -snf /proc/self/fd/0 /dev/stdin
 ln -snf /proc/self/fd/1 /dev/stdout
 ln -snf /proc/self/fd/2 /dev/stderr
 mkdir -p /dev/pts
+mount -t devpts none /dev/pts
 mkdir -p /dev/shm
 
 echo " * Hostname -> localhost"

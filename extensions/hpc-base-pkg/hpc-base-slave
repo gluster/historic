@@ -1,7 +1,11 @@
 #!/bin/sh
 
-grep -q $1/opt/gluster/etc/profile $1/etc/profile || 
+grep -q "source /opt/gluster/etc/profile" $1/etc/profile || 
 	echo "source /opt/gluster/etc/profile" >> $1/etc/profile
 
-[ -f $1/etc/hosts.orig-gluster ] || (cp $1/etc/hosts $1/etc/hosts.orig-gluster && grep "Added by Gluster" /etc/hosts >> $1/etc/hosts)
+[ -f $1/etc/hosts.pre-gluster ] || cp $1/etc/hosts $1/etc/hosts.pre-gluster
 
+sed -i '/Added by Gluster/d' $1/etc/hosts
+grep 'Added by Gluster' /etc/hosts >> $1/etc/hosts
+
+rm -f /etc/udev/rules.d/*persistant-net.rules

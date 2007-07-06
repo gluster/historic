@@ -139,9 +139,14 @@ def update_iface(_path, _iface, _flag):
                        % (if_num, if_num, config_file))
 
     config_file = "%s/etc/sysconfig/network-scripts/ifcfg-%s" % (_path, _iface)
+    config_dir = os.path.dirname (config_file)
+    config_base = os.path.basename (config_file)
     if os.access (config_file, os.R_OK):
-        if not os.access ("%s.orig-gluster" % config_file, os.R_OK):
-            os.system ("cp %s %s.orig-gluster" % (config_file, config_file))
+        if not os.access ("%s/orig-gluster.%s" % (config_dir, config_base),
+                          os.R_OK):
+            os.system ("cp %s %s/orig-gluster.%s" % (config_file,
+                                                     config_dir,
+                                                     config_base))
         if _flag != 'up':
             os.system ("sed -i -e 's/ONBOOT=.*/ONBOOT=no/' %s" % config_file)
         else:

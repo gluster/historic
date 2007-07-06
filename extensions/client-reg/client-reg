@@ -207,7 +207,7 @@ for index in range (string.atoi (cfg.get ('global', 'totalnodes'))):
                                                domain,
                                                hostname,
                                                i_idx))
-hosts_file.write ('%s\tmaster-node.%s\tmaster-node\n' % (master_node,
+hosts_file.write ('%s\tmaster-node.%s\tmaster-node # Added by Gluster\n' % (master_node,
                                                        domain))
 hosts_file.close ()
 os.system ("cp /tftpboot/hosts /etc/hosts")

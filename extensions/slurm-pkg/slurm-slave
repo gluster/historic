@@ -33,3 +33,18 @@ for node in *; do
 done
 
 echo "PartitionName=allofthem Nodes=$all_nodes Default=YES MaxTime=-1 State=UP" >> $conf
+
+ln -sf /opt/gluster/etc/slurm.conf $os_base/etc/slurm.conf
+mkdir -p $os_base/opt/gluster/tmp/slurmd
+chroot $os_base chmod -R 777 /opt/gluster/tmp/slurmd
+chroot $os_base chown -R root.root /opt/gluster/tmp/slurmd
+chroot $os_base chmod -R 777 /opt/gluster/tmp
+chroot $os_base chown -R root.root /opt/gluster/tmp
+mkdir -p $os_base/tmp/slurmd/job
+chown 99 $os_base/tmp/slurmd $os_base/tmp/slurmd/job
+chown root $os_base/tmp
+chmod 777 $os_base/tmp
+chmod +t $os_base/tmp
+
+## sysv init
+chroot $os_base chkconfig --add slurmd

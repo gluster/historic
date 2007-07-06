@@ -16,3 +16,4 @@
 #  
 
 atftp.%: PACKAGE_NAME=atftp-0.7
+atftp.%: LIVE_CONFIGURE_CMD=$(DEFAULT_LIVE_CONFIGURE_CMD) --disable-pcre --disable-libreadline --disable-libpcre

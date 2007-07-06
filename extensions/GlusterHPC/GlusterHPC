@@ -79,6 +79,9 @@ def get_slaves (node):
     return
     
 def source_config (node):
+    os.system ("cat /stage3/init.tgz | ssh %s client-gex" % node)
+    os.system ("cat /stage3/gutils.tgz | ssh %s client-gex" % node)
+    os.system ("cat /stage3/fs-utils.tgz | ssh %s client-gex" % node)
     if os.system ("ssh -t %s 'gprobe | gpart-sel -o /tmp/ghpc.spec -c /tmp/ghpc_tar_cmds -m /tmp/ghpc_approx_max' 2>>/var/log/proglog" % node) != 0:
         return 1
     else:

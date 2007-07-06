@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+# pbs_server	This script will start and stop the PBS Server
+#
+# chkconfig: 345 80 85
+# description: PBS is a versatile batch system for SMPs and clusters
+#
+# Source the library functions
+. /etc/rc.d/init.d/functions
+
+PBS_DAEMON=/opt/gluster/sbin/pbs_server
+PBS_HOME=/opt/gluster/torque
+export PBS_DAEMON PBS_HOME
+
+if [ -f /etc/sysconfig/pbs_server ];then
+   . /etc/sysconfig/pbs_server
+fi
+
+torque_init ()
+{
+    PATH=$PATH:/opt/gluster/bin:/opt/gluster/sbin
+    
+    sleep 3
+    
+    USER=root
+    qmgr -c "set server scheduling=true"
+    echo set server operators += $USER | qmgr
+    echo set server managers += $USER | qmgr
+    qmgr -c 'create queue batch'
+    qmgr -c 'set queue batch queue_type = execution'
+    qmgr -c 'set queue batch started = true'
+    qmgr -c 'set queue batch enabled = true'
+    qmgr -c 'set queue batch resources_default.walltime = 1:00:00'
+    qmgr -c 'set queue batch resources_default.nodes = 1'
+    qmgr -c 'set server default_queue = batch'
+}
+
+# let see how we were called
+case "$1" in
+	start) 
+		echo -n "Starting TORQUE Server: "
+		if [ -r $PBS_HOME/conf.d/server_priv/serverdb ]
+		then
+			daemon $PBS_DAEMON
+		else
+			daemon $PBS_DAEMON -t create
+			torque_init
+		fi
+		touch /var/lock/subsys/pbs_server
+		echo
+		;;
+	stop)
+		echo -n "Shutting down TORQUE Server: "
+		killproc pbs_server
+		rm -f /var/lock/subsys/pbs_server
+		echo
+		;;
+	status)
+		status pbs_server
+		;;
+	restart)
+		$0 stop
+		$0 start
+		;;
+	*)
+		echo "Usage: pbs_server {start|stop|restart|status}"
+		exit 1
+esac

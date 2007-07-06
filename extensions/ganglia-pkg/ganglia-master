@@ -1,0 +1,16 @@
+#!/bin/sh
+
+os_base=$1
+
+machines=$(cat $os_base/opt/gluster/etc/nodes)
+
+echo "data_source \"gluster_new\" master-node $machines" >> $os_base/opt/gluster/etc/gmetad.conf
+echo "gridname \"gluster_grid\"" >> $os_base/opt/gluster/etc/gmetad.conf
+ln -fs /opt/gluster/etc/gmetad.conf $os_base/etc/gmetad.conf
+ln -fs /opt/gluster/etc/gmond.conf $os_base/etc/gmond.conf
+
+mkdir -p $os_base/var/lib/ganglia/rrds
+chroot $os_base chown -R nobody /var/lib/ganglia/rrds
+
+chroot $os_base chkconfig --add gmetad
+chroot $os_base chkconfig --add gmond

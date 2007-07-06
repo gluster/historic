@@ -25,17 +25,26 @@ dlg = dialog.Dialog ()
 
 def main ():
     (ret, sel) = dlg.menu ('Select',
-                           choices=[('halt', 'Shutdown the system'),
-                                    ('reboot', 'Reboot the system')],
+                           choices=[('halt', 'Shutdown the cluster'),
+                                    ('reboot', 'Reboot the cluster')],
                            title='[ Shutdown ]')
     if ret != 0:
         return
 
+    try:
+        hosts = file ('/tmp/ghosts/known_hosts').readlines ()
+    except:
+        hosts = []
+
     if sel == 'halt':
+        for host in hosts:
+            os.system ('ssh %s /sbin/halt' % host.strip())
         os.system ('shutdown -h now')
         while True:
             os.system ('sleep 108')
     if sel == 'reboot':
+        for host in hosts:
+            os.system ('ssh %s /sbin/reboot' % host.strip())
         os.system ('reboot')
         while True:
             os.system ('sleep 108')

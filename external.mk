@@ -90,7 +90,7 @@ cd $(APP_DIR) ; \
 
 cd $(APP_DIR) ; \
 	export $(CONFIGURE_ENV) ; \
-	[ -f Makefile ] || FOOBAR=FUBAR $(call CONFIGURE_CMD)
+	[ -f Makefile ] || FOOBAR=FUBAR $(CONFIGURE_ENV) $(call CONFIGURE_CMD)
 
 cd $(APP_DIR) ; \
         touch libtool ; sed -i -r $$(for line in `cat /etc/ld.so.conf | grep -v '\^[ \t]*#' ; echo /lib /usr/lib /lib64 /usr/lib64` ; do echo ' -e' 's,([^a-zA-Z0-9_\.])'$$line'([^a-zA-Z0-9_\.]),\1\2,' ; done) `find . -name libtool`

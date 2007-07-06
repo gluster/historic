@@ -87,5 +87,6 @@ torque.pkg: ncurses.pkg
 slurm.pkg: openssl.pkg readline.pkg
 pdsh.pkg: slurm.pkg readline.pkg
 cerebro.pkg: slurm.pkg genders.pkg
-rrdtool.pkg: freetype2.pkg libart_lgpl.pkg libpng.pkg
+libpng.pkg: zlib.pkg
+rrdtool.pkg: freetype2.pkg libart_lgpl.pkg libpng.pkg zlib.pkg
 ganglia.pkg: rrdtool.pkg

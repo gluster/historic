@@ -356,7 +356,7 @@ def bootloader_section (mnt_buf, tx_buf, partlist, src_partlist, auto):
                                                                      bl_key))
             f.write ('mount --bind /dev /tmp/ginstaller/%s/dev\n' % bl_key)
             status_check (f, 'Bootloader update failed')
-            f.write ("chroot /tmp/ginstaller/%s sh -c 'grub-install %s'\n" % (bl_key, bl_dest))
+            f.write ("chroot /tmp/ginstaller/%s sh -c 'mount /proc; umount /boot; mount /boot; grub-install %s; umount /proc'\n" % (bl_key, bl_dest))
             status_check (f, 'Bootloader update failed')
             f.write ("umount /tmp/ginstaller/%s/dev\n" % bl_key)
     f.write ("# End of BootLoader Section\n")
