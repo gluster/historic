@@ -3,7 +3,8 @@ timeout 30
 # splashimage (cd)/boot/grub/gluster-logo.xpm.gz
 
 # 32-bit Grub fails on systems with more than 4GB of RAM. So lets limit it.
-uppermem 512000
+# I hope patched grub tarball will fix this -Bala
+## uppermem 512000
 
 # Pretty colours
 color cyan/blue white/blue
