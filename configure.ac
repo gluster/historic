@@ -1,5 +1,5 @@
 
-AC_INIT([gluster], [1.0], [gluster-devel@nongnu.org])
+AC_INIT([gluster], [1.1], [gluster-devel@nongnu.org])
 AM_INIT_AUTOMAKE
 
 AC_CONFIG_FILES([Makefile 

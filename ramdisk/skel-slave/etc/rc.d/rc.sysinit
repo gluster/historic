@@ -33,7 +33,7 @@ mkdir -p /mnt
 cp -f /usr/bin/dialog /usr/bin/dialog.bin
 cat > /usr/bin/dialog <<EOF
 #!/bin/sh
-/usr/bin/dialog.bin --backtitle 'Gluster v1.0 (bulde)                   Copyright (c) 2006,2007 Z RESEARCH Inc.' --aspect 32 "\$@"
+/usr/bin/dialog.bin --backtitle 'Gluster v1.1 (bulde)                   Copyright (c) 2006,2007 Z RESEARCH Inc.' --aspect 32 "\$@"
 EOF
 killall -9 udevd
 
