@@ -1,19 +1,14 @@
 default 0
-timeout 30
+timeout 10
 # splashimage (cd)/boot/grub/gluster-logo.xpm.gz
-
-# 32-bit Grub fails on systems with more than 4GB of RAM. So lets limit it.
-uppermem 256000
 
 # Pretty colours
 color cyan/blue white/blue
 
 title -= Gluster Server =-
-uppermem 256000
 kernel (cd)/boot/linux.master.i686 ramdisk_size=65536 quiet
 initrd (cd)/boot/initrd.master.i686.gz
 
 title -= Gluster Client =-
-uppermem 256000
 kernel (cd)/boot/linux.slave.i686 ramdisk_size=65536 quiet
 initrd (cd)/boot/initrd.slave.i686.gz
