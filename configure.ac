@@ -1,5 +1,5 @@
 
-AC_INIT([gluster], [1.1], [gluster-devel@nongnu.org])
+AC_INIT([gluster], [1.2], [gluster-devel@nongnu.org])
 AM_INIT_AUTOMAKE
 
 AC_CONFIG_FILES([Makefile 
@@ -23,15 +23,13 @@ AC_CONFIG_FILES([Makefile
 #extensions/gutils/Makefile
 #
 #extensions/fs-utils/Makefile
-#extensions/ib-utils/Makefile
 #extensions/auth/Makefile
 #extensions/net-utils/Makefile
 #extensions/debug-utils/Makefile
 #extensions/freeipmi/Makefile
 #
 #extensions/mpich2-pkg/Makefile
-#extensions/mvapich-gen2-pkg/Makefile
-#extensions/openib-pkg/Makefile
+#extensions/ofed-pkg/Makefile
 #extensions/torque-pkg/Makefile
 #extensions/slurm-pkg/Makefile
 #extensions/pdsh-pkg/Makefile

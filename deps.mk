@@ -40,20 +40,6 @@ reiserfsprogs.live: e2fsprogs.live # for uuid.h
 jfsutils.live: e2fsprogs.live # uuid.h
 discover.live: expat.live # dependency
 discover.live: discover-data.live # for xml sepcfications
-ib-libibcommon.live: ib-prepare.live # extract the openib tarball and apply the patch
-ib-libibumad.live: ib-libibcommon.live # ib libraries have dependency on previously build libraries
-ib-libibmad.live: ib-libibumad.live # ib libraries have dependency on previously build libraries
-ib-libosmvendor.live: ib-libibumad.live
-ib-osm.live: ib-libosmvendor.live ib-libosmcomp.live
-ib-osminclude.live: ib-osm.live
-ib-osmtest.live: ib-osm.live
-ib-libibverbs.live: ib-osmtest.live sysfs.live
-ib-libmthca.live: ib-libibverbs.live
-ib-libibat.live: ib-libibverbs.live
-ib-libibcm.live: ib-libibat.live
-ib-libsdp.live: ib-libibverbs.live
-ib-tools.live: pciutils.live zlib.live ib-libmthca.live # These tools use the already existing library
-ib-libosmcomp.live: ib-libibumad.live
 screen.live: ncurses.live # for tgetent
 guile.live: ncurses.live libtool.live gmp.live termcap.live readline.live# libguile needs termcap ncurser and readline. and guile normal support gmp and libtool
 freeipmi.live: guile.live libgcrypt.live guile.native # guile dependency for freeipmi
@@ -67,21 +53,6 @@ lvm2.live: device-mapper.live
 
 # packaging
 
-ib-libibcommon.pkg: ib-prepare.pkg # extract the openib tarball and apply the patch
-ib-libibumad.pkg: ib-libibcommon.pkg sysfs.pkg# ib libraries have dependency on previously build libraries
-ib-libibmad.pkg: ib-libibumad.pkg # ib libraries have dependency on previously build libraries
-ib-libosmvendor.pkg: ib-libibumad.pkg
-ib-osm.pkg: ib-libosmvendor.pkg ib-libosmcomp.pkg
-ib-osminclude.pkg: ib-osm.pkg
-ib-osmtest.pkg: ib-osm.pkg
-ib-libibverbs.pkg: ib-osmtest.pkg sysfs.pkg
-ib-libmthca.pkg: ib-libibverbs.pkg
-ib-libibat.pkg: ib-libibverbs.pkg
-ib-libibcm.pkg: ib-libibat.pkg
-ib-libsdp.pkg: ib-libibverbs.pkg
-ib-tools.pkg: pciutils.pkg zlib.pkg ib-libmthca.pkg # These tools use the already existing library
-ib-libosmcomp.pkg: ib-libibumad.pkg
-mvapich-gen2.pkg: $(APPS_OPENIB:%=%.pkg)
 readline.pkg: ncurses.pkg
 torque.pkg: ncurses.pkg
 slurm.pkg: openssl.pkg readline.pkg

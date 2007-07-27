@@ -1,0 +1,6 @@
+package-name: OpenFabrics Enterprise Distribution Bundle
+package-description: OFED userspace libraries and applications including Mvapich, Mvapich2, OpenMPI
+package-maintainer: Bala.A <bala@zresearch.com>
+package-contents: ofed-pkg.tgz
+package-exec: ./runme
+hpc-register: OFED-1.2

@@ -1,6 +1,0 @@
-package-name: MVAPICH2 HPC Bundle
-package-description: MVAPICH gen2 (needs OpenIB)
-package-maintainer: Anand V. Avati <avati@zresearch.com>
-package-contents: mvapich-gen2-pkg.tgz
-package-exec: ./runme
-hpc-register: mvapich-gen2

@@ -1,6 +1,0 @@
-package-name: OpenIB Bundle
-package-description: Infiniband userspace applications and libraries
-package-maintainer: Anand V. Avati <avati@zresearch.com>
-package-contents: openib-pkg.tgz
-package-exec: ./runme
-hpc-register: openib

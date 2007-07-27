@@ -1,5 +1,4 @@
-#!/bin/sh
-# Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+# Copyright (C) 2007 Z RESEARCH Inc. <http://www.zresearch.com>
 #  
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,9 +14,5 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
-
-prefix=/opt/gluster/mvapich-gen2-1.0-106
-
-PATH=$prefix/bin:$PATH
-
-export PATH
+ofed-pkg.gex: EXTENSION=ofed-pkg
+ofed-pkg.gex: $(APPS_OFED:%=%.dist) sysfs.dist pciutils.dist zlib.dist

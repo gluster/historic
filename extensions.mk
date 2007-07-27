@@ -26,13 +26,12 @@ HPC_PACKAGES = \
 	c3-pkg \
 	ganglia-pkg \
 	hpc-base-pkg \
-	lam-pkg
+	lam-pkg \
+	ofed-pkg 
 #	cerebro-pkg \
 #	genders-pkg \
 #	conman-pkg \
-#	powerman-pkg \
-#	openib-pkg \
-#	mvapich-gen2-pkg
+#	powerman-pkg 
 
 
 
@@ -53,7 +52,6 @@ EXTENSIONS= \
 	$(HPC_PACKAGES) \
 	$(APPLICATIONS)
 #	freeipmi \
-#	ib-utils
 #	bootloader-manager
 
 %.stage3: %.live

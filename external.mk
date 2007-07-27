@@ -25,19 +25,14 @@ APPS_RAMDISK = busybox kernel-modules termcap pcre ncurses dialog readline\
 	module-init-tools
 
 APPS_IPMI = libgpg-error libgcrypt gmp libtool guile freeipmi
-APPS_OPENIB = ib-prepare ib-libibcommon ib-libibumad \
-        ib-libibmad ib-libosmcomp ib-libosmvendor \
-        ib-osm ib-osminclude ib-osmtest sysfs \
-        ib-libibverbs ib-libmthca ib-libibat \
-        ib-libibcm ib-libsdp ib-tools
-
+APPS_OFED = sysfs ofa_user rds-tools mpi-selector mvapich mvapich2 openmpi
 
 APPS_EXTENSIONS = python dhcp-helper makebootfat reiserfsprogs device-mapper lvm2 \
 	xfsprogs e2fsprogs jfsutils netcat parted shadow iptables gdb \
 	grub
-#	$(APPS_IPMI) $(APPS_OPENIB)
+#	$(APPS_IPMI) $(APPS_OFED)
 
-APPS_PKG = mpich2 $(APPS_OPENIB) mvapich-gen2 torque slurm pdsh c3 cerebro \
+APPS_PKG = mpich2 $(APPS_OFED) torque slurm pdsh c3 cerebro \
 	genders lam conman freetype2 libart_lgpl libpng rrdtool ganglia powerman
 
 APPS_BUILD = cdrtools genext2fs kernel-prepare kernel-bzimage
