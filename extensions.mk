@@ -43,6 +43,7 @@ EXTENSIONS= \
 	client-boot \
 	master-boot \
 	client-reg \
+	iface-cfg \
 	mac-collector \
 	fs-utils \
 	gutils \

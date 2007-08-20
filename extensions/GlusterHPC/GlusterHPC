@@ -371,6 +371,9 @@ def main ():
     os.system ("STDIN=/dev/null gcsh gmount")
     os.system ("gmount")
 
+    ## Adding additional interface configuration
+    os.system ("gex --install /stage3/iface-cfg.gex")
+
     ret = os.system ("gpkg-sel")
 
     os.system ("STDIN=/dev/null gcsh gumount")

@@ -1,0 +1,232 @@
+#!/usr/bin/python
+##
+## Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
+##  
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##  
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##  
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##  
+##
+
+from Gluster.GFrontEnd import dialog
+from Gluster import GIP, GIPv4
+import os, sys, re, string, ConfigParser
+
+clientinfo_file = "/var/gluster/clientinfo"
+auxinterface_file = "/var/gluster/auxinterface"
+iface_info = "/var/gluster/iface-info"
+
+clientinfo = ConfigParser.ConfigParser ()
+clientinfo.read (clientinfo_file)
+
+cfg = ConfigParser.ConfigParser ()
+cfg.read (auxinterface_file)
+
+d = dialog.Dialog ();
+
+def is_valid_ip (ip):
+    try:
+        i = GIPv4.IPv4 (ip.strip ('/'))
+    except:
+        d.msgbox ('Invalid input "%s"' % ip)
+        return False
+    return True
+
+def is_valid_number (num):
+    try:
+        n = string.atoi (num)
+        return True
+    except:
+        d.msgbox ('Invalid input "%s"' % num)
+        return False
+    return True
+
+def is_valid_netmask (nmask):
+    try:
+        i = GIPv4.IPv4 ('1.1.1.1', nmask)
+    except:
+        d.msgbox ('Invalid input "%s"' % nmask)
+        return False
+    return True
+
+def is_valid_hostname (hname):
+    c = re.compile ("^[a-zA-Z][a-zA-Z0-9_\-]*$")
+    matches = c.findall (hname)
+    if len (matches) != 1 or matches[0] != hname:
+        d.msgbox ('Invalid input "%s"' % hname)
+        return False
+    return True
+
+def is_valid_interface (iface):
+    ret = os.system ("/sbin/ifconfig '%s' > /dev/null 2>&1" % iface)
+    if ret:
+        d.msgbox ('Not a valid interface "%s"' % iface.strip ())
+        return False
+    return True
+
+
+cluster_config = {
+    'startip': ['<Unspecified>',
+                 'Starting IP of the cluster (master node IP)',
+                is_valid_ip],
+    'netmask' : ['<Unspecified>',
+                 'Subnet mask of the cluster',
+                 is_valid_netmask],
+    'host prefix': [ '<Unspecified>',
+                  'hostname prefix for all nodes. e.g if the hostname prefix is `box\', then nodes will be named `box1\' `box2\' etc',
+                  is_valid_hostname],
+    'interface': [ '<Unspecified>', 'client side interface', is_valid_interface ]
+    }
+
+def sync ():
+    fp = open (auxinterface_file, "w")
+    cfg.write (fp)
+    fp.close ()
+
+def ask_and_set (var):
+    (ret, input) = d.inputbox (cluster_config[var][1],
+                               init=config_details['global'][var])
+    if ret != 0:
+        return
+
+    if not cluster_config[var][2] (input):
+        return
+
+    config_details['global'][var] = input
+    return
+
+
+config_details = {'global': {'interface': '<Unspecified>',
+                             'startip': '<Unspecified>',
+                             'netmask': '<Unspecified>',
+                             'host prefix': '<Unspecified>'
+                            }
+                 }
+def read_cfg_file ():
+    for section in cfg.sections ():
+        for key in cfg.options (section):
+            value = cfg.get (section, key)
+            config_details[section][key] = value
+    return
+
+def check_for_unspecified_fields ():
+    for section in config_details.keys ():
+        for key in config_details[section].keys ():
+            if re.match ('<|>', config_details[section][key]):
+                d.msgbox ("Invalid input for '%s'" % key)
+                return False
+    return True
+
+read_cfg_file ()
+
+oldip = False
+oldiface = False
+
+if not cfg.has_section ('global'):
+    cfg.add_section ('global')
+    for member in cluster_config.keys ():
+        cfg.set ('global', member, cluster_config[member][0])
+##     sync ()
+else:
+    oldip = cfg.get ('global', 'startip')
+    oldiface = cfg.get ('global', 'interface')
+
+while True:
+    (ret, choice) = d.menu ("Edit all fields to configure the interface",
+                        choices=map (lambda x: (x, config_details['global'][x]),
+                                     ['interface',
+                                      'startip',
+                                      'netmask',
+                                      'host prefix']),
+                            title='[ Configure additional interfaces ]',
+                            cancel="skip",
+                            extra_button=True,
+                            ok_label="edit",
+                            extra_label="save")
+
+    ## <ESC>
+    if ret == 2:
+        sys.exit (0)
+        break
+
+    ## "skip"
+    if ret == 1:
+        sys.exit (0)
+        break
+
+##     if ret != 0:
+##         ipobj = GIPv4.IPv4 (cfg.get ('global', 'startip'),
+##                     cfg.get ('global', 'netmask'))
+##         netsize = pow (2, 32 - ipobj.maskbits)
+##         totalnodes = string.atoi (cfg.get ('global', 'totalnodes'))
+##         if totalnodes > netsize:
+##             d.msgbox ('The netmask you specified (%s) accomodates %d hosts, while your total nodes is %d' % (cfg.get ('global', 'netmask'), netsize, totalnodes),
+##                         title='[ Error ]')
+##             continue
+##         break
+
+    ## "save"
+    if ret == 4:
+        if check_for_unspecified_fields () == False:
+            continue
+        for section in config_details.keys ():
+            for key in config_details[section].keys ():
+                cfg.set (section, key, config_details[section][key])
+        sync ()
+        break
+
+    ## "edit"
+    if choice == 'startip':
+        ask_and_set ('startip')
+    elif choice == 'host prefix':
+        ask_and_set ('host prefix')
+    elif choice == 'netmask':
+        ask_and_set ('netmask')
+    elif choice == 'interface':
+        ask_and_set ('interface')
+
+ipobj = GIPv4.IPv4 (cfg.get ('global', 'startip'),
+                    cfg.get ('global', 'netmask'))
+
+offset = int (ipobj.hostpart) - 1
+master_node = cfg.get ('global', 'startip')
+
+hosts_file = file (iface_info, "w")
+
+hostname = clientinfo.get ('global', 'hostname')
+domain = clientinfo.get ('global', 'domain')
+
+hostprefix = cfg.get ('global', 'host prefix')
+netmask = cfg.get ('global', 'netmask')
+interface = cfg.get ('global', 'interface')
+
+hosts_file.write ("\n\n")
+for index in range (string.atoi (clientinfo.get ('global', 'totalnodes'))):
+    i_idx = index + 1
+    i_ip = ipobj[i_idx + offset].getStrings ()[0]
+    hosts_file.write ("%s%d\t%s\t%s%d.%s\t%s%d\t%s\t%s\t# Added by iface-cfg/Gluster\n" % 
+                                              (
+                                               hostname,
+                                               i_idx,
+                                               i_ip,
+                                               hostprefix,
+                                               i_idx,
+                                               domain,
+                                               hostprefix,
+                                               i_idx,
+                                               netmask,
+                                               interface
+                                              )
+                     )
+hosts_file.close ()
+
