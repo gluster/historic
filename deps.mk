@@ -61,3 +61,4 @@ cerebro.pkg: slurm.pkg genders.pkg
 libpng.pkg: zlib.pkg
 rrdtool.pkg: freetype2.pkg libart_lgpl.pkg libpng.pkg zlib.pkg
 ganglia.pkg: rrdtool.pkg
+ofed.pkg: zlib.pkg

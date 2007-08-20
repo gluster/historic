@@ -2,7 +2,7 @@
 
 os_base=$1
 
-machines=$(cat $os_base/opt/gluster/etc/nodes)
+machines=$(cat $os_base/opt/gluster/etc/nodes | xargs)
 
 echo "data_source \"gluster_new\" master-node $machines" >> $os_base/opt/gluster/etc/gmetad.conf
 echo "gridname \"gluster_grid\"" >> $os_base/opt/gluster/etc/gmetad.conf

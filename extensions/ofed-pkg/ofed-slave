@@ -1,0 +1,5 @@
+#!/bin/sh
+
+os_base=$1
+
+chroot $os_base chkconfig --add opensmd

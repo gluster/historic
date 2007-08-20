@@ -1,0 +1,88 @@
+diff -pruN ofa_user-1.2/configure ofa_user-1.2.hacked/configure
+--- ofa_user-1.2/configure	2007-07-16 18:34:35.000000000 +0530
++++ ofa_user-1.2.hacked/configure	2007-07-27 23:06:02.000000000 +0530
+@@ -501,6 +501,11 @@ main()
+         done
+ 
+ #Set default values
++if [ -z "$CROSS" ]; then 
++    CROSSHOST=""
++else
++    CROSSHOST=" --host=$CROSS"
++fi
+ prefix=${prefix:-"/usr/local"}
+ PREFIX=${PREFIX:-""}
+ LIBDIR=${LIBDIR:-""}
+@@ -662,11 +667,11 @@ HAVE_IBV_DEVICE_LIBRARY_EXTENSION_TRUE=y
+                 [ ! -x ./configure ] && ./autogen.sh 
+         
+ 		${AR} qc libibverbs.a
+-                echo "Running: $ENV ./configure --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} CPPFLAGS=\"-I../libibverbs/include\""
+-                if ! ( $ENV ./configure --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} \
++                echo "Running: $ENV ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} CPPFLAGS=\"-I../libibverbs/include\""
++                if ! ( $ENV ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} \
+                         CPPFLAGS="-I../libibverbs/include" LDFLAGS="-L.")
+                 then
+-                        echo "Failed to execute: cd ${CWD}/src/userspace/${dir} && $ENV ./configure --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} CPPFLAGS=\"-I../libibverbs/include\""
++                        echo "Failed to execute: cd ${CWD}/src/userspace/${dir} && $ENV ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} CPPFLAGS=\"-I../libibverbs/include\""
+                         /bin/rm -f libibverbs.a
+                         exit 1
+                 fi
+@@ -693,10 +698,10 @@ HAVE_IBV_DEVICE_LIBRARY_EXTENSION_TRUE=y
+                                 [ ! -x ./configure ] && [ ! -x ./autogen.sh ] ) && continue
+                         ( cd ${dir} && 
+                                 [ ! -x ./configure ] && ./autogen.sh )
+-                        echo "Running: cd ${dir} && ./configure --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR}"
+-                        if ! ( cd ${dir} && ./configure --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} )
++                        echo "Running: cd ${dir} && ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR}"
++                        if ! ( cd ${dir} && ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} )
+                         then
+-                                echo "Failed to execute cd ${dir} && ./configure --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR}"
++                                echo "Failed to execute cd ${dir} && ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR}"
+                                 exit 1
+                         fi            
+                 done
+diff -pruN ofa_user-1.2/ofed_scripts/configure ofa_user-1.2.hacked/ofed_scripts/configure
+--- ofa_user-1.2/ofed_scripts/configure	2007-07-16 18:34:35.000000000 +0530
++++ ofa_user-1.2.hacked/ofed_scripts/configure	2007-07-27 23:06:02.000000000 +0530
+@@ -501,6 +501,11 @@ main()
+         done
+ 
+ #Set default values
++if [ -z "$CROSS" ]; then 
++    CROSSHOST=""
++else
++    CROSSHOST=" --host=$CROSS"
++fi
+ prefix=${prefix:-"/usr/local"}
+ PREFIX=${PREFIX:-""}
+ LIBDIR=${LIBDIR:-""}
+@@ -662,11 +667,11 @@ HAVE_IBV_DEVICE_LIBRARY_EXTENSION_TRUE=y
+                 [ ! -x ./configure ] && ./autogen.sh 
+         
+ 		${AR} qc libibverbs.a
+-                echo "Running: $ENV ./configure --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} CPPFLAGS=\"-I../libibverbs/include\""
+-                if ! ( $ENV ./configure --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} \
++                echo "Running: $ENV ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} CPPFLAGS=\"-I../libibverbs/include\""
++                if ! ( $ENV ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} \
+                         CPPFLAGS="-I../libibverbs/include" LDFLAGS="-L.")
+                 then
+-                        echo "Failed to execute: cd ${CWD}/src/userspace/${dir} && $ENV ./configure --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} CPPFLAGS=\"-I../libibverbs/include\""
++                        echo "Failed to execute: cd ${CWD}/src/userspace/${dir} && $ENV ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} CPPFLAGS=\"-I../libibverbs/include\""
+                         /bin/rm -f libibverbs.a
+                         exit 1
+                 fi
+@@ -693,10 +698,10 @@ HAVE_IBV_DEVICE_LIBRARY_EXTENSION_TRUE=y
+                                 [ ! -x ./configure ] && [ ! -x ./autogen.sh ] ) && continue
+                         ( cd ${dir} && 
+                                 [ ! -x ./configure ] && ./autogen.sh )
+-                        echo "Running: cd ${dir} && ./configure --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR}"
+-                        if ! ( cd ${dir} && ./configure --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} )
++                        echo "Running: cd ${dir} && ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR}"
++                        if ! ( cd ${dir} && ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR} )
+                         then
+-                                echo "Failed to execute cd ${dir} && ./configure --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR}"
++                                echo "Failed to execute cd ${dir} && ./configure ${CROSSHOST} --cache-file=${CACHEFILE} --disable-libcheck --disable-console-socket ${PREFIX} ${LIBDIR} ${MANDIR} ${SYSCONFDIR}"
+                                 exit 1
+                         fi            
+                 done
