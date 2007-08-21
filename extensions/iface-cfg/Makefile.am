@@ -1,3 +1,2 @@
 
-client_reg_DATA = iface-cfg
-client_regdir = $(datadir)/gluster/extensions/iface-cfg
+bin_SCRIPTS = iface-cfg ghpc_iface_update

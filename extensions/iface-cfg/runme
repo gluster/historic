@@ -28,16 +28,16 @@ _init ()
 main ()
 {
     local my_dir="$(dirname $0)";
-	iface-cfg "$@";
-
-    cp $my_dir/update /usr/bin/ghpc_iface_update
-
+    cp -alf "${my_dir}"/destdir_$(uname -m)/* /;
+    
+    iface-cfg "$@";
+    
     for key in $(gmount -o); do
         tar -C /var/gluster -c iface-info | gcsh tar -C /var/gluster -x;
         tar -C /usr/bin -c ghpc_iface_update | gcsh tar -C /usr/bin -x;
 
         ## Update the master
-        sh update "$os_base/$key";
+        sh ghpc_iface_update "$os_base/$key";
         ## Update the slaves
 
         STDIN=/dev/null gcsh /usr/bin/ghpc_iface_update "$os_base/$key"
