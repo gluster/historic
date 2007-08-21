@@ -15,4 +15,5 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 net-tools.%: PACKAGE_NAME=net-tools-1.60
+net-tools.%: LIVE_CONFIGURE_CMD=
 net-tools.%: LIVE_INSTALL_CMD=make install BASEDIR=$1

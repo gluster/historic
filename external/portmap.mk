@@ -15,4 +15,5 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 portmap.%: PACKAGE_NAME=portmap_4
+portmap.%: LIVE_CONFIGURE_CMD=
 portmap.%: LIVE_INSTALL_CMD=make install $(LIVE_BUILD_ENV) DESTDIR=$1

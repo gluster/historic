@@ -15,4 +15,5 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 tcp-wrappers.%: PACKAGE_NAME=tcp_wrappers_7.6
+tcp-wrappers.%: LIVE_CONFIGURE_CMD=
 tcp-wrappers.%: LIVE_INSTALL_CMD=make install INSTPREFIX=$(DESTDIR_LIVE) $(LIVE_BUILD_ENV)

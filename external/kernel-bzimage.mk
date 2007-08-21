@@ -15,6 +15,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 kernel-bzimage.%: PACKAGE_NAME=linux-2.6.21.4
+kernel-bzimage.%: LIVE_CONFIGURE_CMD=
 kernel-bzimage.%: LIVE_BUILD_CMD=make bzImage CROSS_COMPILE=$(CROSS)- ARCH=$(KERNEL_ARCH)
 kernel-bzimage.%: LIVE_INSTALL_CMD=mkdir -p $1/boot; cp arch/$(KERNEL_ARCH)/boot/bzImage $1/boot/vmlinuz
 
