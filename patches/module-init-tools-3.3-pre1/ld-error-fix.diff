@@ -1,0 +1,12 @@
+diff -pruN module-init-tools-3.3-pre1/configure module-init-tools-3.3-pre1.hacked/configure
+--- module-init-tools-3.3-pre1/configure	2006-02-05 04:49:54.000000000 +0530
++++ module-init-tools-3.3-pre1.hacked/configure	2007-08-21 16:56:09.000000000 +0530
+@@ -1741,7 +1741,7 @@ if test "${enable_zlib+set}" = set; then
+ #define CONFIG_USE_ZLIB 1
+ _ACEOF
+ 
+-  zlib_flags="-Wl,-Bstatic -lz -Wl,-Bdynamic"
++  zlib_flags="-Wl,-Bstatic -Wl,-Bdynamic -lz"
+ fi
+ fi;
+ 

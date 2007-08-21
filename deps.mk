@@ -50,6 +50,7 @@ portmap.live: tcp-wrappers.live # for LIB_WRAP
 gdb.live: termcap.live ncurses.live
 jed.live: slang.live
 lvm2.live: device-mapper.live
+module-init-tools.live: zlib.live
 
 # packaging
 
