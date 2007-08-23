@@ -19,6 +19,10 @@
 
 #include <dlfcn.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/uio.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 
 /* open, open64, creat */
@@ -27,10 +31,42 @@ static int (*real_open64) (const char *pathname, int flags, mode_t mode);
 static int (*real_creat) (const char *pathname, mode_t mode);
 
 /* read, readv, pread, pread64 */
+static ssize_t (*real_read) (int fd, void *buf, size_t count);
+static ssize_t (*real_readv) (int fd, const struct iovec *vector, int count);
+static ssize_t (*real_pread) (int fd, void *buf, size_t count, off_t offset);
+static ssize_t (*real_pread64) (int fd, void *buf, size_t count, off_t offset);
+
 /* write, writev, pwrite, pwrite64 */
+static ssize_t (*real_write) (int fd, const void *buf, size_t count);
+static ssize_t (*real_writev) (int fd, const struct iovec *vector, int count);
+static ssize_t (*real_pwrite) (int fd, const void *buf, size_t count, off_t offset);
+static ssize_t (*real_pwrite64) (int fd, const void *buf, size_t count, off_t offset);
+
 /* lseek, llseek, lseek64 */
+static off_t (*real_lseek) (int fildes, off_t offset, int whence);
+static off_t (*real_lseek64) (int fildes, off_t offset, int whence);
+
 /* close */
+static int (*real_close) (int fd);
+
 /* dup dup2 */
+static int (*real_dup) (int fd);
+static int (*real_dup2) (int oldfd, int newfd);
+
+
+#define RESOLVE(sym) do {                     \
+  if (!real_##sym)                            \
+    real_##sym = dlsym (RTLD_NEXT, #sym);     \
+} while (0)
+
+
+struct file {
+
+};
+
+
+static struct file *fdtable[65536];
+
 
 
 int
@@ -38,12 +74,12 @@ open (const char *pathname, int flags, mode_t mode)
 {
   int ret;
 
-  if (!real_open)
-    {
-      real_open = dlsym (RTLD_NEXT, "open");
-    }
+  RESOLVE (open);
 
   ret = real_open (pathname, flags, mode);
+
+  if (ret != -1)
+    do_open (ret, flags);
 
   return ret;
 }
@@ -54,12 +90,12 @@ open64 (const char *pathname, int flags, mode_t mode)
 {
   int ret;
 
-  if (!real_open64)
-    {
-      real_open64 = dlsym (RTLD_NEXT, "open64");
-    }
+  RESOLVE (open64);
 
   ret = real_open64 (pathname, flags, mode);
+
+  if (ret != -1)
+    do_open (ret, flags);
 
   return ret;
 }
@@ -70,12 +106,293 @@ creat (const char *pathname, mode_t mode)
 {
   int ret;
 
-  if (!real_creat)
-    {
-      real_creat = dlsym (RTLD_NEXT, "creat");
-    }
+  RESOLVE (creat);
 
   ret = real_creat (pathname, mode);
 
+  if (ret != -1)
+    //    do_open (ret, O_CREAT|O_WRONLY|O_TRUNC);
+    do_open (ret, 0);
+
   return ret;
 }
+
+
+/* preadv */
+
+static ssize_t
+__do_preadv (int fd, const struct iovec *vector,
+	     int count, off_t offset)
+{
+
+
+
+}
+
+
+static ssize_t
+do_preadv (int fd, const struct iovec *vector,
+	   int count, off_t offset)
+{
+  ssize_t ret;
+
+  ret = __do_preadv (fd, vector, count, offset);
+
+  if (ret != -1)
+    real_lseek (fd, (offset + ret), SEEK_SET);
+
+  return ret;
+}
+
+
+ssize_t
+read (int fd, void *buf, size_t count)
+{
+  int ret;
+
+  RESOLVE (read);
+  RESOLVE (lseek);
+
+  if (!fdtable[fd]) {
+    ret = real_read (fd, buf, count);
+  } else {
+    struct iovec vector;
+    off_t offset;
+
+    vector.iov_base = buf;
+    vector.iov_len = count;
+
+    offset = real_lseek (fd, 0, SEEK_CUR);
+
+    ret = do_preadv (fd, &vector, count, offset);
+  }
+
+  return ret;
+}
+
+
+ssize_t
+readv (int fd, const struct iovec *vector, int count)
+{
+  int ret;
+
+  RESOLVE (readv);
+  RESOLVE (lseek);
+
+  if (!fdtable[fd]) {
+    ret = real_readv (fd, vector, count);
+  } else {
+    off_t offset;
+
+    offset = real_lseek (fd, 0, SEEK_CUR);
+
+    ret = do_preadv (fd, vector, count, offset);
+  }
+
+  return ret;
+}
+
+
+ssize_t
+pread (int fd, void *buf, size_t count, off_t offset)
+{
+  int ret;
+
+  RESOLVE (pread);
+  RESOLVE (lseek);
+
+  if (!fdtable[fd]) {
+    ret = real_pread (fd, buf, count, offset);
+  } else {
+    struct iovec vector;
+    off_t offset;
+
+    vector.iov_base = buf;
+    vector.iov_len = count;
+
+    offset = real_lseek (fd, 0, SEEK_CUR);
+
+    ret = do_preadv (fd, &vector, count, offset);
+  }
+
+  return ret;
+}
+
+
+ssize_t
+pread64 (int fd, void *buf, size_t count, off_t offset)
+{
+  int ret;
+
+  RESOLVE (pread64);
+  RESOLVE (lseek);
+
+  if (!fdtable[fd]) {
+    ret = real_pread64 (fd, buf, count, offset);
+  } else {
+    struct iovec vector;
+    off_t offset;
+
+    vector.iov_base = buf;
+    vector.iov_len = count;
+
+    offset = real_lseek (fd, 0, SEEK_CUR);
+
+    ret = do_preadv (fd, &vector, count, offset);
+  }
+
+  return ret;
+}
+
+
+/* pwritev */
+
+static ssize_t
+__do_pwritev (int fd, const struct iovec *vector,
+	     int count, off_t offset)
+{
+
+
+
+}
+
+
+static ssize_t
+do_pwritev (int fd, const struct iovec *vector,
+	   int count, off_t offset)
+{
+  ssize_t ret;
+
+  ret = __do_pwritev (fd, vector, count, offset);
+
+  if (ret != -1)
+    real_lseek (fd, (offset + ret), SEEK_SET);
+
+  return ret;
+}
+
+
+ssize_t
+write (int fd, const void *buf, size_t count)
+{
+  int ret;
+
+  RESOLVE (write);
+  RESOLVE (lseek);
+
+  if (!fdtable[fd]) {
+    ret = real_write (fd, buf, count);
+  } else {
+    struct iovec vector;
+    off_t offset;
+
+    vector.iov_base = (void *) buf;
+    vector.iov_len = count;
+
+    offset = real_lseek (fd, 0, SEEK_CUR);
+
+    ret = do_pwritev (fd, &vector, count, offset);
+  }
+
+  return ret;
+}
+
+
+ssize_t
+writev (int fd, const struct iovec *vector, int count)
+{
+  int ret;
+
+  RESOLVE (writev);
+  RESOLVE (lseek);
+
+  if (!fdtable[fd]) {
+    ret = real_writev (fd, vector, count);
+  } else {
+    off_t offset;
+
+    offset = real_lseek (fd, 0, SEEK_CUR);
+
+    ret = do_pwritev (fd, vector, count, offset);
+  }
+
+  return ret;
+}
+
+
+ssize_t
+pwrite (int fd, const void *buf, size_t count, off_t offset)
+{
+  int ret;
+
+  RESOLVE (pwrite);
+  RESOLVE (lseek);
+
+  if (!fdtable[fd]) {
+    ret = real_pwrite (fd, buf, count, offset);
+  } else {
+    struct iovec vector;
+    off_t offset;
+
+    vector.iov_base = (void *) buf;
+    vector.iov_len = count;
+
+    offset = real_lseek (fd, 0, SEEK_CUR);
+
+    ret = do_pwritev (fd, &vector, count, offset);
+  }
+
+  return ret;
+}
+
+
+ssize_t
+pwrite64 (int fd, const void *buf, size_t count, off_t offset)
+{
+  int ret;
+
+  RESOLVE (pwrite64);
+  RESOLVE (lseek);
+
+  if (!fdtable[fd]) {
+    ret = real_pwrite64 (fd, buf, count, offset);
+  } else {
+    struct iovec vector;
+    off_t offset;
+
+    vector.iov_base = (void *) buf;
+    vector.iov_len = count;
+
+    offset = real_lseek (fd, 0, SEEK_CUR);
+
+    ret = do_pwritev (fd, &vector, count, offset);
+  }
+
+  return ret;
+}
+
+off_t
+lseek (int fildes, off_t offset, int whence)
+{
+  int ret;
+
+  RESOLVE (lseek);
+
+  ret = real_lseek (fildes, offset, whence);
+
+  return ret;
+}
+
+
+off_t
+lseek64 (int fildes, off_t offset, int whence)
+{
+  int ret;
+
+  RESOLVE (lseek64);
+
+  ret = real_lseek64 (fildes, offset, whence);
+
+  return ret;
+}
+
