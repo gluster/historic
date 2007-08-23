@@ -88,11 +88,18 @@ AC_CONFIG_FILES([Makefile
 		transport/ib-verbs/server/src/Makefile
 		transport/ib-verbs/client/Makefile
 		transport/ib-verbs/client/src/Makefile
+		transport/unix/Makefile
+		transport/unix/server/Makefile
+		transport/unix/server/src/Makefile
+		transport/unix/client/Makefile
+		transport/unix/client/src/Makefile
 		doc/Makefile
 		doc/examples/Makefile
 		extras/Makefile
 		extras/init.d/Makefile
-		glusterfs.spec])
+		glusterfs.spec
+		glusterfs-booster/Makefile
+		glusterfs-booster/src/Makefile])
 
 AC_PROG_CC
 AC_PROG_LIBTOOL

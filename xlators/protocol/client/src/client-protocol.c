@@ -4660,6 +4660,10 @@ client_protocol_handshake (xlator_t *this,
         vector[i].iov_base = alloca (vector[i].iov_len);
     gf_block_to_iovec (blk, vector, count);
 
+    gf_log (trans->xl->name, GF_LOG_DEBUG,
+	    "attempting handshake on remote-subvolume `%s'",
+	    remote_subvolume);
+
     ret = trans->ops->writev (trans, vector, count);
 
     free (blk);
