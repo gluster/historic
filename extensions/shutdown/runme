@@ -44,9 +44,9 @@ def main ():
             os.system ('sleep 108')
     if sel == 'reboot':
         for host in hosts:
-            os.system ('ssh %s eject /mnt/cdrom > /dev/null 2>&1' % host.strip ())
+            #os.system ('ssh %s eject /mnt/cdrom > /dev/null 2>&1' % host.strip ())
             os.system ('ssh %s /sbin/reboot' % host.strip())
-        os.system ('eject /mnt/cdrom > /dev/null 2>&1')
+        os.system ('eject > /dev/null 2>&1')
         os.system ('reboot')
         while True:
             os.system ('sleep 108')

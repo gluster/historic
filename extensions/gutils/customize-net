@@ -147,9 +147,10 @@ def update_iface(_path, _iface, _flag):
             os.system ("cp %s %s/orig-gluster.%s" % (config_file,
                                                      config_dir,
                                                      config_base))
-        if _flag != 'up':
-            os.system ("sed -i -e 's/ONBOOT=.*/ONBOOT=no/' %s" % config_file)
-        else:
+#         if _flag != 'up':
+#             os.system ("sed -i -e 's/ONBOOT=.*/ONBOOT=no/' %s" % config_file)
+#         else:
+         if _flag == 'up':
             file (config_file, 'w').write ("DEVICE=%s\n" % _iface +
                                            "BOOTPROTO=static\n" +
                                            "IPADDR=%s\n" % ip_addr +

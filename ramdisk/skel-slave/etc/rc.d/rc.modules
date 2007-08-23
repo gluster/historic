@@ -38,6 +38,7 @@ done
 /sbin/modprobe iso9660
 /sbin/modprobe isofs
 /sbin/modprobe mii
+/sbin/modprobe ib_ipoib
 } >/dev/null 2>&1
 
 # add acpi modules like button, power etc

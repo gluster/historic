@@ -1,4 +1,3 @@
-#!/bin/sh
 # Copyright (C) 2006 Z RESEARCH Inc. <http://www.zresearch.com>
 #  
 # This program is free software; you can redistribute it and/or modify
@@ -16,29 +15,4 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 
-echo " * Inserting detected modules ..."
-for mod in $(pcimodules)
-do
-  echo -n "   $mod,";
-  [ -z "$(lsmod | grep ^$mod\  )" ] && {
-      echo -n " inserting ...";
-      /sbin/modprobe $mod >/dev/null 2>&1
-      [ $? -eq 0 ] && echo " done" || echo " failed!";
-  } || {
-      echo " already present";
-  }
-done
-# static list of modules which cannot be probed
-
-{
-/sbin/modprobe rtc
-/sbin/modprobe ide-cd
-/sbin/modprobe isofs
-/sbin/modprobe cdrom
-/sbin/modprobe iso9660
-/sbin/modprobe isofs
-/sbin/modprobe mii
-/sbin/modprobe ib_ipoib
-} >/dev/null 2>&1
-
-# add acpi modules like button, power etc
+eject.%: PACKAGE_NAME=eject-2.1.5

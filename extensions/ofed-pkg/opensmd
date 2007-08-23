@@ -29,17 +29,21 @@
 #
 #  $Id: opensmd 7767 2006-06-07 08:46:38Z vlad $
 #
+# chkconfig: 2345 9 91
 # processname: /opt/gluster/ofed/bin/opensm
-# config: /etc/opensm.conf
+# config: /opt/gluster/ofed/etc/opensm.conf
 # pidfile: /var/run/opensm.pid
+# description: Subnet manager for Infiniband IP-over-IB interfaces
 
-if [ ! -f /etc/opensm.conf ]; then
+if [ ! -f /opt/gluster/ofed/etc/opensm.conf ]; then
     exit 0
 fi
 
-. /etc/opensm.conf
+. /opt/gluster/ofed/etc/opensm.conf
 
-CONFIG=/etc/opensm.conf
+modprobe ib_umad
+
+CONFIG=/opt/gluster/ofed/etc/opensm.conf
 
 prog=/opt/gluster/ofed/bin/opensm
 bin=${prog##*/}

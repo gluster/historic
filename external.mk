@@ -22,13 +22,13 @@ APPS_RAMDISK = busybox kernel-modules termcap pcre ncurses dialog readline\
 	findutils grep gawk dhcp file pcap tcpdump lsof screen\
 	coreutils net-tools iputils pciutils libusb usbutils expat \
 	discover discover-data nfs-utils tcp-wrappers portmap \
-	module-init-tools
+	module-init-tools e2fsprogs eject
 
 APPS_IPMI = libgpg-error libgcrypt gmp libtool guile freeipmi
 APPS_OFED = sysfs ofa_user rds-tools mpi-selector mvapich mvapich2 
 
 APPS_EXTENSIONS = python dhcp-helper makebootfat reiserfsprogs device-mapper lvm2 \
-	xfsprogs e2fsprogs jfsutils netcat parted shadow iptables gdb \
+	xfsprogs jfsutils netcat parted shadow iptables gdb \
 	grub
 #	$(APPS_IPMI) $(APPS_OFED)
 

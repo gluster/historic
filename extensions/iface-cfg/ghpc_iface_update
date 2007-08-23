@@ -26,21 +26,27 @@ _init ()
 main ()
 {
     local os_base="$1";
-    local my_dir="$(dirname $0)";
     my_hostname="$(hostname | cut -f1 -d'.')";
-
+    
     my_details=($(grep "^$my_hostname\>" $iface_info));
     ## hostname ip ifacehost+domain ifacehost netmask iface <comments
     my_ip=${my_details[1]};
     my_mask=${my_details[4]};
     my_iface=${my_details[5]};
-
-    ifconfig $my_iface $my_ip netmask $my_mask;
-    customize-net $os_base;
-
+    
+    ## This works ONLY for redhat flavors
+    cat > $os_base/etc/sysconfig/network-scripts/ifcfg-$my_iface <<_EOF_
+DEVICE=$my_iface
+ONBOOT=yes
+BOOTPROTO=static
+IPADDR=$my_ip
+NETMASK=$my_mask
+_EOF_
+    cp -f $os_base/etc/sysconfig/network-scripts/ifcfg-$my_iface $os_base/etc/sysconfig/networking/profiles/default/ifcfg-$my_iface
+    cp -f $os_base/etc/sysconfig/network-scripts/ifcfg-$my_iface $os_base/etc/sysconfig/networking/devices/ifcfg-$my_iface
     ## Update the hosts file
     sed -e '/# Added by iface-cfg\/Gluster$/d' -i $os_base/$hosts_file
-    cut -f2-4,7 $iface_info >> $os_base/$hosts_file;
+    grep -v '^master-node\>' $iface_info | cut -f2-4,7 >> $os_base/$hosts_file;
 }
 
 _init "$@" && main "$@";

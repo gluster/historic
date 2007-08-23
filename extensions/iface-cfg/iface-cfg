@@ -211,6 +211,13 @@ netmask = cfg.get ('global', 'netmask')
 interface = cfg.get ('global', 'interface')
 
 hosts_file.write ("\n\n")
+hosts_file.write ("master-node\t%s\tNONE\tNONE\t%s\t%s\t# Added by iface-cfg/Gluster\n" % 
+                                              (
+                                               master_node,
+                                               netmask,
+                                               interface
+                                              )
+                     )
 for index in range (string.atoi (clientinfo.get ('global', 'totalnodes'))):
     i_idx = index + 1
     i_ip = ipobj[i_idx + offset].getStrings ()[0]
