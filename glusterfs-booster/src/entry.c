@@ -61,12 +61,29 @@ static int (*real_dup2) (int oldfd, int newfd);
 
 
 struct file {
-
+  void *transport;
 };
 
 
 static struct file *fdtable[65536];
+void *ctx;
 
+
+static void
+do_open (int fd)
+{
+  int ret;
+  char buf[512];
+  void *trans;
+
+  ret = fgetxattr (fd, "trusted.foo", buf, 512);
+
+  if (ret == -1)
+    return;
+
+  trans = glusterfs_booster_bridge_open (ctx, buf, ret);
+  
+}
 
 
 int
@@ -74,12 +91,10 @@ open (const char *pathname, int flags, mode_t mode)
 {
   int ret;
 
-  RESOLVE (open);
-
   ret = real_open (pathname, flags, mode);
 
   if (ret != -1)
-    do_open (ret, flags);
+    do_open (ret);
 
   return ret;
 }
@@ -90,12 +105,10 @@ open64 (const char *pathname, int flags, mode_t mode)
 {
   int ret;
 
-  RESOLVE (open64);
-
   ret = real_open64 (pathname, flags, mode);
 
   if (ret != -1)
-    do_open (ret, flags);
+    do_open (ret);
 
   return ret;
 }
@@ -106,13 +119,11 @@ creat (const char *pathname, mode_t mode)
 {
   int ret;
 
-  RESOLVE (creat);
-
   ret = real_creat (pathname, mode);
 
   if (ret != -1)
     //    do_open (ret, O_CREAT|O_WRONLY|O_TRUNC);
-    do_open (ret, 0);
+    do_open (ret);
 
   return ret;
 }
@@ -150,9 +161,6 @@ read (int fd, void *buf, size_t count)
 {
   int ret;
 
-  RESOLVE (read);
-  RESOLVE (lseek);
-
   if (!fdtable[fd]) {
     ret = real_read (fd, buf, count);
   } else {
@@ -176,9 +184,6 @@ readv (int fd, const struct iovec *vector, int count)
 {
   int ret;
 
-  RESOLVE (readv);
-  RESOLVE (lseek);
-
   if (!fdtable[fd]) {
     ret = real_readv (fd, vector, count);
   } else {
@@ -197,9 +202,6 @@ ssize_t
 pread (int fd, void *buf, size_t count, off_t offset)
 {
   int ret;
-
-  RESOLVE (pread);
-  RESOLVE (lseek);
 
   if (!fdtable[fd]) {
     ret = real_pread (fd, buf, count, offset);
@@ -223,9 +225,6 @@ ssize_t
 pread64 (int fd, void *buf, size_t count, off_t offset)
 {
   int ret;
-
-  RESOLVE (pread64);
-  RESOLVE (lseek);
 
   if (!fdtable[fd]) {
     ret = real_pread64 (fd, buf, count, offset);
@@ -277,9 +276,6 @@ write (int fd, const void *buf, size_t count)
 {
   int ret;
 
-  RESOLVE (write);
-  RESOLVE (lseek);
-
   if (!fdtable[fd]) {
     ret = real_write (fd, buf, count);
   } else {
@@ -303,9 +299,6 @@ writev (int fd, const struct iovec *vector, int count)
 {
   int ret;
 
-  RESOLVE (writev);
-  RESOLVE (lseek);
-
   if (!fdtable[fd]) {
     ret = real_writev (fd, vector, count);
   } else {
@@ -324,9 +317,6 @@ ssize_t
 pwrite (int fd, const void *buf, size_t count, off_t offset)
 {
   int ret;
-
-  RESOLVE (pwrite);
-  RESOLVE (lseek);
 
   if (!fdtable[fd]) {
     ret = real_pwrite (fd, buf, count, offset);
@@ -351,9 +341,6 @@ pwrite64 (int fd, const void *buf, size_t count, off_t offset)
 {
   int ret;
 
-  RESOLVE (pwrite64);
-  RESOLVE (lseek);
-
   if (!fdtable[fd]) {
     ret = real_pwrite64 (fd, buf, count, offset);
   } else {
@@ -376,8 +363,6 @@ lseek (int fildes, off_t offset, int whence)
 {
   int ret;
 
-  RESOLVE (lseek);
-
   ret = real_lseek (fildes, offset, whence);
 
   return ret;
@@ -389,10 +374,36 @@ lseek64 (int fildes, off_t offset, int whence)
 {
   int ret;
 
-  RESOLVE (lseek64);
-
   ret = real_lseek64 (fildes, offset, whence);
 
   return ret;
 }
 
+
+void
+_init (void)
+{
+  RESOLVE (open);
+  RESOLVE (open64);
+  RESOLVE (creat);
+
+  RESOLVE (read);
+  RESOLVE (readv);
+  RESOLVE (pread);
+  RESOLVE (pread64);
+
+  RESOLVE (write);
+  RESOLVE (writev);
+  RESOLVE (pwrite);
+  RESOLVE (pwrite64);
+
+  RESOLVE (lseek);
+  RESOLVE (lseek64);
+
+  RESOLVE (close);
+
+  RESOLVE (dup);
+  RESOLVE (dup2);
+
+  ctx = glusterfs_booster_bridge_init ();
+}
