@@ -16,5 +16,5 @@
 #  
 torque.%: PACKAGE_NAME=torque-2.1.8
 torque.%: PKG_CONFIGURE_CMD=$(PKG_BUILD_ENV) CFLAGS=-I$(DESTDIR_PKG)/opt/gluster/include LDFLAGS=-L/opt/gluster/lib ./configure --prefix=/opt/gluster --with-default-server=master-node --with-rcp=scp --with-server-home=/opt/gluster/torque/conf.d
-torque.%: PKG_BUILD_CMD=make all $(PKG_CONFIGURE_ENV)
+torque.%: PKG_BUILD_CMD=make -j 8 all $(PKG_CONFIGURE_ENV)
 torque.%: PKG_INSTALL_CMD=make install DESTDIR=$1; ls torque.setup | cpio -puvd $1/opt/gluster/setup

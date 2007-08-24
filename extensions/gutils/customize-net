@@ -150,7 +150,7 @@ def update_iface(_path, _iface, _flag):
 #         if _flag != 'up':
 #             os.system ("sed -i -e 's/ONBOOT=.*/ONBOOT=no/' %s" % config_file)
 #         else:
-         if _flag == 'up':
+        if _flag == 'up':
             file (config_file, 'w').write ("DEVICE=%s\n" % _iface +
                                            "BOOTPROTO=static\n" +
                                            "IPADDR=%s\n" % ip_addr +

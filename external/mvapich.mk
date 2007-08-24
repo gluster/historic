@@ -24,4 +24,4 @@ endif
 
 mvapich.%: PKG_CONFIGURE_CMD=PKG_CONFIGURE_CMD=RSHCOMMAND="ssh" ./configure --enable-sharedlib --with-device=ch_gen2 --with-arch=LINUX --prefix=$1/opt/gluster/ofed/mpi/gcc/$(PACKAGE_NAME) --enable-f77 --enable-f90 '-lib=-L$(DESTDIR_PKG)/opt/gluster/ofed/lib -libverbs -libumad -libcommon -lpthread -Wall' --c++=$(CROSS)-g++ --disable-devdebug -cc=$(CROSS)-gcc -fc=$(CROSS)-gfortran -clinker=$(CROSS)-gcc -c++linker=$(CROSS)-g++ -with-cross
 
-mvapich.%: PKG_BUILD_CMD=make RANLIB=$(CROSS)-ranlib
+mvapich.%: PKG_BUILD_CMD=make -j 8 RANLIB=$(CROSS)-ranlib

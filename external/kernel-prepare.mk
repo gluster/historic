@@ -17,7 +17,7 @@
 kernel-prepare.%: PACKAGE_NAME=linux-2.6.21.4
 kernel-prepare.%: LIVE_PREPARE_CMD=cp $(PATCHES_DIR)/$(PACKAGE_NAME)/config-$(KERNEL_ARCH) .config
 kernel-prepare.%: LIVE_CONFIGURE_CMD=
-kernel-prepare.%: LIVE_BUILD_CMD=make modules_prepare CROSS_COMPILE=$(CROSS)- ARCH=$(KERNEL_ARCH)
+kernel-prepare.%: LIVE_BUILD_CMD=make -j 8 modules_prepare CROSS_COMPILE=$(CROSS)- ARCH=$(KERNEL_ARCH)
 kernel-prepare.%: LIVE_INSTALL_CMD=ln -sf build_live_$(ARCH)/$(PACKAGE_NAME)/include $(abs_top_builddir)/live_$(ARCH)_kernel_include; ln -sf build_live_$(ARCH)/$(PACKAGE_NAME) $(abs_top_builddir)/live_$(ARCH)_kernel_src
 
 clean.kernel-prepare:

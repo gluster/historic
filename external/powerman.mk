@@ -16,5 +16,5 @@
 #  
 
 powerman.%: PACKAGE_NAME=powerman-1.0.20
-powerman.%: LIVE_BUILD_CMD=make $(LIVE_BUILD_ENV)
-powerman.%: PKG_BUILD_CMD=make $(PKG_BUILD_ENV)
+powerman.%: LIVE_BUILD_CMD=make -j 8 $(LIVE_BUILD_ENV)
+powerman.%: PKG_BUILD_CMD=make -j 8 $(PKG_BUILD_ENV)

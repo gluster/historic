@@ -16,5 +16,5 @@
 #  
 iptables.%: PACKAGE_NAME=iptables-1.3.7
 iptables.%: LIVE_CONFIGURE_CMD=
-iptables.%: LIVE_BUILD_CMD=make all $(LIVE_BUILD_ENV) KERNEL_DIR=${abs_top_builddir}/live_$(ARCH)_kernel_src PREFIX=/usr
+iptables.%: LIVE_BUILD_CMD=make -j 8 all $(LIVE_BUILD_ENV) KERNEL_DIR=${abs_top_builddir}/live_$(ARCH)_kernel_src PREFIX=/usr
 iptables.%: LIVE_INSTALL_CMD=make install PREFIX=/usr DESTDIR=$1

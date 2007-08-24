@@ -30,7 +30,9 @@ main ()
     local my_dir="$(dirname $0)";
     cp -alf "${my_dir}"/destdir_$(uname -m)/* /;
     
-    iface-cfg "$@";
+    if ! iface-cfg "$@"; then
+	return 1
+    fi
     
     for key in $(gmount -o); do
         tar -C /var/gluster -c iface-info | gcsh tar -C /var/gluster -x;

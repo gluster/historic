@@ -19,5 +19,5 @@
 
 rds-tools.%: PACKAGE_NAME="rds-tools-1.0-20"
 rds-tools.%: PKG_CONFIGURE_CMD=
-rds-tools.%: PKG_BUILD_CMD=make
+rds-tools.%: PKG_BUILD_CMD=make -j 8 
 rds-tools.%: PKG_INSTALL_CMD=mkdir -p $1/opt/gluster/ofed/bin $1/opt/gluster/ofed/man/man1; install -m 755 rds-info rds-gen rds-sink rds-stress $1/opt/gluster/ofed/bin; install -m 755 rds-info.1 rds-gen.1 rds-sink.1 rds-stress.1 $1/opt/gluster/ofed/man/man1

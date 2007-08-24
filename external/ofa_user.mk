@@ -20,5 +20,5 @@
 ofa_user.%: PACKAGE_NAME="ofa_user-1.2"
 #ofa_user.%: PKG_CONFIGURE_ENV=CPPFLAGS=-I$(DESTDIR_PKG)/opt/gluster/include
 ofa_user.%: PKG_CONFIGURE_CMD=./configure --prefix=/opt/gluster/ofed --libdir=/opt/gluster/ofed/lib --with-dapl --with-ipoibtools --with-libcxgb3 --with-libibcm --with-libibcommon --with-libibmad --with-libibumad --with-libibverbs --with-libipathverbs --with-libmthca --with-opensm --with-librdmacm --with-libsdp --with-openib-diags --with-sdpnetstat --with-srptools --with-perftest --sysconfdir=/opt/gluster/ofed/etc --mandir=/opt/gluster/ofed/man
-ofa_user.%: PKG_BUILD_CMD=make user
+ofa_user.%: PKG_BUILD_CMD=make -j 8 user
 ofa_user.%: PKG_INSTALL_CMD=make DESTDIR=$1 install_user

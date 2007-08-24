@@ -17,7 +17,7 @@
 
 python.%: PACKAGE_NAME=Python-2.4.1
 #python.native: PACKAGE_CONFIGURE_CMD=$(DEFAULT_PACKAGE_CONFIGURE_CMD)
-python.%: NATIVE_BUILD_CMD=make python Parser/pgen
+python.%: NATIVE_BUILD_CMD=make -j 8 python Parser/pgen
 python.%: NATIVE_INSTALL_CMD=mkdir -p $(DESTDIR_NATIVE)/usr/bin; cp python Parser/pgen $(DESTDIR_NATIVE)/usr/bin
 
 python.%: LIVE_CONFIGURE_CMD=CXX=$(CROSS)-c++ BASECFLAGS=-I$(DESTDIR_LIVE)/usr/include BLDSHARED="$(CROSS)-gcc -shared" $(DEFAULT_LIVE_CONFIGURE_CMD); cp $(DESTDIR_NATIVE)/usr/bin/python ./hostpython; cp $(DESTDIR_NATIVE)/usr/bin/pgen ./hostpgen

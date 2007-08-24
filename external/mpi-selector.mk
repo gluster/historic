@@ -19,4 +19,4 @@
 
 mpi-selector.%: PACKAGE_NAME="mpi-selector-1.0.0"
 mpi-selector.%: PKG_CONFIGURE_CMD=$(DEFAULT_PKG_CONFIGURE_CMD) --prefix=/opt/gluster/ofed --sysconfdir=/opt/gluster/ofed/etc --datadir=/opt/gluster/ofed/share --includedir=/opt/gluster/ofed/include --libdir=/opt/gluster/ofed/lib --libexecdir=/opt/gluster/ofed/libexec --localstatedir=/opt/gluster/ofed/var --sharedstatedir=/opt/gluster/ofed/com --mandir=/opt/gluster/ofed/man --infodir=/opt/gluster/ofed/info --with-shell-startup-dir=/etc/profile.d
-mpi-selector.%: PKG_BUILD_CMD=make
+mpi-selector.%: PKG_BUILD_CMD=make -j 8
