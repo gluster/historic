@@ -51,8 +51,7 @@ SECTION_LINE: OPTION_LINE | TYPE_LINE | SUBSECTION_LINE;
 
 TYPE_LINE: TYPE WORD {section_type ($2);};
 
-OPTION_LINE: OPTION WORD WORD {section_option ($2, $3);}
-| OPTION WORD WORD {section_option ($2, $3);};
+OPTION_LINE: OPTION WORD WORD {section_option ($2, $3);};
 
 SUBSECTION_LINE: SUBSECTION WORDS;
 WORDS: WORD {section_sub ($1);}| WORDS WORD {section_sub ($2);};
