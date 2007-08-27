@@ -74,9 +74,11 @@
      option alu.open-files-usage.exit-threshold <n> (100)
      option alu.limits.min-free-disk <%> 
      option alu.limits.max-open-files <n> 
+     option alu.read-only-childs <name of child volumes>
 #  <rr>
      option rr.limits.min-free-disk <%> (5)
      option rr.refresh-interval <t> (10 seconds)
+     option rr.read-only-childs <name of child volumes>
 #  <random>
      option random.limits.min-free-disk <%> (5)
      option random.refresh-interval <t> (10 seconds)
