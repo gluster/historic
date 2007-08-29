@@ -12,4 +12,4 @@ CLEANFILES = *~
 glusterfs_booster_so_SOURCES = entry.c bridge.c
 glusterfs_booster_so_CFLAGS = -D_GNU_SOURCE 
 glusterfs_booster_so_LDFLAGS = -shared -nostartfiles
-#glusterfs_booster_so_LDADD = -L../../libglusterfs/src -lglusterfs
+glusterfs_booster_so_LDADD = -L../../libglusterfs/src -lglusterfs

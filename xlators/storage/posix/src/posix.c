@@ -1052,7 +1052,7 @@ posix_getxattr (call_frame_t *frame,
   int32_t op_ret = -1;
   int32_t op_errno = ENOENT;
   int32_t list_offset = 0;
-  size_t size = 0;
+  int32_t size = 0;
   size_t remaining_size = 0;
   char key[1024] = {0,};
   char *value = NULL;
@@ -1073,6 +1073,9 @@ posix_getxattr (call_frame_t *frame,
   if (size <= 0) {
     if (size == 0) {
       size = lgetxattr (real_path, "trusted.afr.key", NULL, 0);
+      if (size == -1) {
+	size = 0;
+      }
       op_errno = errno;
     }
     SET_TO_OLD_FS_UID_GID ();

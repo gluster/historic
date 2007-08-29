@@ -24,13 +24,50 @@
 #include "transport.h"
 #include "protocol.h"
 
+#define BOOSTER_LISTEN_PATH  "/tmp/glusterfs-booster-server"
+
 static int32_t
-booster_setxattr (call_frame_t *frame,
-                  xlator_t *this,
-                  loc_t *loc,
-                  dict_t *dict,
-                  int32_t flags)
+booster_getxattr_cbk (call_frame_t *frame,
+		      void *cookie,
+		      xlator_t *this,
+		      int32_t op_ret,
+		      int32_t op_errno,
+		      dict_t *dict)
 {
+  dict_t *options = get_new_dict ();
+  int len;
+  char *buf;
+  loc_t *loc = (loc_t *)cookie;
+
+  dict_set (options, "transport-type", str_to_data ("unix/client"));
+  dict_set (options, "connect-path", str_to_data (BOOSTER_LISTEN_PATH));
+
+  len = dict_serialized_length (options);
+  buf = calloc (1, len);
+  dict_serialize (options, buf);
+
+  dict_set (dict, "user.glusterfs-booster-transport-options", 
+	    data_from_dynptr (buf, len));
+  dict_set (dict, "user.glusterfs-booster-handle", bin_to_data (loc->inode, 8));
+
+  if (op_ret < 0)
+    op_ret = 2;
+  else
+    op_ret += 2;
+
+  STACK_UNWIND (frame, op_ret, op_errno, dict);
+  return 0;
+}
+
+static int32_t
+booster_getxattr (call_frame_t *frame,
+		  xlator_t *this,
+		  loc_t *loc)
+{
+  _STACK_WIND (frame, booster_getxattr_cbk,
+	       loc, FIRST_CHILD (this), FIRST_CHILD (this)->fops->getxattr,
+	       loc);
+  return 0;
 }
 
 static int32_t
@@ -53,7 +90,7 @@ booster_open (call_frame_t *frame,
               fd_t *fd)
 {
   STACK_WIND (frame, booster_open_cbk,
-	      this, FIRST_CHILD (this)->fops->open,
+	      FIRST_CHILD (this), FIRST_CHILD (this)->fops->open,
 	      loc, flags, fd);
   return 0;
 }
@@ -100,6 +137,7 @@ notify (xlator_t *this,
 {
   switch (event) {
   case GF_EVENT_POLLIN:
+    printf ("some input happening\n");
     break;
   }
 }
@@ -133,6 +171,7 @@ int32_t
 init (xlator_t *this)
 {
   transport_t *trans;
+  dict_t *options = get_new_dict ();
 
   if (!this->children || this->children->next) {
     gf_log ("booster", GF_LOG_ERROR,
@@ -140,7 +179,10 @@ init (xlator_t *this)
     return -1;
   }
 
-  trans = transport_load (this->options, this, this->notify);
+  dict_set (options, "transport-type", str_to_data ("unix/server"));
+  dict_set (options, "listen-path", str_to_data (BOOSTER_LISTEN_PATH));
+
+  trans = transport_load (options, this, this->notify);
 
   return 0;
 }
@@ -152,9 +194,7 @@ fini (xlator_t *this)
 
 struct xlator_fops fops = {
   .open = booster_open,
-  .readv = booster_readv,
-  .writev = booster_writev,
-  .setxattr = booster_setxattr,
+  .getxattr = booster_getxattr,
 };
 
 struct xlator_mops mops = {

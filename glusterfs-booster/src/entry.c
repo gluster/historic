@@ -53,21 +53,18 @@ static int (*real_close) (int fd);
 static int (*real_dup) (int fd);
 static int (*real_dup2) (int oldfd, int newfd);
 
-
 #define RESOLVE(sym) do {                     \
   if (!real_##sym)                            \
     real_##sym = dlsym (RTLD_NEXT, #sym);     \
 } while (0)
 
-
 struct file {
   void *transport;
+  char handle[8];
 };
-
 
 static struct file *fdtable[65536];
 void *ctx;
-
 
 static void
 do_open (int fd)
@@ -76,15 +73,24 @@ do_open (int fd)
   char buf[512];
   void *trans;
 
-  ret = fgetxattr (fd, "trusted.foo", buf, 512);
+  ret = fgetxattr (fd, "user.glusterfs-booster-transport-options", buf, 512);
 
   if (ret == -1)
     return;
 
   trans = glusterfs_booster_bridge_open (ctx, buf, ret);
-  
-}
 
+  ret = fgetxattr (fd, "user.glusterfs-booster-handle", buf, 512);
+  if (ret == -1)
+    return;
+
+  if (fdtable[fd])
+    free (fdtable[fd]);
+
+  fdtable[fd] = calloc (1, sizeof (struct file));
+  fdtable[fd]->transport = trans;
+  memcpy (fdtable[fd]->handle, buf, 8);
+}
 
 int
 open (const char *pathname, int flags, mode_t mode)
@@ -99,7 +105,6 @@ open (const char *pathname, int flags, mode_t mode)
   return ret;
 }
 
-
 int
 open64 (const char *pathname, int flags, mode_t mode)
 {
@@ -112,7 +117,6 @@ open64 (const char *pathname, int flags, mode_t mode)
 
   return ret;
 }
-
 
 int
 creat (const char *pathname, mode_t mode)
@@ -128,9 +132,7 @@ creat (const char *pathname, mode_t mode)
   return ret;
 }
 
-
 /* preadv */
-
 static ssize_t
 __do_preadv (int fd, const struct iovec *vector,
 	     int count, off_t offset)
@@ -139,7 +141,6 @@ __do_preadv (int fd, const struct iovec *vector,
 
 
 }
-
 
 static ssize_t
 do_preadv (int fd, const struct iovec *vector,
@@ -154,7 +155,6 @@ do_preadv (int fd, const struct iovec *vector,
 
   return ret;
 }
-
 
 ssize_t
 read (int fd, void *buf, size_t count)
@@ -178,7 +178,6 @@ read (int fd, void *buf, size_t count)
   return ret;
 }
 
-
 ssize_t
 readv (int fd, const struct iovec *vector, int count)
 {
@@ -196,7 +195,6 @@ readv (int fd, const struct iovec *vector, int count)
 
   return ret;
 }
-
 
 ssize_t
 pread (int fd, void *buf, size_t count, off_t offset)
@@ -220,7 +218,6 @@ pread (int fd, void *buf, size_t count, off_t offset)
   return ret;
 }
 
-
 ssize_t
 pread64 (int fd, void *buf, size_t count, off_t offset)
 {
@@ -243,9 +240,7 @@ pread64 (int fd, void *buf, size_t count, off_t offset)
   return ret;
 }
 
-
 /* pwritev */
-
 static ssize_t
 __do_pwritev (int fd, const struct iovec *vector,
 	     int count, off_t offset)
@@ -254,7 +249,6 @@ __do_pwritev (int fd, const struct iovec *vector,
 
 
 }
-
 
 static ssize_t
 do_pwritev (int fd, const struct iovec *vector,
@@ -269,7 +263,6 @@ do_pwritev (int fd, const struct iovec *vector,
 
   return ret;
 }
-
 
 ssize_t
 write (int fd, const void *buf, size_t count)
@@ -293,7 +286,6 @@ write (int fd, const void *buf, size_t count)
   return ret;
 }
 
-
 ssize_t
 writev (int fd, const struct iovec *vector, int count)
 {
@@ -311,7 +303,6 @@ writev (int fd, const struct iovec *vector, int count)
 
   return ret;
 }
-
 
 ssize_t
 pwrite (int fd, const void *buf, size_t count, off_t offset)
@@ -334,7 +325,6 @@ pwrite (int fd, const void *buf, size_t count, off_t offset)
 
   return ret;
 }
-
 
 ssize_t
 pwrite64 (int fd, const void *buf, size_t count, off_t offset)
@@ -368,7 +358,6 @@ lseek (int fildes, off_t offset, int whence)
   return ret;
 }
 
-
 off_t
 lseek64 (int fildes, off_t offset, int whence)
 {
@@ -378,7 +367,6 @@ lseek64 (int fildes, off_t offset, int whence)
 
   return ret;
 }
-
 
 void
 _init (void)

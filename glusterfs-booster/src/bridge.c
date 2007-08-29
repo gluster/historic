@@ -31,9 +31,7 @@
 #include "defaults.h"
 #include "common-utils.h"
 
-
 static glusterfs_ctx_t ctx;
-
 
 int32_t
 glusterfs_booster_bridge_notify (xlator_t *this, int32_t event,
@@ -42,12 +40,12 @@ glusterfs_booster_bridge_notify (xlator_t *this, int32_t event,
   return 0;
 }
 
-
-void *
+glusterfs_ctx_t *
 glusterfs_booster_bridge_init ()
 {
   ctx.logfile = "/dev/stderr";
   ctx.loglevel = GF_LOG_ERROR;
+  ctx.poll_type = SYS_POLL_TYPE_MAX;
 
   gf_log_init ("/dev/stderr");
   gf_log_set_loglevel (GF_LOG_ERROR);
@@ -55,12 +53,13 @@ glusterfs_booster_bridge_init ()
   return &ctx;
 }
 
-
 void *
 glusterfs_booster_bridge_open (glusterfs_ctx_t *ctx, char *buf, int size)
 {
   xlator_t *xl;
+  transport_t *trans;
   data_t *transport_data;
+  int ret;
 
   xl = calloc (1, sizeof (xlator_t));
   xl->name = "booster";
@@ -68,7 +67,6 @@ glusterfs_booster_bridge_open (glusterfs_ctx_t *ctx, char *buf, int size)
   xl->next = xl->prev = xl;
   xl->ctx = &ctx;
   xl->notify = glusterfs_booster_bridge_open;
-
 
   xl->options = get_new_dict ();
   if (dict_unserialize (buf, size, &xl->options) == NULL) {
@@ -85,8 +83,13 @@ glusterfs_booster_bridge_open (glusterfs_ctx_t *ctx, char *buf, int size)
     return NULL;
   }
 
-  xl->private = transport_load (xl->options, xl,
-				glusterfs_booster_bridge_notify);
+  trans = transport_load (xl->options, xl,
+			  glusterfs_booster_bridge_notify);
+
+  ret = transport_connect (trans);
+  if (ret != 0) {
+    gf_log ("booster", GF_LOG_ERROR, "could not connect to translator");
+  }
 
   if (!xl->private) {
     gf_log ("booster", GF_LOG_ERROR,
