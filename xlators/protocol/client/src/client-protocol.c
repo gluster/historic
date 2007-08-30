@@ -2953,7 +2953,7 @@ client_readv_cbk (call_frame_t *frame,
   
   if (!buf_data || !ret_data || !err_data) {
     struct stat stbuf = {0,};
-    STACK_UNWIND (frame, -1, ENOTCONN, NULL, &stbuf);
+    STACK_UNWIND (frame, -1, ENOTCONN, NULL, 1, &stbuf);
     return 0;
   }
   
@@ -3228,7 +3228,7 @@ client_rename_cbk (call_frame_t *frame,
   struct stat *stbuf = NULL;
 
   if (!ret_data || !err_data) {
-    STACK_UNWIND (frame, -1, ENOTCONN);
+    STACK_UNWIND (frame, -1, ENOTCONN, NULL);
     return 0;
   }
   
@@ -3302,7 +3302,7 @@ client_mkdir_cbk (call_frame_t *frame,
   inode_t *inode = local->inode;
   
   if (!ret_data || !err_data) {
-    STACK_UNWIND (frame, -1, ENOTCONN, inode);
+    STACK_UNWIND (frame, -1, ENOTCONN, inode, NULL);
     return 0;
   }
   
@@ -3762,7 +3762,7 @@ client_lk_cbk (call_frame_t *frame,
       !start_data ||
       !len_data ||
       !pid_data) {
-    STACK_UNWIND (frame, -1, ENOTCONN);
+    STACK_UNWIND (frame, -1, ENOTCONN, NULL);
     return 0;
   }
   
@@ -4086,7 +4086,7 @@ client_getspec_cbk (call_frame_t *frame,
   data_t *spec_data = NULL;
 
   if (!ret_data || !err_data) {
-    STACK_UNWIND (frame, -1, ENOTCONN);
+    STACK_UNWIND (frame, -1, ENOTCONN, NULL);
     return 0;
   }
   
