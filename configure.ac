@@ -65,6 +65,9 @@ AC_CONFIG_FILES([Makefile
 		xlators/encryption/Makefile
 		xlators/encryption/rot-13/Makefile
 		xlators/encryption/rot-13/src/Makefile
+                xlators/bindings/Makefile
+                xlators/bindings/python/Makefile
+                xlators/bindings/python/src/Makefile
 		scheduler/Makefile
 		scheduler/alu/Makefile
 		scheduler/alu/src/Makefile
@@ -259,5 +262,42 @@ fi
 AC_CHECK_HEADERS([sys/epoll.h])
 AC_CHECK_HEADERS([sys/xattr.h])
 AC_CHECK_HEADERS([sys/extattr.h])
+
+# Language bindings
+BINDINGS_SUBDIRS=""
+AC_ARG_ENABLE([python],
+              AC_HELP_STRING([--disable-python],
+                             [Do not build the python bindings.]))
+
+if test "x$enable_python" = "x"; then
+    enable_python="yes";
+fi
+
+dnl if test "$enable_python" = "yes"; then
+dnl     AC_CHECK_PROG(PYTHON_CONFIG,[python2.5-config],[python2.5-config],[no])
+dnl     if test "$PYTHON_CONFIG" = "no"; then
+dnl         AC_MSG_ERROR([python2.5-config is needed to build the python bindings.  Please install python2.5 and its development packages.  You can disable the python bindings by passing --disable-python to configure.])
+dnl     else
+dnl         PYTHON_CFLAGS=`$PYTHON_CONFIG --includes`
+dnl         PYTHON_LDFLAGS=`$PYTHON_CONFIG --ldflags`
+dnl         AC_SUBST(PYTHON_CFLAGS)
+dnl         AC_SUBST(PYTHON_LDFLAGS)
+dnl     fi
+dnl fi
+
+PYTHON_CFLAGS="-I/usr/include/python2.4"
+PYTHON_LDFLAGS="-lpython2.4"
+AC_SUBST(PYTHON_CFLAGS)
+AC_SUBST(PYTHON_LDFLAGS)
+
+HAVE_PYTHON=1
+if test "$enable_python" = "yes"; then
+    HAVE_PYTHON=1
+    BINDINGS_SUBDIRS="$BINDINGS_SUBDIRS python"
+else
+    HAVE_PYTHON=0
+fi
+AC_SUBST(HAVE_PYTHON)
+AC_SUBST(BINDINGS_SUBDIRS)
 
 AC_OUTPUT

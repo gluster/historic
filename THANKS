@@ -5,3 +5,6 @@ Here is a list of people, who helped in glusterfs development.
 
 * Christopher Hawkins <chawkins@veracitynetworks.com>
   - init.d script.
+
+* Chris Atlee <chris@atlee.ca>
+  - initial work for python binding translator
