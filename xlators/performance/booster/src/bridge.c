@@ -33,6 +33,9 @@
 #include "booster.h"
 
 
+/* TODO:
+   - add cond_wait in ib-verbs receive()
+*/
 static glusterfs_ctx_t ctx;
 
 int32_t
@@ -41,7 +44,7 @@ glusterfs_booster_bridge_notify (xlator_t *this, int32_t event,
 {
   switch (event) {
   case GF_EVENT_POLLERR:
-    transport_disconnect (event);
+    transport_disconnect (data);
     break;
   }
   return 0;
@@ -66,7 +69,6 @@ glusterfs_booster_bridge_open (glusterfs_ctx_t *ctx, char *options, int size,
 {
   xlator_t *xl;
   transport_t *trans;
-  data_t *transport_data;
   struct file *filep;
   int ret;
 
@@ -74,7 +76,7 @@ glusterfs_booster_bridge_open (glusterfs_ctx_t *ctx, char *options, int size,
   xl->name = "booster";
   xl->type = "performance/booster\n";
   xl->next = xl->prev = xl;
-  xl->ctx = &ctx;
+  xl->ctx = ctx;
   xl->notify = glusterfs_booster_bridge_notify;
 
   xl->options = get_new_dict ();
@@ -115,7 +117,7 @@ glusterfs_booster_bridge_open (glusterfs_ctx_t *ctx, char *options, int size,
 
   filep = calloc (1, sizeof (*filep));
   filep->transport = trans;
-  memcpy (&filep->handle, handle, 8);
+  memcpy (&filep->handle, handle, 20);
 
   return filep;
 }
@@ -133,13 +135,46 @@ glusterfs_booster_bridge_preadv (struct file *filep, struct iovec *vector,
   hdr.op = GF_FOP_READ;
   hdr.offset = offset;
   hdr.size = iov_length (vector, count);
-  hdr.handle = filep->handle;
+  memcpy (&hdr.handle, filep->handle, 20);
 
   hdrvec.iov_base = &hdr;
   hdrvec.iov_len = sizeof (hdr);
   ret = trans->ops->writev (trans, &hdrvec, 1);
-  gf_log ("booster", GF_LOG_DEBUG,
-	  "writev returned %d", ret);
+  if (ret != 0)
+    return -1;
+
+  ret = trans->ops->recieve (trans, (char *) &hdr, sizeof (hdr));
+  if (ret != 0)
+    return -1;
+
+  if (hdr.op_ret <= 0) {
+    errno = hdr.op_errno;
+    return hdr.op_ret;
+  }
+
+  if (hdr.op_ret > iov_length (vector, count)) {
+    errno = ERANGE;
+    return -1;
+  }
+
+  {
+    int i = 0;
+    int op_ret = 0;
+    ssize_t size_tot = hdr.op_ret, size_i;
+
+    for (i=0; i<count && size_tot; i++) {
+      size_i = min (size_tot, vector[i].iov_len);
+      if (trans->ops->recieve (trans, vector[i].iov_base, size_i) != 0) {
+	op_ret = -1;
+	break;
+      }
+      size_tot -= size_i;
+      op_ret += size_i;
+    }
+
+    return op_ret;
+  }
+  return 0;
 }
 
 
@@ -152,15 +187,23 @@ glusterfs_booster_bridge_pwritev (struct file *filep, struct iovec *vector,
   transport_t *trans = filep->transport;
   struct iovec hdrvec;
 
-  hdr.op = GF_FOP_READ;
+  hdr.op = GF_FOP_WRITE;
   hdr.offset = offset;
   hdr.size = iov_length (vector, count);
-  hdr.handle = filep->handle;
+  memcpy (&hdr.handle, filep->handle, 20);
 
   hdrvec.iov_base = &hdr;
   hdrvec.iov_len = sizeof (hdr);
   ret = trans->ops->writev (trans, &hdrvec, 1);
   gf_log ("booster", GF_LOG_DEBUG,
 	  "writev returned %d", ret);
+  trans->ops->writev (trans, vector, count);
 
+
+  ret = trans->ops->recieve (trans, (char *) &hdr, sizeof (hdr));
+  if (ret != 0)
+    return -1;
+
+  errno = hdr.op_errno;
+  return hdr.op_ret;
 }

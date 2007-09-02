@@ -23,8 +23,41 @@
 #include "logging.h"
 #include "transport.h"
 #include "protocol.h"
+#include "booster.h"
 
+/* TODO:
+   - make BOOSTER_LISTEN_PATH acceptable from xlator options
+   - authorize transport to use an inode/fd
+   - make get_frame_for_transport() library function
+*/ 
 #define BOOSTER_LISTEN_PATH  "/tmp/glusterfs-booster-server"
+
+static call_frame_t *
+get_frame_for_transport (transport_t *trans)
+{
+  call_ctx_t *_call = (void *) calloc (1, sizeof (*_call));
+  call_pool_t *pool = trans->xl->ctx->pool;
+
+  if (!pool) {
+    pool = trans->xl->ctx->pool = calloc (1, sizeof (*pool));
+    LOCK_INIT (&pool->lock);
+    INIT_LIST_HEAD (&pool->all_frames);
+  }
+
+  _call->pool = pool;
+
+  LOCK (&_call->pool->lock);
+  list_add (&_call->all_frames, &_call->pool->all_frames);
+  UNLOCK (&_call->pool->lock);
+
+  _call->trans = trans;
+  _call->unique = 0;           /* which call */
+
+  _call->frames.root = _call;
+  _call->frames.this = trans->xl;
+
+  return &_call->frames;
+}
 
 static int32_t
 booster_getxattr_cbk (call_frame_t *frame,
@@ -38,6 +71,7 @@ booster_getxattr_cbk (call_frame_t *frame,
   int len;
   char *buf;
   loc_t *loc = (loc_t *)cookie;
+  char handle[20];
 
   gf_log (this->name, GF_LOG_DEBUG, "setting path to %s", BOOSTER_LISTEN_PATH);
   dict_set (options, "transport-type", str_to_data ("unix/client"));
@@ -49,7 +83,11 @@ booster_getxattr_cbk (call_frame_t *frame,
 
   dict_set (dict, "user.glusterfs-booster-transport-options", 
 	    data_from_dynptr (buf, len));
-  dict_set (dict, "user.glusterfs-booster-handle", bin_to_data (loc->inode, 8));
+  sprintf (handle, "%p", loc->inode);
+  gf_log (this->name, GF_LOG_DEBUG, "handle is %s for inode %"PRId64,
+	  handle, loc->inode->ino);
+  dict_set (dict, "user.glusterfs-booster-handle",
+	    data_from_dynstr (strdup (handle)));
 
   if (op_ret < 0)
     op_ret = 2;
@@ -72,62 +110,134 @@ booster_getxattr (call_frame_t *frame,
 }
 
 static int32_t
-booster_open_cbk (call_frame_t *frame,
-                  void *cookie,
-                  xlator_t *this,
-                  int32_t op_ret,
-                  int32_t op_errno,
-                  fd_t *fd)
+booster_readv_cbk (call_frame_t *frame, 
+		   void *cookie,
+		   xlator_t *this,
+		   int32_t op_ret,
+		   int32_t op_errno,
+		   struct iovec *vector,
+		   int32_t count,
+		   struct stat *stbuf)
 {
-  STACK_UNWIND (frame, op_ret, op_errno, fd);
+  struct glusterfs_booster_protocol_header hdr = {0, };
+  transport_t *trans = frame->root->trans;
+  struct iovec hdrvec;
+
+  hdr.op_ret = op_ret;
+  hdr.op_errno = op_errno;
+  hdrvec.iov_base = &hdr;
+  hdrvec.iov_len = sizeof (hdr);
+
+  trans->ops->writev (trans, &hdrvec, 1);
+  if (op_ret != -1)
+    trans->ops->writev (trans, vector, count);
+
+  transport_unref (trans);
+
+  STACK_DESTROY (frame->root);
   return 0;
 }
 
 static int32_t
-booster_open (call_frame_t *frame,
-              xlator_t *this,
-              loc_t *loc,
-              int32_t flags,
-              fd_t *fd)
+booster_writev_cbk (call_frame_t *frame,
+		    void *cookie,
+		    xlator_t *this,
+		    int32_t op_ret,
+		    int32_t op_errno,
+		    struct stat *stbuf)
 {
-  STACK_WIND (frame, booster_open_cbk,
-	      FIRST_CHILD (this), FIRST_CHILD (this)->fops->open,
-	      loc, flags, fd);
+  struct glusterfs_booster_protocol_header hdr = {0, };
+  transport_t *trans = frame->root->trans;
+  struct iovec hdrvec;
+
+  hdr.op_ret = op_ret;
+  hdr.op_errno = op_errno;
+  hdrvec.iov_base = &hdr;
+  hdrvec.iov_len = sizeof (hdr);
+
+  trans->ops->writev (trans, &hdrvec, 1);
+
+  transport_unref (trans);
+
+  STACK_DESTROY (frame->root);
   return 0;
 }
 
-static int32_t
-booster_readv_reply_cbk (call_frame_t *frame, 
-			 void *cookie,
-			 xlator_t *this,
-			 int32_t op_ret,
-			 int32_t op_errno,
-			 struct iovec *vector,
-			 int32_t count,
-			 struct stat *stbuf)
-{
-}
 
 int32_t
-booster_readv_req (xlator_t *this, 
-		   dict_t *params)
+booster_interpret (transport_t *trans)
 {
-}
+  struct glusterfs_booster_protocol_header hdr;
+  int ret;
+  inode_t *inode;
+  fd_t *fd = NULL;
+  call_frame_t *frame;
 
-static int32_t
-booster_writev_reply_cbk (call_frame_t *frame,
-			  void *cookie,
-			  xlator_t *this,
-			  int32_t op_ret,
-			  int32_t op_errno,
-			  struct stat *stbuf)
-{
-}
+  ret = trans->ops->recieve (trans, (char *) &hdr, sizeof (hdr));
 
-int32_t
-booster_writev_req (xlator_t *this, 
-		    dict_t *params)
-{
+  if (ret != 0)
+    return -1;
+
+  gf_log (trans->xl->name, GF_LOG_DEBUG,
+	  "op=%d off=%"PRId64" size=%"PRId64" handle=%s",
+	  hdr.op, hdr.offset, hdr.size, hdr.handle);
+
+  sscanf (hdr.handle, "%p", &inode);
+  gf_log (trans->xl->name, GF_LOG_DEBUG,
+	  "inode number = %"PRId64, inode->ino);
+
+  /* TODO: hold inode lock and check for fd */
+  if (!list_empty (&inode->fds))
+    fd = list_entry (inode->fds.next, fd_t, inode_list);
+  if (!fd) {
+    gf_log (trans->xl->name, GF_LOG_DEBUG,
+	    "no fd found for handle %p", inode);
+    return -1;
+  } else {
+    gf_log (trans->xl->name, GF_LOG_DEBUG,
+	    "using fd %p for handle %p", fd, inode);
+  }
+
+  frame = get_frame_for_transport (trans);
+  switch (hdr.op) {
+  case GF_FOP_READ:
+    STACK_WIND (frame, booster_readv_cbk,
+		FIRST_CHILD (frame->this), FIRST_CHILD (frame->this)->fops->readv,
+		fd, hdr.size, hdr.offset);
+    break;
+  case GF_FOP_WRITE:
+    {
+      char *write_buf;
+      data_t *ref_data;
+      dict_t *ref_dict;
+      struct iovec vector;
+      int count = 1;
+
+      /* TODO:
+	 - implement limit on hdr.size
+      */
+      write_buf = malloc (hdr.size);
+      ret = trans->ops->recieve (trans, write_buf, hdr.size);
+      if (ret == 0) {
+	vector.iov_base = write_buf;
+	vector.iov_len = hdr.size;
+
+	ref_data = data_from_dynptr (write_buf, hdr.size);
+	ref_dict = get_new_dict ();
+	dict_set (ref_dict, NULL, ref_data);
+	frame->root->req_refs = dict_ref (ref_dict);
+
+	STACK_WIND (frame, booster_writev_cbk,
+		    FIRST_CHILD (frame->this), FIRST_CHILD (frame->this)->fops->writev,
+		    fd, &vector, count, hdr.offset);
+
+	dict_unref (ref_dict);
+      }
+    }
+    break;
+  }
+
+  return 0;
 }
 
 int32_t
@@ -136,39 +246,20 @@ notify (xlator_t *this,
         void *data,
         ...)
 {
+  int ret = 0;
+
   switch (event) {
   case GF_EVENT_POLLIN:
-    printf ("some input happening\n");
+    ret = booster_interpret (data);
+    if (ret != 0)
+      transport_disconnect (data);
     break;
   case GF_EVENT_POLLERR:
     transport_disconnect (data);
     break;
   }
-}
 
-int32_t
-booster_interpret (transport_t *trans, gf_block_t *blk)
-{
-  dict_t *params = blk->dict;
-  xlator_t *this = (xlator_t *)trans->private;
-
-  switch (blk->type) {
-  case GF_OP_TYPE_FOP_REQUEST:
-    if (blk->op == GF_FOP_READ) {
-      booster_readv_req (this, params);
-    }
-    else if (blk->op == GF_FOP_WRITE) {
-      booster_writev_req (this, params);
-    }
-    else {
-      gf_log (trans->xl->name, GF_LOG_WARNING, "unexpected fop (%d)", blk->op);
-      return -1;
-    }
-    break;
-  default:
-    gf_log (trans->xl->name, GF_LOG_WARNING, "unexpected block type (%d)", blk->type);
-    return -1;
-  }
+  return ret;
 }
 
 int32_t
@@ -197,7 +288,6 @@ fini (xlator_t *this)
 }
 
 struct xlator_fops fops = {
-  .open = booster_open,
   .getxattr = booster_getxattr,
 };
 

@@ -26,14 +26,14 @@
 
 struct file {
   void *transport;
-  uint64_t handle;
+  char handle[20];
 };
 
 struct glusterfs_booster_protocol_header {
   int8_t op;
   uint64_t offset;
   uint64_t size;
-  uint64_t handle;
+  char handle[20];
   int32_t op_ret;
   int32_t op_errno;
   char buffer[0];

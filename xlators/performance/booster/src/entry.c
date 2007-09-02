@@ -23,6 +23,23 @@
 #include <sys/uio.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <attr/xattr.h>
+#include <stdlib.h>
+
+int
+glusterfs_booster_bridge_pwritev (void *filep, const struct iovec *vector,
+				  int count, off_t offset);
+int
+glusterfs_booster_bridge_preadv (void *filep, const struct iovec *vector,
+				 int count, off_t offset);
+
+void *glusterfs_booster_bridge_init ();
+
+void *
+glusterfs_booster_bridge_open (void *ctx, char *options, int size,
+			       char *handle);
+
+
 
 
 /* open, open64, creat */
@@ -64,8 +81,7 @@ void *ctx;
 static void
 do_open (int fd)
 {
-  int ret;
-  char options[512], handle[17];
+  char options[512], handle[20];
   int options_ret, handle_ret;
   void *filep;
 
@@ -75,12 +91,12 @@ do_open (int fd)
   if (options_ret == -1)
     return;
 
-  handle_ret = fgetxattr (fd, "user.glusterfs-booster-handle", handle, 17);
+  handle_ret = fgetxattr (fd, "user.glusterfs-booster-handle", handle, 20);
 
   if (handle_ret == -1)
     return;
 
-  printf ("open on fd = %d\n", fd);
+  printf ("open on fd = %d, handle=%s\n", fd, handle);
 
   filep = glusterfs_booster_bridge_open (ctx, options, options_ret, handle);
 
@@ -88,6 +104,9 @@ do_open (int fd)
     return;
 
   if (fdtable[fd])
+    /* TODO: 
+       - disconnect transport
+    */
     free (fdtable[fd]);
 
   fdtable[fd] = filep;
@@ -145,8 +164,17 @@ do_preadv (int fd, const struct iovec *vector,
   ret = glusterfs_booster_bridge_preadv (fdtable[fd], vector, count, offset);
 
   printf ("returning %d\n", ret);
-  if (ret != -1)
+  if (ret == -1) {
+    printf ("disabling booster on fd=%d\n", fd);
+    /* TODO: 
+       - disconnect transport
+       - retry with real_read
+    */
+    free (fdtable[fd]);
+    fdtable[fd] = NULL;
+  } else {
     real_lseek (fd, (offset + ret), SEEK_SET);
+  }
 
   return ret;
 }
@@ -245,8 +273,17 @@ do_pwritev (int fd, const struct iovec *vector,
   printf ("doing pwritev on fd=%d\n", fd);
   ret = glusterfs_booster_bridge_pwritev (fdtable[fd], vector, count, offset);
 
-  if (ret != -1)
+  if (ret == -1) {
+    printf ("disabling booster on fd=%d\n", fd);
+    /* TODO:
+       - disconnect transport
+       - retry with real_writev
+    */
+    free (fdtable[fd]);
+    fdtable[fd] = NULL;
+  } else {
     real_lseek (fd, (offset + ret), SEEK_SET);
+  }
 
   return ret;
 }
