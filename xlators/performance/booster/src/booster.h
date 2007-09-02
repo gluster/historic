@@ -20,4 +20,23 @@
 #ifndef __BOOSTER_H__
 #define __BOOSTER_H__
 
+#include "glusterfs.h"
+#include "transport.h"
+#include "xlator.h"
+
+struct file {
+  void *transport;
+  char handle[8];
+};
+
+struct glusterfs_booster_protocol_header {
+  int8_t op;
+  uint64_t offset;
+  uint64_t size;
+  uint64_t handle;
+  int32_t op_ret;
+  int32_t op_errno;
+  char buffer[0];
+} __attribute__ ((packed));
+
 #endif /* __BOOSTER_H__ */

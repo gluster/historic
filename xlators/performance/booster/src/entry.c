@@ -58,38 +58,39 @@ static int (*real_dup2) (int oldfd, int newfd);
     real_##sym = dlsym (RTLD_NEXT, #sym);     \
 } while (0)
 
-struct file {
-  void *transport;
-  char handle[8];
-};
-
-static struct file *fdtable[65536];
+static void *fdtable[65536];
 void *ctx;
 
 static void
 do_open (int fd)
 {
   int ret;
-  char buf[512];
-  void *trans;
+  char options[512], handle[17];
+  int options_ret, handle_ret;
+  void *filep;
 
-  ret = fgetxattr (fd, "user.glusterfs-booster-transport-options", buf, 512);
+  options_ret = fgetxattr (fd, "user.glusterfs-booster-transport-options",
+			   options, 512);
 
-  if (ret == -1)
+  if (options_ret == -1)
     return;
 
-  trans = glusterfs_booster_bridge_open (ctx, buf, ret);
+  handle_ret = fgetxattr (fd, "user.glusterfs-booster-handle", handle, 17);
 
-  ret = fgetxattr (fd, "user.glusterfs-booster-handle", buf, 512);
-  if (ret == -1)
+  if (handle_ret == -1)
+    return;
+
+  printf ("open on fd = %d\n", fd);
+
+  filep = glusterfs_booster_bridge_open (ctx, options, options_ret, handle);
+
+  if (!filep)
     return;
 
   if (fdtable[fd])
     free (fdtable[fd]);
 
-  fdtable[fd] = calloc (1, sizeof (struct file));
-  fdtable[fd]->transport = trans;
-  memcpy (fdtable[fd]->handle, buf, 8);
+  fdtable[fd] = filep;
 }
 
 int
@@ -133,14 +134,6 @@ creat (const char *pathname, mode_t mode)
 }
 
 /* preadv */
-static ssize_t
-__do_preadv (int fd, const struct iovec *vector,
-	     int count, off_t offset)
-{
-
-
-
-}
 
 static ssize_t
 do_preadv (int fd, const struct iovec *vector,
@@ -148,8 +141,10 @@ do_preadv (int fd, const struct iovec *vector,
 {
   ssize_t ret;
 
-  ret = __do_preadv (fd, vector, count, offset);
+  printf ("doing read on fd=%d\n", fd);
+  ret = glusterfs_booster_bridge_preadv (fdtable[fd], vector, count, offset);
 
+  printf ("returning %d\n", ret);
   if (ret != -1)
     real_lseek (fd, (offset + ret), SEEK_SET);
 
@@ -242,21 +237,13 @@ pread64 (int fd, void *buf, size_t count, off_t offset)
 
 /* pwritev */
 static ssize_t
-__do_pwritev (int fd, const struct iovec *vector,
-	     int count, off_t offset)
-{
-
-
-
-}
-
-static ssize_t
 do_pwritev (int fd, const struct iovec *vector,
 	   int count, off_t offset)
 {
   ssize_t ret;
 
-  ret = __do_pwritev (fd, vector, count, offset);
+  printf ("doing pwritev on fd=%d\n", fd);
+  ret = glusterfs_booster_bridge_pwritev (fdtable[fd], vector, count, offset);
 
   if (ret != -1)
     real_lseek (fd, (offset + ret), SEEK_SET);

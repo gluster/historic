@@ -39,6 +39,7 @@ booster_getxattr_cbk (call_frame_t *frame,
   char *buf;
   loc_t *loc = (loc_t *)cookie;
 
+  gf_log (this->name, GF_LOG_DEBUG, "setting path to %s", BOOSTER_LISTEN_PATH);
   dict_set (options, "transport-type", str_to_data ("unix/client"));
   dict_set (options, "connect-path", str_to_data (BOOSTER_LISTEN_PATH));
 
@@ -139,6 +140,9 @@ notify (xlator_t *this,
   case GF_EVENT_POLLIN:
     printf ("some input happening\n");
     break;
+  case GF_EVENT_POLLERR:
+    transport_disconnect (data);
+    break;
   }
 }
 
@@ -157,12 +161,12 @@ booster_interpret (transport_t *trans, gf_block_t *blk)
       booster_writev_req (this, params);
     }
     else {
-      gf_log ("booster", GF_LOG_WARNING, "unexpected fop (%d)", blk->op);
+      gf_log (trans->xl->name, GF_LOG_WARNING, "unexpected fop (%d)", blk->op);
       return -1;
     }
     break;
   default:
-    gf_log ("booster", GF_LOG_WARNING, "unexpected block type (%d)", blk->type);
+    gf_log (trans->xl->name, GF_LOG_WARNING, "unexpected block type (%d)", blk->type);
     return -1;
   }
 }
@@ -174,7 +178,7 @@ init (xlator_t *this)
   dict_t *options = get_new_dict ();
 
   if (!this->children || this->children->next) {
-    gf_log ("booster", GF_LOG_ERROR,
+    gf_log (this->name, GF_LOG_ERROR,
 	    "FATAL: booster not configured with exactly one child");
     return -1;
   }
