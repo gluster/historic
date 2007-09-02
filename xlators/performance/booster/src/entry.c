@@ -25,6 +25,7 @@
 #include <stdarg.h>
 #include <attr/xattr.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 int
 glusterfs_booster_bridge_pwritev (void *filep, const struct iovec *vector,
@@ -60,8 +61,8 @@ static ssize_t (*real_pwrite) (int fd, const void *buf, size_t count, off_t offs
 static ssize_t (*real_pwrite64) (int fd, const void *buf, size_t count, off_t offset);
 
 /* lseek, llseek, lseek64 */
-static off_t (*real_lseek) (int fildes, off_t offset, int whence);
-static off_t (*real_lseek64) (int fildes, off_t offset, int whence);
+static off_t (*real_lseek) (int fildes, uint32_t offset, int whence);
+static off_t (*real_lseek64) (int fildes, uint64_t offset, int whence);
 
 /* close */
 static int (*real_close) (int fd);
@@ -160,7 +161,7 @@ do_preadv (int fd, const struct iovec *vector,
 {
   ssize_t ret;
 
-  printf ("doing read on fd=%d\n", fd);
+  printf ("doing read on fd=%d, offset=%"PRId64"\n", fd, offset);
   ret = glusterfs_booster_bridge_preadv (fdtable[fd], vector, count, offset);
 
   printf ("returning %d\n", ret);
@@ -173,7 +174,8 @@ do_preadv (int fd, const struct iovec *vector,
     free (fdtable[fd]);
     fdtable[fd] = NULL;
   } else {
-    real_lseek (fd, (offset + ret), SEEK_SET);
+    printf ("setting seek to %ld\n", (offset + ret));
+    real_lseek64 (fd, (offset + ret), SEEK_SET);
   }
 
   return ret;
@@ -193,7 +195,7 @@ read (int fd, void *buf, size_t count)
     vector.iov_base = buf;
     vector.iov_len = count;
 
-    offset = real_lseek (fd, 0, SEEK_CUR);
+    offset = real_lseek64 (fd, 0, SEEK_CUR);
 
     ret = do_preadv (fd, &vector, 1, offset);
   }
@@ -211,7 +213,7 @@ readv (int fd, const struct iovec *vector, int count)
   } else {
     off_t offset;
 
-    offset = real_lseek (fd, 0, SEEK_CUR);
+    offset = real_lseek64 (fd, 0, SEEK_CUR);
 
     ret = do_preadv (fd, vector, count, offset);
   }
@@ -228,12 +230,9 @@ pread (int fd, void *buf, size_t count, off_t offset)
     ret = real_pread (fd, buf, count, offset);
   } else {
     struct iovec vector;
-    off_t offset;
 
     vector.iov_base = buf;
     vector.iov_len = count;
-
-    offset = real_lseek (fd, 0, SEEK_CUR);
 
     ret = do_preadv (fd, &vector, 1, offset);
   }
@@ -250,12 +249,9 @@ pread64 (int fd, void *buf, size_t count, off_t offset)
     ret = real_pread64 (fd, buf, count, offset);
   } else {
     struct iovec vector;
-    off_t offset;
 
     vector.iov_base = buf;
     vector.iov_len = count;
-
-    offset = real_lseek (fd, 0, SEEK_CUR);
 
     ret = do_preadv (fd, &vector, count, offset);
   }
@@ -282,7 +278,7 @@ do_pwritev (int fd, const struct iovec *vector,
     free (fdtable[fd]);
     fdtable[fd] = NULL;
   } else {
-    real_lseek (fd, (offset + ret), SEEK_SET);
+    real_lseek64 (fd, (offset + ret), SEEK_SET);
   }
 
   return ret;
@@ -302,7 +298,7 @@ write (int fd, const void *buf, size_t count)
     vector.iov_base = (void *) buf;
     vector.iov_len = count;
 
-    offset = real_lseek (fd, 0, SEEK_CUR);
+    offset = real_lseek64 (fd, 0, SEEK_CUR);
 
     ret = do_pwritev (fd, &vector, 1, offset);
   }
@@ -320,7 +316,7 @@ writev (int fd, const struct iovec *vector, int count)
   } else {
     off_t offset;
 
-    offset = real_lseek (fd, 0, SEEK_CUR);
+    offset = real_lseek64 (fd, 0, SEEK_CUR);
 
     ret = do_pwritev (fd, vector, count, offset);
   }
@@ -337,12 +333,9 @@ pwrite (int fd, const void *buf, size_t count, off_t offset)
     ret = real_pwrite (fd, buf, count, offset);
   } else {
     struct iovec vector;
-    off_t offset;
 
     vector.iov_base = (void *) buf;
     vector.iov_len = count;
-
-    offset = real_lseek (fd, 0, SEEK_CUR);
 
     ret = do_pwritev (fd, &vector, 1, offset);
   }
@@ -359,12 +352,9 @@ pwrite64 (int fd, const void *buf, size_t count, off_t offset)
     ret = real_pwrite64 (fd, buf, count, offset);
   } else {
     struct iovec vector;
-    off_t offset;
 
     vector.iov_base = (void *) buf;
     vector.iov_len = count;
-
-    offset = real_lseek (fd, 0, SEEK_CUR);
 
     ret = do_pwritev (fd, &vector, count, offset);
   }
@@ -373,7 +363,7 @@ pwrite64 (int fd, const void *buf, size_t count, off_t offset)
 }
 
 off_t
-lseek (int fildes, off_t offset, int whence)
+lseek (int fildes, uint32_t offset, int whence)
 {
   int ret;
 
@@ -383,7 +373,7 @@ lseek (int fildes, off_t offset, int whence)
 }
 
 off_t
-lseek64 (int fildes, off_t offset, int whence)
+lseek64 (int fildes, uint64_t offset, int whence)
 {
   int ret;
 

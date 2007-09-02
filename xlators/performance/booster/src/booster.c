@@ -132,7 +132,7 @@ booster_readv_cbk (call_frame_t *frame,
   if (op_ret != -1)
     trans->ops->writev (trans, vector, count);
 
-  transport_unref (trans);
+  //  transport_unref (trans);
 
   STACK_DESTROY (frame->root);
   return 0;
@@ -157,7 +157,7 @@ booster_writev_cbk (call_frame_t *frame,
 
   trans->ops->writev (trans, &hdrvec, 1);
 
-  transport_unref (trans);
+  //  transport_unref (trans);
 
   STACK_DESTROY (frame->root);
   return 0;
