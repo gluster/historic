@@ -26,7 +26,7 @@
 
 struct file {
   void *transport;
-  char handle[8];
+  uint64_t handle;
 };
 
 struct glusterfs_booster_protocol_header {

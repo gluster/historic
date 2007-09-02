@@ -167,7 +167,7 @@ read (int fd, void *buf, size_t count)
 
     offset = real_lseek (fd, 0, SEEK_CUR);
 
-    ret = do_preadv (fd, &vector, count, offset);
+    ret = do_preadv (fd, &vector, 1, offset);
   }
 
   return ret;
@@ -207,7 +207,7 @@ pread (int fd, void *buf, size_t count, off_t offset)
 
     offset = real_lseek (fd, 0, SEEK_CUR);
 
-    ret = do_preadv (fd, &vector, count, offset);
+    ret = do_preadv (fd, &vector, 1, offset);
   }
 
   return ret;
@@ -267,7 +267,7 @@ write (int fd, const void *buf, size_t count)
 
     offset = real_lseek (fd, 0, SEEK_CUR);
 
-    ret = do_pwritev (fd, &vector, count, offset);
+    ret = do_pwritev (fd, &vector, 1, offset);
   }
 
   return ret;
@@ -307,7 +307,7 @@ pwrite (int fd, const void *buf, size_t count, off_t offset)
 
     offset = real_lseek (fd, 0, SEEK_CUR);
 
-    ret = do_pwritev (fd, &vector, count, offset);
+    ret = do_pwritev (fd, &vector, 1, offset);
   }
 
   return ret;
