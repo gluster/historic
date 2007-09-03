@@ -54,11 +54,11 @@ glusterfs_ctx_t *
 glusterfs_booster_bridge_init ()
 {
   ctx.logfile = "/dev/stderr";
-  ctx.loglevel = GF_LOG_DEBUG;
+  ctx.loglevel = GF_LOG_ERROR;
   ctx.poll_type = SYS_POLL_TYPE_MAX;
 
   gf_log_init ("/dev/stderr");
-  gf_log_set_loglevel (GF_LOG_DEBUG);
+  gf_log_set_loglevel (GF_LOG_ERROR);
 
   return &ctx;
 }

@@ -97,7 +97,7 @@ do_open (int fd)
   if (handle_ret == -1)
     return;
 
-  printf ("open on fd = %d, handle=%s\n", fd, handle);
+  //  printf ("open on fd = %d, handle=%s\n", fd, handle);
 
   filep = glusterfs_booster_bridge_open (ctx, options, options_ret, handle);
 
@@ -161,12 +161,12 @@ do_preadv (int fd, const struct iovec *vector,
 {
   ssize_t ret;
 
-  printf ("doing read on fd=%d, offset=%"PRId64"\n", fd, offset);
+  //  printf ("doing read on fd=%d, offset=%"PRId64"\n", fd, offset);
   ret = glusterfs_booster_bridge_preadv (fdtable[fd], vector, count, offset);
 
-  printf ("returning %d\n", ret);
+  //  printf ("returning %d\n", ret);
   if (ret == -1) {
-    printf ("disabling booster on fd=%d\n", fd);
+    //    printf ("disabling booster on fd=%d\n", fd);
     /* TODO: 
        - disconnect transport
        - retry with real_read
@@ -174,7 +174,7 @@ do_preadv (int fd, const struct iovec *vector,
     free (fdtable[fd]);
     fdtable[fd] = NULL;
   } else {
-    printf ("setting seek to %ld\n", (offset + ret));
+    //    printf ("setting seek to %ld\n", (offset + ret));
     real_lseek64 (fd, (offset + ret), SEEK_SET);
   }
 
@@ -266,11 +266,11 @@ do_pwritev (int fd, const struct iovec *vector,
 {
   ssize_t ret;
 
-  printf ("doing pwritev on fd=%d\n", fd);
+  //  printf ("doing pwritev on fd=%d\n", fd);
   ret = glusterfs_booster_bridge_pwritev (fdtable[fd], vector, count, offset);
 
   if (ret == -1) {
-    printf ("disabling booster on fd=%d\n", fd);
+    //    printf ("disabling booster on fd=%d\n", fd);
     /* TODO:
        - disconnect transport
        - retry with real_writev
