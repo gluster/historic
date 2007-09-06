@@ -65,7 +65,7 @@ rr_init (xlator_t *xl)
     index++;
   }
 
-  data = dict_get (xl->options, "rr.read-only-childs");
+  data = dict_get (xl->options, "rr.read-only-subvolumes");
   if (data) {
     char *child = NULL;
     char *tmp;
@@ -76,7 +76,7 @@ rr_init (xlator_t *xl)
       for (index = 1; index < rr_buf->child_count; index++) {
 	if (strcmp (rr_buf->array[index - 1].xl->name, child) == 0) {
 	  memcpy (&(rr_buf->array[index-1]), 
-		  &(rr_buf->array[rr_buf->child_count]), 
+		  &(rr_buf->array[rr_buf->child_count-1]), 
 		  sizeof (struct rr_sched_struct));
 	  rr_buf->child_count--;
 	  break;
@@ -182,7 +182,7 @@ rr_update (xlator_t *xl)
 }
 
 static xlator_t *
-rr_schedule (xlator_t *xl, int32_t size)
+rr_schedule (xlator_t *xl, void *path)
 {
   int32_t rr;
   struct rr_struct *rr_buf = (struct rr_struct *)*((long *)xl->private);

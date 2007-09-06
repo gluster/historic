@@ -215,8 +215,8 @@ glusterfsd_cleanup_and_exit (int signum)
 int32_t 
 main (int32_t argc, char *argv[])
 {
-  FILE *fp;
-  int32_t pidfd;
+  FILE *fp = NULL;
+  int32_t pidfd = 0;
   glusterfs_ctx_t ctx = {
     .logfile = DATADIR "/log/glusterfs/glusterfsd.log",
     .loglevel = GF_LOG_ERROR,

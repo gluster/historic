@@ -831,7 +831,7 @@ init (xlator_t *this)
   }
 
   conf = (void *) calloc (1, sizeof (*conf));
-  conf->page_size = 256 * 1024;
+  conf->page_size = 1 * 1024 * 1024;
   conf->page_count = 2;
 
   if (dict_get (options, "page-size")) {

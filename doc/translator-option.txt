@@ -74,11 +74,11 @@
      option alu.open-files-usage.exit-threshold <n> (100)
      option alu.limits.min-free-disk <%> 
      option alu.limits.max-open-files <n> 
-     option alu.read-only-childs <name of child volumes>
+     option alu.read-only-subvolumes <name of child volumes>
 #  <rr>
      option rr.limits.min-free-disk <%> (5)
      option rr.refresh-interval <t> (10 seconds)
-     option rr.read-only-childs <name of child volumes>
+     option rr.read-only-subvolumes <name of child volumes>
 #  <random>
      option random.limits.min-free-disk <%> (5)
      option random.refresh-interval <t> (10 seconds)
@@ -86,7 +86,9 @@
      option nufa.limits.min-free-disk <%> (5)
      option nufa.refresh-interval <t> (10 seconds)
      option nufa.local-volume-name <volume> 
-
+#  <switch>
+     option switch.case *jpg:child1,child2;*mpg:child3;*:child4,child5,child6
+     option switch.read-only-subvolumes <volumes>
 
 # cluster/stripe:
      option inode-lru-limit <n> (1000)
@@ -105,13 +107,13 @@
      option flush-behind [on|yes|off|no] (off|no)
 
 # performance/read-ahead:
-     option page-size <n> (256KB)
+     option page-size <n> (1MB)
      option page-count <n> (2)
      option force-atime-update [on|off|yes|no] (off|no)
 
 # performance/io-threads:
      option thread-count <n> (1)
-     option cache-size <n> (64MB)
+     option cache-size <n> (2MB)
 
 # performance/io-cache:
      option page-size <n> (128KB)

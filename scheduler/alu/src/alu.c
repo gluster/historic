@@ -403,7 +403,7 @@ which is constant");
     }
     alu_sched->array = sched_array;
 
-    data = dict_get (xl->options, "alu.read-only-childs");
+    data = dict_get (xl->options, "alu.read-only-subvolumes");
     if (data) {
       char *child = NULL;
       char *tmp;
@@ -412,9 +412,9 @@ which is constant");
       child = strtok_r (childs_data, ",", &tmp);
       while (child) {
 	for (index = 1; index < alu_sched->child_count; index++) {
-	  if (strcmp (alu_sched->array[index - 1].xl->name, child) == 0) {
-	    memcpy (&(alu_sched->array[index - 1]), 
-		    &(alu_sched->array[alu_sched->child_count]), 
+	  if (strcmp (alu_sched->array[index -1].xl->name, child) == 0) {
+	    memcpy (&(alu_sched->array[index -1]), 
+		    &(alu_sched->array[alu_sched->child_count -1]), 
 		    sizeof (struct alu_sched_struct));
 	    alu_sched->child_count--;
 	    break;
@@ -424,8 +424,6 @@ which is constant");
       }
     }
   }
-
-
 
   *((long *)xl->private) = (long)alu_sched;
 
@@ -613,7 +611,7 @@ alu_update (xlator_t *xl)
 }
 
 static xlator_t *
-alu_scheduler (xlator_t *xl, int32_t size)
+alu_scheduler (xlator_t *xl, void *path)
 {
   /* This function schedules the file in one of the child nodes */
   struct alu_sched *alu_sched = (struct alu_sched *)*((long *)xl->private);
