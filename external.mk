@@ -27,7 +27,8 @@ APPS_RAMDISK = busybox kernel-modules termcap pcre ncurses dialog readline\
 APPS_IPMI = libgpg-error libgcrypt gmp libtool guile freeipmi
 APPS_OFED = sysfs ofa_user rds-tools mpi-selector mvapich mvapich2 
 
-APPS_EXTENSIONS = python dhcp-helper makebootfat reiserfsprogs device-mapper lvm2 \
+APPS_EXTENSIONS = python netdevice.py dhcp-helper makebootfat \
+	reiserfsprogs device-mapper lvm2 \
 	xfsprogs jfsutils netcat parted shadow iptables gdb \
 	grub
 #	$(APPS_IPMI) $(APPS_OFED)

@@ -26,7 +26,8 @@ dlg = dialog.Dialog ()
 def main ():
     (ret, sel) = dlg.menu ('Select',
                            choices=[('halt', 'Shutdown the cluster'),
-                                    ('reboot', 'Eject cdrom and reboot the cluster')],
+                                    ('reboot', 'Reboot the cluster'), 
+                                    ('eject and reboot', 'Eject cdrom and reboot the cluster')],
                            title='[ Shutdown ]')
     if ret != 0:
         return
@@ -43,6 +44,12 @@ def main ():
         while True:
             os.system ('sleep 108')
     if sel == 'reboot':
+        for host in hosts:
+            os.system ('ssh %s /sbin/reboot' % host.strip())
+        os.system ('reboot')
+        while True:
+            os.system ('sleep 108')
+    if sel == 'eject and reboot':
         for host in hosts:
             #os.system ('ssh %s eject /mnt/cdrom > /dev/null 2>&1' % host.strip ())
             os.system ('ssh %s /sbin/reboot' % host.strip())

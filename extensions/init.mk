@@ -15,4 +15,4 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 init.gex: EXTENSION=init
-init.gex: python.stage3 dhcp-helper.stage3 netcat.stage3
+init.gex: python.stage3 netdevice.py.stage3 dhcp-helper.stage3 netcat.stage3
