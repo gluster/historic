@@ -23,42 +23,16 @@
 #include "logging.h"
 #include "defaults.h"
 
-static PyObject *pGlusterModule = 0;
-
 typedef struct
 {
     char        *scriptname;
-    PyObject    *pGlobals, *pLocals;
     PyObject    *pXlator;
+    PyObject    *pScriptModule;
+    PyObject    *pGlusterModule;
+    PyThreadState *pInterp;
+
+    PyObject    *pFrameType, *pVectorType, *pFdType;
 } python_private_t;
-
-/*
- * This macro creates converter functions for various gluster types.
- * name is the prefix of the function name
- * ctype is the C type
- * pytype is the name (a quoted string) of one of the types in
- *      glustertypes.py
- * The converted function will call pytype.from_address(ptr) to
- * construct a python representation of the object at the given address
- *
- * TODO: We're probably leaking references here.  Need to Py_DECREF
- *       retval at some point?
- */
-#define TypeConverter(name, ctype, pytype) \
-static PyObject * \
-name##_converter (ctype *ptr) \
-{ \
-    PyObject *py_type = PyObject_GetAttrString( \
-                            pGlusterModule, pytype); \
-    PyObject *retval = PyObject_CallMethod(py_type, "from_address", \
-            "O&", PyLong_FromVoidPtr, ptr); \
-    Py_DECREF(py_type); \
-    return retval; \
-}
-
-TypeConverter(frame, call_frame_t, "call_frame_t");
-TypeConverter(vector, struct iovec, "iovec");
-TypeConverter(fd, fd_t, "fd_t");
 
 static int32_t
 python_writev (call_frame_t *frame,
@@ -72,11 +46,12 @@ python_writev (call_frame_t *frame,
   gf_log("python", GF_LOG_DEBUG, "In writev");
   if (PyObject_HasAttrString(priv->pXlator, "writev"))
   {
+
       PyObject *retval = PyObject_CallMethod(priv->pXlator, "writev",
-              "O& O& O& i l",
-              frame_converter, frame,
-              fd_converter, fd,
-              vector_converter, vector,
+              "O O O i l",
+              PyObject_CallMethod(priv->pFrameType, "from_address", "O&", PyLong_FromVoidPtr, frame),
+              PyObject_CallMethod(priv->pFdType, "from_address", "O&", PyLong_FromVoidPtr, fd),
+              PyObject_CallMethod(priv->pVectorType, "from_address", "O&", PyLong_FromVoidPtr, vector),
               count,
               offset);
       if (PyErr_Occurred())
@@ -99,9 +74,74 @@ struct xlator_fops fops = {
 struct xlator_mops mops = {
 };
 
+static PyObject *
+AnonModule_FromFile (const char* fname)
+{
+    // Get the builtins
+    PyThreadState* pThread = PyThreadState_Get();
+    PyObject *pBuiltins = pThread->interp->builtins;
+
+    if (PyErr_Occurred())
+    {
+        PyErr_Print();
+        return NULL;
+    }
+
+    // Create a new dictionary for running code in
+    PyObject *pModuleDict = PyDict_New();
+    PyDict_SetItemString(pModuleDict, "__builtins__", pBuiltins);
+    Py_INCREF(pBuiltins);
+
+    // Run the file in the new context
+    FILE* fp = fopen(fname, "r");
+    PyRun_File(fp, fname, Py_file_input, pModuleDict, pModuleDict);
+    fclose(fp);
+    if (PyErr_Occurred())
+    {
+        PyErr_Print();
+        Py_DECREF(pModuleDict);
+        Py_DECREF(pBuiltins);
+        return NULL;
+    }
+
+    // Create an object to hold the new context
+    PyRun_String("class ModuleWrapper(object):\n\tpass\n", Py_single_input, pModuleDict, pModuleDict);
+    if (PyErr_Occurred())
+    {
+        PyErr_Print();
+        Py_DECREF(pModuleDict);
+        Py_DECREF(pBuiltins);
+        return NULL;
+    }
+    PyObject *pModule = PyRun_String("ModuleWrapper()", Py_eval_input, pModuleDict, pModuleDict);
+    if (PyErr_Occurred())
+    {
+        PyErr_Print();
+        Py_DECREF(pModuleDict);
+        Py_DECREF(pBuiltins);
+        Py_XDECREF(pModule);
+        return NULL;
+    }
+
+    // Set the new context's dictionary to the one we used to run the code
+    // inside
+    PyObject_SetAttrString(pModule, "__dict__", pModuleDict);
+    if (PyErr_Occurred())
+    {
+        PyErr_Print();
+        Py_DECREF(pModuleDict);
+        Py_DECREF(pBuiltins);
+        Py_DECREF(pModule);
+        return NULL;
+    }
+
+    return pModule;
+}
+
 int32_t
 init (xlator_t *this)
 {
+  // This is ok to call more than once per process
   Py_InitializeEx(0);
 
   if (!this->children) {
@@ -121,27 +161,45 @@ init (xlator_t *this)
       return -1;
   }
 
-  gf_log("python", GF_LOG_DEBUG,
-          "Importing module...%s", priv->scriptname);
-  
-  priv->pGlobals = 0;
-  priv->pLocals = 0;
+  priv->pInterp = Py_NewInterpreter();
+    
+  // Adjust python's path
+  PyObject *syspath = PySys_GetObject("path");
+  PyObject *path = PyString_FromString(GLUSTER_PYTHON_PATH);
+  PyList_Append(syspath, path);
+  Py_DECREF(path);
 
-  pGlusterModule = PyImport_ImportModule(priv->scriptname);
-  if (!pGlusterModule)
+  gf_log("python", GF_LOG_DEBUG,
+          "Loading gluster module");
+
+  priv->pGlusterModule = PyImport_ImportModule("gluster");
+  if (PyErr_Occurred())
+  {
+      PyErr_Print();
+      return -1;
+  }
+
+  priv->pFrameType = PyObject_GetAttrString(priv->pGlusterModule, "call_frame_t");
+  priv->pFdType = PyObject_GetAttrString(priv->pGlusterModule, "fd_t");
+  priv->pVectorType = PyObject_GetAttrString(priv->pGlusterModule, "iovec");
+
+  gf_log("python", GF_LOG_DEBUG, "Loading script...%s", priv->scriptname);
+  
+  priv->pScriptModule = AnonModule_FromFile(priv->scriptname);
+  if (!priv->pScriptModule || PyErr_Occurred())
   {
       gf_log("python", GF_LOG_ERROR, "Error loading %s", priv->scriptname);
       PyErr_Print();
       return -1;
   }
 
-  if (!PyObject_HasAttrString(pGlusterModule, "xlator"))
+  if (!PyObject_HasAttrString(priv->pScriptModule, "xlator"))
   {
       gf_log("python", GF_LOG_ERROR, "%s does not have a xlator attribute", priv->scriptname);
       return -1;
   }
   gf_log("python", GF_LOG_DEBUG, "Instantiating translator");
-  priv->pXlator = PyObject_CallMethod(pGlusterModule, "xlator", "O&",
+  priv->pXlator = PyObject_CallMethod(priv->pScriptModule, "xlator", "O&",
           PyLong_FromVoidPtr, this);
   if (PyErr_Occurred() || !priv->pXlator)
   {
@@ -158,5 +216,13 @@ init (xlator_t *this)
 void 
 fini (xlator_t *this)
 {
+  python_private_t *priv = (python_private_t*)(this->private);
+  Py_DECREF(priv->pXlator);
+  Py_DECREF(priv->pScriptModule);
+  Py_DECREF(priv->pGlusterModule);
+  Py_DECREF(priv->pFrameType);
+  Py_DECREF(priv->pFdType);
+  Py_DECREF(priv->pVectorType);
+  Py_EndInterpreter(priv->pInterp);
   return;
 }
