@@ -8,4 +8,16 @@ echo "master-node" > $slfld/server_name
 echo "\$pbsserver     master-node" > $slfld/mom_priv/config
 
 ## sysv init
+## if Redhat/Fedora flavor
+if [ -e "$os_base/etc/redhat-release" -o -e "$os_base/etc/fedora-release" ]; then 
+    mv -f $os_base/etc/init.d/pbs_mom.init.d.redhat $os_base/etc/init.d/pbs_mom
+    rm -f $os_base/etc/init.d/pbs_mom.init.d.*
+fi
+
+## if SuSE flavor
+if [ -e "$os_base/etc/SuSE-release" ]; then 
+    mv -f $os_base/etc/init.d/pbs_mom.init.d.suse $os_base/etc/init.d/pbs_mom
+    rm -f $os_base/etc/init.d/pbs_mom.init.d.*
+fi
+
 chroot $os_base chkconfig --add pbs_mom

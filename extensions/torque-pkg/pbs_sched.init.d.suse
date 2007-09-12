@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# pbs_sched	This script will start and stop the PBS Scheduler
+#
+# chkconfig: 345 85 85
+# description: PBS is a batch versatile batch system for SMPs and clusters
+#
+
+PBS_DAEMON=/opt/gluster/sbin/pbs_sched
+export PBS_DAEMON
+
+if [ -f /etc/sysconfig/pbs_sched ];then
+   . /etc/sysconfig/pbs_sched
+fi
+
+. /etc/rc.status
+rc_reset
+
+# let see how we were called
+case "$1" in
+	start) 
+		echo -n "Starting TORQUE Scheduler: "
+		startproc $PBS_DAEMON
+		rc_status -v
+		;;
+	stop)
+		echo -n "Shutting down TORQUE Scheduler: "
+		killproc $PBS_DAEMON
+		rc_status -v
+		;;
+	status)
+		echo -n "Checking for service TORQUE Scheduler: "
+		checkproc $PBS_DAEMON
+		rc_status -v
+		;;
+	restart)
+		$0 stop
+		$0 start
+		;;
+	*)
+		echo "Usage: pbs_sched {start|stop|restart|status}"
+		exit 1
+esac

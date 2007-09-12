@@ -1,0 +1,42 @@
+#!/bin/sh
+# $Id: gmond.init,v 1.2 2002/10/18 21:57:58 sacerdoti Exp $
+#
+# chkconfig: 2345 70 40
+# description: gmond startup script
+#
+GMOND=/opt/gluster/sbin/gmond
+
+GMOND_PIDFILE=/var/run/gmond.init.pid
+
+. /etc/rc.status
+rc_reset
+
+case "$1" in
+   start)
+      route add -host 239.2.11.71 dev eth0 2>&1 >/dev/null
+      echo -n "Starting GANGLIA gmond: "
+      startproc -f -p $GMOND_PIDFILE $GMOND -p $GMOND_PIDFILE
+      rc_status -v
+      ;;
+
+  stop)
+      echo -n "Shutting down GANGLIA gmond: "
+      killproc -p $GMOND_PIDFILE -TERM $GMOND
+      rc_status -v
+      ;;
+
+  restart|reload)
+      $0 stop
+      $0 start
+      ;;
+  status)
+      echo -n "Checking for service GANGLIA gmond: "
+      checkproc -p $GMOND_PIDFILE $GMOND
+      rc_status -v
+      ;;
+  *)
+      echo "Usage: $0 {start|stop|restart|status}"
+      exit 1
+esac
+
+exit $RETVAL
