@@ -11,9 +11,9 @@
 # config: /etc/sysconfig/slurm
 #
 ### BEGIN INIT INFO
-# Provides:          slurm
-# Required-Start:    $local_fs $syslog $network $named munge
-# Required-Stop:     $local_fs $syslog $network $named munge
+# Provides:          slurmctld
+# Required-Start:    $local_fs $syslog $network $named $munge
+# Required-Stop:     $local_fs $syslog $network $named $munge
 # Default-Start:     3 5
 # Default-Stop:      0 1 2 6
 # Short-Description: slurm daemon management

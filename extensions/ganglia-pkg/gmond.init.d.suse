@@ -1,9 +1,15 @@
 #!/bin/sh
-# $Id: gmond.init,v 1.2 2002/10/18 21:57:58 sacerdoti Exp $
 #
-# chkconfig: 2345 70 40
-# description: gmond startup script
+### BEGIN INIT INFO
+# Provides: gmond
+# Required-Start: $network
+# Required-Stop: 
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 6
+# Description: Start gmond daemon
+### END INIT INFO
 #
+
 GMOND=/opt/gluster/sbin/gmond
 
 GMOND_PIDFILE=/var/run/gmond.init.pid
