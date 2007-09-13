@@ -90,6 +90,7 @@ struct _unify_local_t {
   int32_t revalidate;
 
   off_t st_size;
+  time_t mtime;
   blkcnt_t st_blocks;
   nlink_t st_nlink;
   

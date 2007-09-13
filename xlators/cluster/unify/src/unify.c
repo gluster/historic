@@ -153,7 +153,7 @@ unify_buf_cbk (call_frame_t *frame,
 	  (NS (this) != ((call_frame_t *)cookie)->this)) {
 	local->st_size = buf->st_size;
 	local->st_blocks = buf->st_blocks;
-	///local->stbuf.st_mtime = buf->st_mtime;
+	local->mtime = buf->st_mtime;
       }
     }
   }
@@ -219,7 +219,7 @@ unify_lookup_cbk (call_frame_t *frame,
 	  /* If file, then replace size of file in stat info */
 	  local->st_size = buf->st_size;
 	  local->st_blocks = buf->st_blocks;
-	  ///local->st_mtime = buf->st_mtime;
+	  local->mtime = buf->st_mtime;
       }
       if (local->st_nlink < buf->st_nlink)
 	local->st_nlink = buf->st_nlink;
@@ -255,7 +255,7 @@ unify_lookup_cbk (call_frame_t *frame,
       } else {
 	local->stbuf.st_size = local->st_size;
 	local->stbuf.st_blocks = local->st_blocks;
-	///local->stbuf.st_mtime = local->st_mtime;
+	local->stbuf.st_mtime = local->mtime;
       }
 
       local->stbuf.st_nlink = local->st_nlink;
@@ -1068,20 +1068,69 @@ unify_create_cbk (call_frame_t *frame,
 		  inode_t *inode,
 		  struct stat *buf)
 {
+  struct sched_ops *sched_ops = NULL;
+  xlator_t *sched_xl = NULL;
   unify_local_t *local = frame->local;
+  unify_private_t *priv = this->private;
+  int16_t *list = NULL;
+  int16_t index = 0;
 
-  if (op_ret == -1 && op_errno != ENOENT) {
-    /* send close () on Namespace */
-    local->op_errno = op_errno;
-    local->op_ret = -1;
-    local->call_count = 1;
-    STACK_WIND (frame,
-		unify_create_fail_cbk,
-		NS(this),
-		NS(this)->fops->close,
-		fd);
-
-    return 0;
+  if (op_ret == -1) {
+    if (op_errno != EEXIST) {
+      /* Create/update inode for this entry */
+      local->entry_count++;
+      if (local->entry_count < (priv->child_count -1)) {
+	local->stbuf = *buf;
+	local->op_ret = -1;
+	
+	/* Start the mapping list */
+	list = data_to_ptr (dict_get (inode->ctx, this->name));
+	
+	/* This means, file doesn't exist anywhere in the Filesystem */
+	sched_ops = priv->sched_ops;
+      
+	/* Send create request to the scheduled node now */
+	sched_xl = sched_ops->schedule (this, local->name); 
+	for (index = 0; index < priv->child_count; index++)
+	  if (sched_xl == priv->xl_array[index])
+	    break;
+	list[1] = index;
+	local->inode = inode;
+	
+	{
+	  loc_t tmp_loc = {
+	    .inode = inode,
+	    .path = local->name
+	  };
+	  _STACK_WIND (frame,
+		       unify_create_cbk,
+		       sched_xl,
+		       sched_xl,
+		       sched_xl->fops->create,
+		       &tmp_loc,
+		       local->flags,
+		       local->mode,
+		       local->fd);
+	}
+	return 0;
+      }
+    } else {
+      /* File already exists. This case should not happen as if the file 
+       * already exists, it should be detected by namespace
+       */
+      
+      /* send close () on Namespace */
+      local->op_errno = op_errno;
+      local->op_ret = -1;
+      local->call_count = 1;
+      STACK_WIND (frame,
+		  unify_create_fail_cbk,
+		  NS(this),
+		  NS(this)->fops->close,
+		  fd);
+      
+      return 0;
+    }
   }
 
   if (op_ret >= 0) {
