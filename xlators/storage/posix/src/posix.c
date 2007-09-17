@@ -1073,7 +1073,7 @@ posix_getxattr (call_frame_t *frame,
   if (size <= 0) {
     if (size == 0) {
       size = lgetxattr (real_path, "trusted.afr.key", NULL, 0);
-      if (size == -1) {
+      if (size == -1 && errno == ENODATA) {
 	size = 0;
       }
       op_errno = errno;
