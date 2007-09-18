@@ -70,6 +70,8 @@ AC_CONFIG_FILES([Makefile
                 xlators/bindings/Makefile
                 xlators/bindings/python/Makefile
                 xlators/bindings/python/src/Makefile
+		xlators/meta/Makefile
+		xlators/meta/src/Makefile
 		scheduler/Makefile
 		scheduler/alu/Makefile
 		scheduler/alu/src/Makefile
@@ -158,6 +160,20 @@ if test "x$enable_server" == "xno"; then
   GLUSTERFSD_SUBDIR="";
 fi
 AC_SUBST(GLUSTERFSD_SUBDIR)
+
+AC_ARG_ENABLE([booster],
+	AC_HELP_STRING([--disable-booster],
+			[Do not build the glusterfs booster]))
+HAVE_BOOSTER=1
+BOOSTER_SUBDIR="glusterfs-booster";
+BOOSTER_XLATOR_SUBDIR="booster";
+if test "x$enable_booster" == "xno"; then
+  HAVE_BOOSTER=0
+  BOOSTER_SUBDIR="";
+  BOOSTER_XLATOR_SUBDIR="";	
+fi
+AC_SUBST(BOOSTER_SUBDIR)
+AC_SUBST(BOOSTER_XLATOR_SUBDIR)
 
 AC_ARG_ENABLE([fuse-client],
 	      AC_HELP_STRING([--disable-fuse-client],
