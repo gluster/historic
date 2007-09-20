@@ -8,6 +8,8 @@ volume client
 # option ib-verbs-work-request-recv-count 16
 # option transport-type ib-sdp/client  # for Infiniband transport
   option remote-host 192.168.1.10      # IP address of the remote brick
+  option username username
+  option password passwd
 # option remote-port 6996              # default server port is 6996
   option remote-subvolume brick        # name of the remote volume
 # option transport-timeout 30          # default value is 120seconds 

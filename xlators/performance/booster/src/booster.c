@@ -243,7 +243,7 @@ booster_interpret (transport_t *trans)
 int32_t
 notify (xlator_t *this,
         int32_t event,
-        void *data,
+        void * data,
         ...)
 {
   int ret = 0;

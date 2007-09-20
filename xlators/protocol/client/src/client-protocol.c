@@ -4604,6 +4604,7 @@ client_protocol_handshake (xlator_t *this,
   dict_t *request;
   dict_t *options;
   char *remote_subvolume = NULL;
+  data_t *username_data = NULL, *password_data = NULL;
 
   request = get_new_dict ();
 
@@ -4612,7 +4613,24 @@ client_protocol_handshake (xlator_t *this,
 
   remote_subvolume = data_to_str (dict_get (options,
                                             "remote-subvolume"));
-  
+  username_data = dict_get (options, "username");
+  if (username_data) {
+    char *username = NULL;
+    username = data_to_str (username_data);
+    dict_set (request, 
+	      "username",
+	      data_from_dynstr (strdup (username)));
+  }
+
+  password_data = dict_get (options, "password");
+  if (password_data) {
+    char *password = NULL;
+    password = data_to_str (password_data);
+    dict_set (request,
+	      "password",
+	      data_from_dynstr (strdup (password)));
+  }
+
   {
     struct timeval timeout;
     timeout.tv_sec = priv->transport_timeout;
@@ -4637,7 +4655,6 @@ client_protocol_handshake (xlator_t *this,
   dict_set (request,
             "remote-subvolume",
             data_from_dynstr (strdup (remote_subvolume)));
-
   {
     struct iovec *vector;
     int32_t i;

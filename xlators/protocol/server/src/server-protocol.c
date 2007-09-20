@@ -32,6 +32,7 @@
 #include "call-stub.h"
 #include "defaults.h"
 #include "list.h"
+#include "authenticate.h"
 
 #if __WORDSIZE == 64
 # define F_L64 "%l"
@@ -41,7 +42,7 @@
 
 #define STATE(frame) ((server_state_t *)frame->root->state)
 #define TRANSPORT_OF(frame) ((transport_t *) STATE (frame)->trans)
-#define SERVER_PRIV(frame) ((server_proto_priv_t *) TRANSPORT_OF(frame)->xl_private)
+#define SERVER_PRIV(frame ) ((server_proto_priv_t *) TRANSPORT_OF(frame)->xl_private)
 #define BOUND_XL(frame) ((xlator_t *) STATE (frame)->bound_xl)
 
 /*
@@ -5066,6 +5067,8 @@ mop_setvolume (call_frame_t *frame,
   data_t *name_data;
   char *name;
   xlator_t *xl;
+  dict_t *config_params = dict_copy (frame->this->options, NULL);
+  struct sockaddr_in *_sock = NULL;
 
   priv = SERVER_PRIV (frame);
 
@@ -5081,82 +5084,40 @@ mop_setvolume (call_frame_t *frame,
   name = data_to_str (name_data);
   xl = get_xlator_by_name (frame->this,
 			   name);
-
   if (!xl) {
     char *msg;
     asprintf (&msg, "remote-subvolume \"%s\" is not found", name);
     dict_set (dict, "ERROR", data_from_dynstr (msg));
     remote_errno = ENOENT;
     goto fail;
-  } else {
-    char *searchstr = NULL;
-    struct sockaddr_in *_sock = NULL;
-    data_t *allow_ip = NULL;
-
-    _sock = &(TRANSPORT_OF (frame))->peerinfo.sockaddr;
-    asprintf (&searchstr, "auth.ip.%s.allow", xl->name);
-    allow_ip = dict_get (frame->this->options,
-			 searchstr);
-    
-    free (searchstr);
-    
-    if (allow_ip) {
-      gf_log (TRANSPORT_OF (frame)->xl->name, GF_LOG_DEBUG,
-	      "received port = %d", ntohs (_sock->sin_port));
-      
-      if (ntohs (_sock->sin_port) < 1024) {
-	char *ip_addr_str = NULL;
-	char *tmp;
-	char *ip_addr_cpy = strdup (allow_ip->data);
-
-	ip_addr_str = strtok_r (ip_addr_cpy, ",", &tmp);
-
-	while (ip_addr_str) {
-	  gf_log (TRANSPORT_OF (frame)->xl->name,  GF_LOG_DEBUG,
-		  "allowed = \"%s\", received ip addr = \"%s\"",
-		  ip_addr_str, inet_ntoa (_sock->sin_addr));
-
-	  if (fnmatch (ip_addr_str,
-		       inet_ntoa (_sock->sin_addr),
-		       0) == 0) {
-	    ret = 0;
-	    priv->bound_xl = xl; 
-
-	    gf_log (TRANSPORT_OF (frame)->xl->name,  GF_LOG_DEBUG,
-		    "accepted client from %s:%d",
-		     inet_ntoa (_sock->sin_addr), ntohs (_sock->sin_port));
-
-	    dict_set (dict, "ERROR", str_to_data ("Success"));
-	    break;
-	  }
-	  ip_addr_str = strtok_r (NULL, ",", &tmp);
-	}
-	if (ret != 0) {
-	  dict_set (dict, "ERROR", 
-		    str_to_data ("Authentication Failed: IP address not allowed"));
-	}
-	free (ip_addr_cpy);
-	goto fail;
-      } else {
-	dict_set (dict, "ERROR", 
-		  str_to_data ("Authentication Range not specified in volume spec"));
-	goto fail;
-      }
-    } else {
-      char *msg;
-      asprintf (&msg, "Volume \"%s\" is not attachable from host %s", 
-		xl->name, inet_ntoa (_sock->sin_addr));
-      dict_set (dict, "ERROR", data_from_dynstr (msg));
-      goto fail;
-    }
-    if (!priv->bound_xl) {
-      dict_set (dict, "ERROR", 
-		str_to_data ("Check volume spec file and handshake options"));
-      ret = -1;
-      remote_errno = EACCES;
-      goto fail;
-    } 
   }
+  
+  _sock = &(TRANSPORT_OF (frame))->peerinfo.sockaddr;
+  dict_set (params, "peer", str_to_data(inet_ntoa (_sock->sin_addr)));
+
+  if (authenticate (params, config_params) == AUTH_ACCEPT) {
+    gf_log (TRANSPORT_OF (frame)->xl->name,  GF_LOG_DEBUG,
+	    "accepted client from %s:%d",
+	    inet_ntoa (_sock->sin_addr), ntohs (_sock->sin_port));
+    ret = 0;
+    priv->bound_xl = xl;
+    dict_set (dict, "ERROR", str_to_data ("Success"));
+  }
+  else {
+    gf_log (TRANSPORT_OF (frame)->xl->name, GF_LOG_DEBUG,
+	    "Cannot authenticate client from %s:%d",
+	    inet_ntoa (_sock->sin_addr), ntohs (_sock->sin_port));
+    dict_set (dict, "ERROR", str_to_data ("Authentication failed"));
+    goto fail;
+  }
+  if (!priv->bound_xl) {
+    dict_set (dict, "ERROR", 
+	      str_to_data ("Check volume spec file and handshake options"));
+    ret = -1;
+    remote_errno = EACCES;
+    goto fail;
+  } 
+  
   
  fail:
   if (priv->bound_xl && ret >= 0 && (!(priv->bound_xl->itable))) {

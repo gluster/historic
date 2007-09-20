@@ -1,7 +1,6 @@
 /*
    Copyright (c) 2007 Z RESEARCH, Inc. <http://www.zresearch.com>
    This file is part of GlusterFS.
-
    GlusterFS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published
    by the Free Software Foundation; either version 3 of the License,
@@ -1840,6 +1839,7 @@ afr_readv (call_frame_t *frame,
 	      fd,
 	      size,
 	      offset);
+
   return 0;
 }
 
