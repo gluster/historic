@@ -87,7 +87,7 @@ authenticate_t authenticate_ip (dict_t *input_params, dict_t *config_params)
 		       peer,
 		       0);
 
-      if (negate ? !match : match) {
+      if (negate ? match : !match) {
 	free (ip_addr_cpy);
 	return AUTH_ACCEPT;
       }
@@ -121,7 +121,7 @@ authenticate_t authenticate_ip (dict_t *input_params, dict_t *config_params)
       match = fnmatch (ip_addr_str,
 		       peer,
 		       0);
-      if (negate ? !match : match) {
+      if (negate ? match : !match) {
 	free (ip_addr_cpy);
 	return AUTH_REJECT;
       }
