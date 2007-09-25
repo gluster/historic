@@ -8,10 +8,10 @@
 
 #define IP_DELIMITER " ,"
 
-authenticate_t authenticate_user (dict_t *input_params, dict_t *config_params);
-authenticate_t authenticate_ip (dict_t *input_params, dict_t *config_params);
+auth_result_t authenticate_user (dict_t *input_params, dict_t *config_params);
+auth_result_t authenticate_ip (dict_t *input_params, dict_t *config_params);
 
-authenticate_t authenticate (dict_t *input_params, dict_t *config_params) 
+auth_result_t authenticate (dict_t *input_params, dict_t *config_params) 
 {
   char *peer = NULL;
   int user_result = -1, ip_result = -1;
@@ -38,7 +38,7 @@ authenticate_t authenticate (dict_t *input_params, dict_t *config_params)
   return AUTH_ACCEPT;
 } 
 
-authenticate_t authenticate_ip (dict_t *input_params, dict_t *config_params)
+auth_result_t authenticate_ip (dict_t *input_params, dict_t *config_params)
 {
   char *name = NULL;
   char *searchstr = NULL;
@@ -133,7 +133,7 @@ authenticate_t authenticate_ip (dict_t *input_params, dict_t *config_params)
   return AUTH_DONT_CARE;
 }
 
-authenticate_t authenticate_user (dict_t *input_params, dict_t *config_params)
+auth_result_t authenticate_user (dict_t *input_params, dict_t *config_params)
 {
   char *username = NULL, *password = NULL;
   char *username_password = NULL;
