@@ -1829,7 +1829,7 @@ server_lookup_cbk (call_frame_t *frame,
     if (!inode->ino) {
       server_inode = inode_update (BOUND_XL(frame)->itable, NULL, NULL, stbuf);
     
-      if (server_inode != inode) {
+      if (server_inode != inode && (!server_inode->ctx)) {
 	server_inode->ctx = inode->ctx;
 	inode->ctx = NULL;
       }
@@ -5648,6 +5648,9 @@ server_protocol_cleanup (transport_t *trans)
   call_frame_t *frame;
   dict_t *open_files, *open_dirs;
   struct sockaddr_in *_sock;
+
+  if (!priv)
+    return 0;
 
   cleanup.trans = trans;
 

@@ -185,7 +185,6 @@ dict_set (dict_t *this,
   	  data_t *value)
 {
   int hashval;
-  static int static_hashval;
   data_pair_t *pair;
   char key_free = 0;
 
@@ -200,14 +199,11 @@ dict_set (dict_t *this,
     key_free = 1;
   }
 
-  hashval = static_hashval = SuperFastHash (key, strlen (key)) % this->hash_size;
+  hashval = SuperFastHash (key, strlen (key)) % this->hash_size;
   pair = _dict_lookup (this, key);
 
   if (pair) {
     data_t *unref_data = pair->value;
-    if (strlen (pair->key) < strlen (key))
-      pair->key = realloc (pair->key, strlen (key));
-    strcpy (pair->key, key);
     pair->value = data_ref (value);
     data_unref (unref_data);
     if (key_free)

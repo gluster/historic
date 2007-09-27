@@ -637,6 +637,7 @@ pl_close (call_frame_t *frame, xlator_t *this,
   data_t *fd_data = dict_get (fd->ctx, this->name);
   if (fd_data == NULL) {
     pthread_mutex_unlock (&priv->mutex);
+    gf_log (this->name, GF_LOG_ERROR, "fd_data is NULL");
     STACK_UNWIND (frame, -1, EBADF, &nulllock);
     return 0;
   }
@@ -645,6 +646,7 @@ pl_close (call_frame_t *frame, xlator_t *this,
   data_t *inode_data = dict_get (fd->inode->ctx, this->name);
   if (inode_data == NULL) {
     pthread_mutex_unlock (&priv->mutex);
+    gf_log (this->name, GF_LOG_ERROR, "inode_data is NULL");
     STACK_UNWIND (frame, -1, EBADF, &nulllock);
     return 0;
   }
@@ -695,6 +697,7 @@ pl_flush (call_frame_t *frame, xlator_t *this,
 {
   data_t *inode_data = dict_get (fd->inode->ctx, this->name);
   if (inode_data == NULL) {
+    gf_log (this->name, GF_LOG_ERROR, "inode_data is NULL");
     STACK_UNWIND (frame, -1, EBADF);
     return 0;
   }
@@ -979,6 +982,7 @@ pl_writev (call_frame_t *frame, xlator_t *this,
   data_t *fd_data = dict_get (fd->ctx, this->name);
   if (fd_data == NULL) {
     pthread_mutex_unlock (&priv->mutex);
+    gf_log (this->name, GF_LOG_ERROR, "fd_data is NULL");
     STACK_UNWIND (frame, -1, EBADF, &nullbuf);
     return 0;
   }
@@ -987,6 +991,7 @@ pl_writev (call_frame_t *frame, xlator_t *this,
   data_t *inode_data = dict_get (fd->inode->ctx, this->name);
   if (inode_data == NULL) {
     pthread_mutex_unlock (&priv->mutex);
+    gf_log (this->name, GF_LOG_ERROR, "inode_data is NULL");
     STACK_UNWIND (frame, -1, EBADF, &nullbuf);
     return 0;
   }
