@@ -236,7 +236,8 @@ gf_block_unserialize (int32_t fd)
 }
 
 gf_block_t *
-gf_block_unserialize_transport (struct transport *trans)
+gf_block_unserialize_transport (struct transport *trans,
+				const int32_t max_block_size)
 {
   gf_block_t *blk = gf_block_new (0);
   int32_t header_len = GF_START_LEN + GF_CALLID_LEN + GF_TYPE_LEN + 
@@ -301,6 +302,13 @@ gf_block_unserialize_transport (struct transport *trans)
   header += GF_NAME_LEN;
 
   blk->size = strtol (header, &endptr, 16);
+  
+  if (max_block_size && (blk->size > max_block_size)) {
+    /* block size exceeds the maximum block size permitted by the protocol controlling 
+     * this transport */
+    goto herr;
+  }
+
   if (*endptr) {
     gf_log (trans->xl->name, GF_LOG_ERROR,
 	    "error reading block size: peer (%s:%d)",

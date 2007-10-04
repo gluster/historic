@@ -280,6 +280,7 @@ server_reply (call_frame_t *frame,
 {
   server_reply_t *entry = NULL;
   transport_t *trans = frame->this->private;;
+  server_conf_t *conf = NULL;
 
   entry = calloc (1, sizeof (*entry));
   entry->frame = frame;
@@ -293,8 +294,10 @@ server_reply (call_frame_t *frame,
       break;
     }
   }
+  
+  conf = trans->xl_private;
 
-  server_reply_queue (entry, trans->xl_private);
+  server_reply_queue (entry, conf->queue);
 }
 
 /*
@@ -5714,8 +5717,9 @@ server_protocol_cleanup (transport_t *trans)
 int32_t
 init (xlator_t *this)
 {
-  transport_t *trans;
-  server_reply_queue_t *queue;
+  transport_t *trans = NULL;
+  server_conf_t *conf = NULL;
+  server_reply_queue_t *queue = NULL;
 
   gf_log (this->name, GF_LOG_DEBUG, "protocol/server xlator loaded");
 
@@ -5735,6 +5739,11 @@ init (xlator_t *this)
     return -1;
   }
 
+  /* this->private points to the listening transport object.
+   * for this give trans, trans->xl_private is server config structure.
+   * but for transport objects corresponding to connected clients, trans->xl_private
+   * points to serv_proto_priv_t
+   */
   this->private = trans;
 
   queue = calloc (1, sizeof (server_reply_queue_t));
@@ -5742,7 +5751,18 @@ init (xlator_t *this)
   pthread_cond_init (&queue->cond, NULL);
   INIT_LIST_HEAD (&queue->list);
 
-  trans->xl_private = queue;
+  conf = calloc (1, sizeof (server_conf_t));
+  conf->queue = queue;
+  
+  if (dict_get (this->options, "limits.transaction-size")) {
+    conf->max_block_size = data_to_int32 (dict_get (this->options, "limits.trasaction-size"));
+  } else {
+    gf_log (this->name, GF_LOG_DEBUG,
+	    "defaulting limits.transaction-size to %d", DEFAULT_BLOCK_SIZE);
+    conf->max_block_size = DEFAULT_BLOCK_SIZE;
+  }
+ 
+  trans->xl_private = conf;
 
   pthread_create (&queue->thread, NULL, server_reply_proc, queue);
 
@@ -5786,6 +5806,7 @@ notify (xlator_t *this,
 	transport_t *trans = data;
 	gf_block_t *blk;
 	server_proto_priv_t *priv = trans->xl_private;
+	server_conf_t *conf = this->private;
 
 	if (!priv) {
 	  priv = (void *) calloc (1, sizeof (*priv));
@@ -5794,8 +5815,9 @@ notify (xlator_t *this,
 	  priv->open_dirs = get_new_dict ();
 	  pthread_mutex_init (&priv->lock, NULL);
 	}
+	
+	blk = gf_block_unserialize_transport (trans, conf->max_block_size);
 
-	blk = gf_block_unserialize_transport (trans);
 	if (!blk) {
 	  ret = -1;
 	}
