@@ -83,6 +83,11 @@ AC_CONFIG_FILES([Makefile
 		scheduler/rr/src/Makefile
 		scheduler/switch/Makefile
 		scheduler/switch/src/Makefile
+		auth/Makefile
+		auth/ip/Makefile
+		auth/ip/src/Makefile
+		auth/login/Makefile
+		auth/login/src/Makefile
 		transport/Makefile
 		transport/tcp/Makefile
 		transport/tcp/server/Makefile

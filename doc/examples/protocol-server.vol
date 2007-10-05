@@ -8,7 +8,8 @@ end-volume
 ### Add network serving capability to above brick.
 volume server
   type protocol/server
-  option auth.username.passwd user1:pwd1,user2:pwd2,user3:pwd3,user4:pwd4,user5:pwd5
+# option auth.login.<username>.password  # password for user <username>
+# option auth.login.<brickname>.allow   # list of users allowed for brick <brickname>
   option transport-type tcp/server     # For TCP/IP transport
 # option transport-type ib-sdp/server  # For Infiniband transport
 # option transport-type ib-verbs/server # For Infiniband Verbs transport
@@ -20,6 +21,6 @@ volume server
 # option listen-port 6996              # Default is 6996
 # option client-volume-filename /etc/glusterfs/glusterfs-client.vol
   subvolumes brick 
-  option auth.ip.brick_name.allow ip
-  option auth.ip.brick_name.reject ip
+#  option auth.ip.<brickname>.allow ip # list of IPs allowed for brick <brickname>. Each ip address pattern can be preceeded by '!' to invert selection. 
+#  option auth.ip.<brickname>.reject ip # list of IPs to be rejected for brick <brickname>. Each ip address pattern can be preceeded by '!' to invert selection.
 end-volume

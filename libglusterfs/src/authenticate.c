@@ -3,174 +3,91 @@
 #endif
 
 #include <stdio.h>
-#include <fnmatch.h>
+#include <dlfcn.h>
 #include "authenticate.h"
 
-#define IP_DELIMITER " ,"
-
-auth_result_t authenticate_user (dict_t *input_params, dict_t *config_params);
-auth_result_t authenticate_ip (dict_t *input_params, dict_t *config_params);
-
-auth_result_t authenticate (dict_t *input_params, dict_t *config_params) 
+static void
+init (dict_t *this,
+      char *key,
+      data_t *value,
+      void *data)
 {
-  char *peer = NULL;
-  int user_result = -1, ip_result = -1;
+  void *handle = NULL;
+  char *auth_file = NULL;
+  auth_fn_t authenticate;
 
-  peer = data_to_str (dict_get (input_params, "peer"));
-  if (!peer) {
-    gf_log ("authenticate",
+  asprintf (&auth_file, "%s/%s.so", LIBDIR, key);
+  handle = dlopen (auth_file, RTLD_LAZY);
+  if (!handle) {
+    gf_log ("libglusterfs/",
 	    GF_LOG_ERROR,
-	    "Peer information not found\n");
-    return AUTH_REJECT;
+	    "dlopen(%s): %s\n", 
+	    auth_file,
+	    dlerror ());
+    free (auth_file);
+    return;
+  }
+  free (auth_file);
+  
+  authenticate = dlsym (handle, "auth");
+  if (!authenticate) {
+    gf_log ("libglusterfs/scheduler",
+	    GF_LOG_ERROR,
+	    "dlsym(authenticate) on %s\n", 
+	    dlerror ());
+    return;
   }
 
-  user_result = authenticate_user (input_params, config_params);
-  if (user_result == AUTH_REJECT)
-    return user_result;
-
-  ip_result = authenticate_ip (input_params, config_params);
-  if (ip_result == AUTH_REJECT)
-    return ip_result;
-
-  if (AUTH_DONT_CARE == ip_result && AUTH_DONT_CARE == user_result)
-    return AUTH_REJECT;
-
-  return AUTH_ACCEPT;
-} 
-
-auth_result_t authenticate_ip (dict_t *input_params, dict_t *config_params)
-{
-  char *name = NULL;
-  char *searchstr = NULL;
-  data_t *allow_ip = NULL, *reject_ip = NULL;
-  char *peer = NULL;
-
-  name = data_to_str (dict_get (input_params, "remote-subvolume"));
-  if (!name) {
-    gf_log ("authenticate/ip",
-	    GF_LOG_ERROR,
-	    "remote-subvolume not specified");
-    return AUTH_REJECT;
-  }
-
-  asprintf (&searchstr, "auth.ip.%s.allow", name);
-  allow_ip = dict_get (config_params,
-		       searchstr);
-  free (searchstr);
-
-  peer = data_to_str (dict_get (input_params, "peer"));
-  if (!peer) {
-    gf_log ("authenticate/ip",
-	    GF_LOG_ERROR,
-	    "peer not specified");
-    return AUTH_REJECT;
-  }
-
-  if (allow_ip) {
-    char *ip_addr_str = NULL;
-    char *tmp;
-    char *ip_addr_cpy = strdup (allow_ip->data);
-    
-    ip_addr_str = strtok_r (ip_addr_cpy, IP_DELIMITER, &tmp);
-      
-    while (ip_addr_str) {
-      char negate = 0, match = 0;
-         gf_log (name,  GF_LOG_DEBUG,
-	      "allowed = \"%s\", received ip addr = \"%s\"",
-	      ip_addr_str, peer);
-      if (ip_addr_str[0] == '!') {
-	negate = 1;
-	ip_addr_str++;
-      }
-
-      match = fnmatch (ip_addr_str,
-		       peer,
-		       0);
-
-      if (negate ? match : !match) {
-	free (ip_addr_cpy);
-	return AUTH_ACCEPT;
-      }
-      ip_addr_str = strtok_r (NULL, IP_DELIMITER, &tmp);
-    }
-    free (ip_addr_cpy);
-  }      
-  
-  asprintf (&searchstr, "auth.ip.%s.reject", name);
-  reject_ip = dict_get (config_params,
-			searchstr);
-  free (searchstr);
-  
-  if (reject_ip) {
-    char *ip_addr_str = NULL;
-    char *tmp;
-    char *ip_addr_cpy = strdup (reject_ip->data);
-      
-    ip_addr_str = strtok_r (ip_addr_cpy, IP_DELIMITER, &tmp);
-    
-    while (ip_addr_str) {
-      char negate = 0,  match =0;
-      gf_log (name,  GF_LOG_DEBUG,
-	      "rejected = \"%s\", received ip addr = \"%s\"",
-	      ip_addr_str, peer);
-      if (ip_addr_str[0] == '!') {
-	negate = 1;
-	ip_addr_str++;
-      }
-
-      match = fnmatch (ip_addr_str,
-		       peer,
-		       0);
-      if (negate ? match : !match) {
-	free (ip_addr_cpy);
-	return AUTH_REJECT;
-      }
-      ip_addr_str = strtok_r (NULL, IP_DELIMITER, &tmp);
-    }
-    free (ip_addr_cpy);
-  }      
-  
-  return AUTH_DONT_CARE;
+  dict_set (this, key, data_from_static_ptr (authenticate));
 }
 
-auth_result_t authenticate_user (dict_t *input_params, dict_t *config_params)
+void
+auth_init (dict_t *auth_modules)
 {
-  char *username = NULL, *password = NULL;
-  char *username_password = NULL;
-  char *user_configuration = NULL;
-  char *saveptr = NULL;
+  int32_t dummy;
+  dict_foreach (auth_modules, init, &dummy);
+}
 
-  username = data_to_str (dict_get (input_params, "username"));
-  password = data_to_str (dict_get (input_params, "password"));
+auth_result_t authenticate (dict_t *input_params, dict_t *config_params, dict_t *auth_modules) 
+{
+  dict_t *results = NULL;
+  int32_t result = AUTH_ACCEPT, auth_dont_care = 1;
 
-  if (!username)
-    return AUTH_DONT_CARE;
-
-  user_configuration = data_to_str (dict_get (config_params, "auth.username.password"));
-  if (!user_configuration) {
-    gf_log ("authenticate/username-password",
-	    GF_LOG_ERROR,
-	    "user configuration not provided");
-    return AUTH_REJECT;
-  }
-
-  username_password = strtok_r (user_configuration, ",", &saveptr);
-  while (username_password) {
-    char *config_username = NULL, *config_password = NULL;
-    char *inner_saveptr = NULL;
-    
-    config_username = strtok_r (username_password, ":", &inner_saveptr);
-    config_password = strtok_r (NULL, ":", &inner_saveptr);
-
-    if (!strcmp (username, config_username)) {
-      if (!strcmp (password, config_password))
-	return AUTH_ACCEPT;
-      else
-	return AUTH_REJECT;
+  results = get_new_dict ();
+  auto void map (dict_t *this,
+		 char *key,
+		 data_t *value,
+		 void *data)
+    {
+      dict_t *res = data;
+      auth_fn_t authenticate = data_to_ptr (value);
+      dict_set (res, key, int_to_data (authenticate (input_params, config_params)));
     }
-    
-    username_password = strtok_r (NULL, ",", &saveptr);
-  }
 
-  return AUTH_REJECT;
+  dict_foreach (auth_modules, map, results);
+
+  auto void reduce (dict_t *this,
+		    char *key,
+		    data_t *value,
+		    void *data)
+    {
+      int32_t *res = data;
+      if (AUTH_REJECT == data_to_int64 (value))
+	*res = AUTH_REJECT;
+      if (AUTH_DONT_CARE != data_to_int64 (value))
+	auth_dont_care = 0;
+    }
+
+  dict_foreach (results, reduce, &result);
+  if (auth_dont_care) {
+    char *name = NULL;
+    name = data_to_str (dict_get (input_params, "remote-subvolume"));
+    gf_log ("auth",
+	    GF_LOG_DEBUG,
+	    "Nobody cares to authenticate!! Rejecting the client %s", name);
+    result = AUTH_REJECT;
+  }
+    
+  dict_destroy (results);
+  return result;
 }

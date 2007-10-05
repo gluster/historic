@@ -45,6 +45,8 @@
 #define SERVER_PRIV(frame ) ((server_proto_priv_t *) TRANSPORT_OF(frame)->xl_private)
 #define BOUND_XL(frame) ((xlator_t *) STATE (frame)->bound_xl)
 
+static dict_t *auth_modules = NULL;
+
 /*
  * str_to_ptr - convert a string to pointer
  * @string: string
@@ -5098,7 +5100,13 @@ mop_setvolume (call_frame_t *frame,
   _sock = &(TRANSPORT_OF (frame))->peerinfo.sockaddr;
   dict_set (params, "peer", str_to_data(inet_ntoa (_sock->sin_addr)));
 
-  if (authenticate (params, config_params) == AUTH_ACCEPT) {
+  if (!auth_modules) {
+    gf_log (TRANSPORT_OF (frame)->xl->name, 
+	    GF_LOG_ERROR,
+	    "Authentication module not initialized");
+  }
+
+  if (authenticate (params, config_params, auth_modules) == AUTH_ACCEPT) {
     gf_log (TRANSPORT_OF (frame)->xl->name,  GF_LOG_DEBUG,
 	    "accepted client from %s:%d",
 	    inet_ntoa (_sock->sin_addr), ntohs (_sock->sin_port));
@@ -5707,6 +5715,25 @@ server_protocol_cleanup (transport_t *trans)
   return 0;
 }
 
+static void 
+get_auth_types (dict_t *this,
+		char *key,
+		data_t *value,
+		void *data)
+{
+  dict_t *auth_dict = data;
+  char *saveptr = NULL, *tmp = NULL;
+  char *key_cpy = strdup (key);
+
+  tmp = strtok_r (key_cpy, ".", &saveptr);
+  if (!strcmp (tmp, "auth")) {
+    tmp = strtok_r (NULL, ".", &saveptr);
+    dict_set (auth_dict, tmp, str_to_data("junk"));
+  }
+
+  free (key_cpy);
+}
+  
 
 /*
  * init - called during server protocol initialization
@@ -5764,8 +5791,11 @@ init (xlator_t *this)
  
   trans->xl_private = conf;
 
-  pthread_create (&queue->thread, NULL, server_reply_proc, queue);
+  auth_modules = get_new_dict ();
+  dict_foreach (this->options, get_auth_types, auth_modules);
+  auth_init (auth_modules);
 
+  pthread_create (&queue->thread, NULL, server_reply_proc, queue);
   return 0;
 }
 
@@ -5779,6 +5809,10 @@ init (xlator_t *this)
 void
 fini (xlator_t *this)
 {
+  if (auth_modules) {
+    dict_destroy (auth_modules);
+    auth_modules = NULL;
+  }
 
   return;
 }
