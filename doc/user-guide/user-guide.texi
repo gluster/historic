@@ -20,8 +20,8 @@ Documentation License''.
 @end copying
 
 @titlepage
-@title GlusterFS 1.3 User Guide
-@subtitle August 15, 2007
+@title GlusterFS 1.3 User Guide [DRAFT]
+@subtitle Real Soon Now, 2007
 @author Vikas Gorur
 
 @page
@@ -122,8 +122,7 @@ Miscallaneous Translators
 @node Acknowledgements
 @unnumbered Acknowledgements
 GlusterFS continues to be a wonderful and enriching experience for all of
-us involved. I'd like to thank Anand Babu, who concieved
-GlusterFS and has lead us throughout with his infectious enthusiasm.
+us involved. Anand Babu conceived GlusterFS, and leads its development.
 The development team consists of Anand Avati, Amar Tumballi, Basavanagowda
 Kanur, Krishna Srinivas, Raghavendra G, and myself. Our @acronym{CEO},
 Hitesh Chellani, ensures we get paid for hacking on GlusterFS. 
@@ -316,6 +315,100 @@ Disable building of the GlusterFS server.
 @node A Tutorial Introduction
 @section A Tutorial Introduction
 
+This section will show you how to quickly get GlusterFS up and running. We'll 
+configure GlusterFS as a simple network filesystem, with one server and one client.
+In this mode of usage, GlusterFS can serve as a replacement for NFS.
+
+We'll make use of two machines; call them @emph{server} and
+@emph{client} (If you don't want to setup two machines, just run
+everything that follows on the same machine).  In the examples that
+follow, the shell prompts will use these names to clarify the machine
+on which the command is being run. For example, a command that should
+be run on the server will be shown with the prompt:
+
+@example
+[root@@server]#
+@end example
+
+Our goal is to make a directory on the @emph{server} (say, @command{/export})
+accessible to the @emph{client}.
+
+First of all, get GlusterFS installed on both the machines, as described in the 
+previous sections. Make sure you have the @acronym{FUSE} kernel module loaded. You
+can ensure this by running: 
+
+@example
+[root@@server]# modprobe fuse
+@end example
+
+Before we can run the GlusterFS client or server programs, we need to write
+two files called @emph{volume specifications}. The volume spec describes the 
+@emph{translator tree} on a node. The next chapter will explain the concepts of
+`translator' and `volume specification' in detail. For now, just assume that
+the volume spec is like an NFS @command{/etc/export} file.
+
+On the server, create a text file somewhere (we'll assume the path
+@command{/tmp/glusterfs-server.vol}) with the following contents.
+
+@cartouche
+@example
+volume colon-o
+  type storage/posix
+  option directory /export
+end-volume
+
+volume server
+  type protocol/server
+  subvolumes colon-o
+  option transport-type tcp/server     
+  option auth.ip.colon-o.allow *
+end-volume
+@end example
+@end cartouche
+
+A brief explanation of the file's contents. The first section defines a storage
+volume, named ``colon-o'' (the volume names are arbitrary), which exports the
+@command{/export} directory. The second section defines options for the translator
+which will make the storage volume accessible remotely. It specifies @command{colon-o} as
+a subvolume. This defines the @emph{translator tree}, about which more will be said
+in the next chapter. The two options specify that the @acronym{TCP} protocol is to be
+used (as opposed to InfiniBand, for example), and that access to the storage volume
+is to be provided to clients with any @acronym{IP} address at all. If you wanted to
+restrict access to this server to only your subnet for example, you'd specify
+something like @command{192.168.1.*} in the second option line.
+
+On the client machine, create the following text file (again, we'll assume
+the path to be @command{/tmp/glusterfs-client.vol}). Replace
+@emph{server-ip-address} with the @acronym{IP} address of your server machine. If you
+are doing all this on a single machine, use @command{127.0.0.1}.
+
+@cartouche
+@example
+volume client
+  type protocol/client
+  option transport-type tcp/client
+  option remote-host @emph{server-ip-address}
+  option remote-subvolume colon-o
+end-volume
+@end example
+@end cartouche
+
+Now we need to start both the server and client programs. To start the server:
+
+@example
+[root@@server]# glusterfsd -f /tmp/glusterfs-server.vol
+@end example
+
+To start the client:
+
+@example
+[root@@client]# glusterfs -f /tmp/glusterfs-client.vol /mnt/glusterfs
+@end example
+
+You should now be able to see the files under the server's @command{/export} directory
+in the @command{/mnt/glusterfs} directory on the client. That's it, GlusterFS is now
+working as a network file system.
+
 @node Concepts
 @chapter Concepts
 
@@ -367,7 +460,19 @@ application -> kernel -> fuse -> /dev/fuse -> user process
 @node Storage Translators
 @section Storage Translators
 
-Amazon S3 support is planned.
+The storage translators form the ``backend'' for GlusterFS. Currently,
+the only available storage translator is the @acronym{POSIX}
+translator, which stores files on a normal @acronym{POSIX}
+filesystem. A pleasant consequence of this is that your data will
+still be accessible if GlusterFS crashes or cannot be started.
+
+Other storage backends are planned for the future. One of the possibilities is an
+Amazon S3 translator. Amazon S3 is an unlimited online storage service accessible
+through a web services @acronym{API}. The S3 translator will allow you to access
+the storage as a normal @acronym{POSIX} filesystem.
+@footnote{Some more discussion about this can be found at: 
+
+http://developer.amazonwebservices.com/connect/message.jspa?messageID=52873}
 
 @menu
 * POSIX::        
@@ -379,18 +484,27 @@ Amazon S3 support is planned.
 type storage/posix
 @end example
 
-reuses POSIX compatible underlying filesystem. 
+The @command{posix} translator uses a normal @acronym{POSIX}
+filesystem as its ``backend'' to actually store files and
+directories. This can be any filesystem that supports extended
+attributes (@acronym{EXT3}, ReiserFS, @acronym{XFS}, ...). Extended
+attributes are used by some translators to store metadata (for
+example, by the @acronym{AFR} and stripe translators. See sections
+4.3.2 and 4.3.3, respectively).
 
 @table @code
 @item directory <path>
-j
+The directory on the local filesytem which is to be used for storage.
 
 @item inode-lru-limit <n> (1000)
-k
 @end table               
 
-@node Client and Server Translators
+@node Client and Server Translators, Clustering Translators, Storage Translators, Translators
 @section Client and Server Translators
+
+The client and server translator enable GlusterFS to export a
+translator tree over the network or access a remote GlusterFS
+server. These two translators implement GlusterFS's network protocol.
 
 @menu
 * Transport modules::           
@@ -400,8 +514,15 @@ k
 
 @node Transport modules
 @subsection Transport modules
-three types of transports
+The client and server translators are capable of using any of the
+pluggable transport modules. Currently available transport modules are
+@command{tcp}, which uses a @acronym{TCP} connection between client
+and server to communicate; @command{ib-sdp}, which uses a
+@acronym{TCP} connection over InfiniBand, and @command{ibverbs}, which
+uses high-speed InfiniBand connections.
 
+@node TCP
+@subsubsection TCP
 @table @code
 @item non-blocking-connect [no|off|on|yes] (on)
 
@@ -410,40 +531,54 @@ three types of transports
 @item remote-host <hostname> *
 @end table
 
-@cindex InfiniBand transport
-infiniband
-h/w gives api called verbs. lowest level of s/w access. (= ib-verbs). highest
-performance. ib-verbs reliable connection-oriented channel transfer. (Mellanox
-notes).
+@node IB-SDP
+@subsubsection IB-SDP
+kernel implements socket interface for ib hardware. SDP is over ib-verbs.
+This module accepts the same options as @command{tcp}
 
-options:
+@node ibverbs
+@subsubsection ibverbs
+
+@cindex InfiniBand transport
+
+The @command{ib-verbs} transport accesses the InfiniBand hardware through
+the ``verbs'' @acronym{API}, which is the lowest level of software access possible
+and which gives the highest performance. On InfiniBand hardware, it is always
+best to use @command{ib-verbs}. Use @command{ib-sdp} only if you cannot get
+@command{ib-verbs} working for some reason. 
+
+If you are familiar with InfiniBand jargon,
+the mode is used by GlusterFS is ``reliable connection-oriented channel transfer''.
+
+(Mellanox notes).
+
+The @command{ib-verbs} transport module accepts the following options.
 
 @table @code
 @item ib-verbs-work-request-send-count <n> (64)
-foo
+Length of the send queue in datagrams. [Reason to increase/decrease?]
 
 @item ib-verbs-work-request-recv-count <n> (64)
-asf
+Length of the receive queue in datagrams. [Reason to increase/decrease?]
 
 @item ib-verbs-work-request-send-size <size> (128KB)
-asdf
+Size of each datagram that is sent. [Reason to increase/decrease?]
 
 @item ib-verbs-work-request-recv-size <size> (128KB)
-adsf
+Size of each datagram that is received. [Reason to increase/decrease?]
 
 @item ib-verbs-port <n> (1)
-iuio
+Port number for ib-verbs.
 
 @item ib-verbs-mtu [256|512|1024|2048|4096] (2048)
+The Maximum Transmission Unit [Reason to increase/decrease?]
 
 @item ib-verbs-device-name <device-name> (first device in the list)
-oaisdf
-
+InfiniBand device to be used.
 @end table
-``impedance matching'' is necessary.
 
-ib-sdp.
-kernel implements socket interface for ib hardware. SDP is over ib-verbs.
+For maximum performance, you should ensure that the send/receive counts on both
+the client and server are the same.
 
 ib-verbs is preferred over ib-sdp.
 
@@ -534,8 +669,8 @@ disk-speed-usage - the speed at which the disks are spinning. This is
 a constant value and therefore not very useful.
 
 The ALU scheduler needs to know which of these sub-schedulers to use,
-and in which order to evaluate them. This is done through the "option
-alu.order" configuration directive.
+and in which order to evaluate them. This is done through the 
+@command{option alu.order} configuration directive.
 
 Each sub-scheduler needs to know two things: when to kick in (the
 entry-threshold), and how long to stay in control (the
@@ -570,7 +705,7 @@ disk-usage scheduler entry-threshold and a smaller read-usage
 scheduler entry-threshold.
 
 For thresholds defining a size, values specifying "KB", "MB" and "GB"
-are allowed. For example: "option alu.limits.min-free-disk 5GB".
+are allowed. For example: @command{option alu.limits.min-free-disk 5GB}.
 
 @table @code
 @item alu.order <order> * ("disk-usage:write-usage:read-usage:open-files-usage:disk-speed")
@@ -592,9 +727,9 @@ Round-Robin (RR) scheduler creates files in a round-robin
 fashion. Each client will have its own round-robin loop. When your
 files are mostly similar in size and I/O access pattern, this
 scheduler is a good choice. RR scheduler now checks for free disk size
-of the server before scheduling, so you can get to know when to add
+of the server before scheduling, so you can know when to add
 another server brick. The default value of min-free-disk is 5% and is
-checked every 10seconds (by default) if there is any create call
+checked every 10 seconds (by default) if there is any create call
 happening.
 
 @table @code
@@ -610,11 +745,11 @@ happening.
 @subsubsection NUFA
 
 Non-Uniform Filesystem Scheduler similar to NUMA
-(http://en.wikipedia.org/wiki/Non-Uniform_Memory_Access) memory
-design. It is mainly used in HPC environments where you are required
-to run the filesystem server and client within the same cluster. Under
-such environment, NUFA scheduler gives the local system more priority
-for file creation over other nodes.
+@footnote{http://en.wikipedia.org/wiki/Non-Uniform_Memory_Access}
+memory design. It is mainly used in HPC environments where you are
+required to run the filesystem server and client within the same
+cluster. Under such environment, NUFA scheduler gives the local system
+first priority for file creation over other nodes.
 
 @table @code
 @item nufa.limits.min-free-disk <%> (5)
@@ -626,6 +761,7 @@ for file creation over other nodes.
 Namespace volume needed because:
  - persistent inode numbers.
  - file exists even when node is down.
+
 namespace files are simply touched. on every lookup it is checked.
 
 @cindex self heal (unify)
