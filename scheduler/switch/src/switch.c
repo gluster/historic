@@ -299,6 +299,9 @@ switch_notify (xlator_t *xl, int32_t event, void *data)
   struct switch_struct *switch_buf = (struct switch_struct *)*((long *)xl->private);
   int32_t idx = 0;
 
+  if (!switch_buf)
+    return;
+
   for (idx = 0; idx < switch_buf->child_count; idx++) {
     if (strcmp (switch_buf->array[idx].xl->name, ((xlator_t *)data)->name) == 0)
       break;

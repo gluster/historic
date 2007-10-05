@@ -1571,20 +1571,41 @@ init (xlator_t *this)
     gf_log (this->name,
 	    GF_LOG_ERROR,
 	    "FATAL: storage/posix cannot have subvolumes");
+    free (_private);
     return -1;
   }
 
   if (!directory) {
     gf_log (this->name, GF_LOG_ERROR,
 	    "export directory not specified in spec file");
-    exit (1);
+    free (_private);
+    return -1;
   }
   umask (000); // umask `masking' is done at the client side
+
+#if 0 /* This may lead to problems. */
   if (mkdir (directory->data, 0777) == 0) {
     gf_log (this->name, GF_LOG_WARNING,
 	    "directory specified not exists, created");
   }
+#endif /* if 0 */
+  /* Check for the export directory */
+  {
+    int32_t ret = 0;
+    struct stat buf;
 
+    ret = lstat (directory->data, &buf);
+    if (ret == -1) {
+      gf_log (this->name, GF_LOG_CRITICAL,
+	      "Export directory does not exists, exiting");
+      free (_private);
+      return -1;
+    }
+    if ((buf.st_mode & 0777) != 0777) {
+      gf_log (this->name, GF_LOG_WARNING,
+	      "Export directory's permissions are not global");
+    }
+  }
   _private->base_path = strdup (directory->data);
   _private->base_path_length = strlen (_private->base_path);
 
