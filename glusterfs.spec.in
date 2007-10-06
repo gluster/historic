@@ -1,10 +1,10 @@
-# if you make changes, the it is advised to increment this number, and provide 
+# if you make changes, the it is advised to increment this number, and provide
 # a descriptive suffix to identify who owns or what the change represents
 # e.g. release_version 2.MSW
 %define release_version 1
 
 # if you wish to compile an rpm without ibverbs support, compile like this...
-# rpmbuild -ta @PACKAGE_NAME@-@PACKAGE_VERSION@.tar.gz --without ibverbs
+# rpmbuild -ta glusterfs-1.4.doa0.tar.gz --without ibverbs
 %define with_ibverbs %{?_without_ibverbs:0}%{?!_without_ibverbs:1}
 
 
@@ -12,9 +12,9 @@ Summary: Cluster File System
 Name: @PACKAGE_NAME@
 Version: @PACKAGE_VERSION@
 Release: %release_version
-License: GPL2
+License: GPL-V2 or later
 Group: System Environment/Base
-Vendor: gluster.org
+Vendor: Z Research Inc
 Packager: @PACKAGE_BUGREPORT@
 BuildRoot: %_tmppath/%name-%version-%release-root
 BuildRequires: fuse-devel
@@ -23,12 +23,10 @@ BuildRequires: byacc bison flex
 %if %with_ibverbs
 BuildRequires: libibverbs-devel
 %endif
-BuildRequires: libsysfs-devel
 BuildRequires: gcc
 BuildRequires: make
-URL: http://www.gluster.org/docs/index.php/GlusterFS
+URL: ftp://ftp.zresearch.com/pub/gluster/glusterfs/1.3/glusterfs-1.3.1.tar.gz
 Source: %name-%version.tar.gz
-
 %description
 GlusterFS is a clustered file-system capable of scaling to several
 peta-bytes. It aggregates various storage bricks over Infiniband RDMA
@@ -73,7 +71,7 @@ This package provides the glusterfs server daemon.
 
 
 %package client
-Summary: GlusterFS Client 
+Summary: GlusterFS Client
 Group: Applications/File
 #Requires: fuse  # let the auto dependancy work this out
 Requires: %name-common = %version
@@ -117,7 +115,7 @@ This package provides the development libraries.
 %if "%{with_ibverbs}" == "0"
 %define configure_options --disable-ibverbs
 %endif
-./configure --prefix=  %{?configure_options:%configure_options}
+./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var  %{?configure_options:%configure_options}
 %{__make}
 
 
@@ -132,38 +130,38 @@ This package provides the development libraries.
 
 %files common
 %doc AUTHORS ChangeLog COPYING INSTALL NEWS README
-/lib/
+/usr/lib/
 %dir /var/log/glusterfs
-%exclude /lib/*.a
-%exclude /lib/*.la
+%exclude /usr/lib/*.a
+%exclude /usr/lib/*.la
 
 
 %files server
 %doc AUTHORS ChangeLog COPYING INSTALL NEWS README
-%doc doc/examples
-%doc doc/glusterfs-server.vol.sample
-%doc doc/glusterfs-client.vol.sample
+%doc /usr/share/doc/glusters/examples
 %config /etc/glusterfs/
-/sbin/glusterfsd
+/usr/sbin/glusterfsd
 
 
 %files client
 %doc AUTHORS ChangeLog COPYING INSTALL NEWS README
-/sbin/glusterfs
+/usr/bin/glusterfs
 /sbin/mount.glusterfs
 
 %files devel
 %doc AUTHORS ChangeLog COPYING INSTALL NEWS README THANKS
-/lib/*.a
-/lib/*.la
+/usr/lib/*.a
+/usr/lib/*.la
 /usr/include/
 
-
 %post
-ldconfig -n /lib
+ldconfig -n /usr/lib
 
 
 %changelog
+
+* Fri Sep 20 2007 Harshavardhana Ranganath <harsha@zresearch.com> - 1.3.1
+- removed libsysfs-devel and added changes to libdirs to point right location.
 
 * Sat Aug 4 2007 Matt Paine <matt@mattsoftware.com> - 1.3.pre7
 - Added support to build rpm without ibverbs support (use --without ibverbs switch)

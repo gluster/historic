@@ -274,6 +274,7 @@ AC_CHECK_HEADERS([sys/extattr.h])
 
 # Language bindings
 BINDINGS_SUBDIRS=""
+HAVE_PYTHON=0
 AC_ARG_ENABLE([python],
               AC_HELP_STRING([--disable-python],
                              [Do not build the python bindings.]))
@@ -294,19 +295,29 @@ dnl         AC_SUBST(PYTHON_LDFLAGS)
 dnl     fi
 dnl fi
 
-PYTHON_CFLAGS="-I/usr/include/python2.4"
-PYTHON_LDFLAGS="-lpython2.4"
-AC_SUBST(PYTHON_CFLAGS)
-AC_SUBST(PYTHON_LDFLAGS)
+# Automake extension for python checking                                                                                      
+AM_PATH_PYTHON([2.4], [have_python=yes], [have_python=no])
+AC_CHECK_HEADER([python$PYTHON_VERSION/Python.h], [have_python_devel=yes], [have_python_devel=no])
 
-HAVE_PYTHON=1
-if test "$enable_python" = "yes"; then
-    HAVE_PYTHON=1
-    BINDINGS_SUBDIRS="$BINDINGS_SUBDIRS python"
-else
-    HAVE_PYTHON=0
+if test "$enable_python" = "yes" ; then
+   if test "$have_python" = "yes" -a "$have_python_devel" = "yes"; then
+   # Check for Python Flags from sysconfig.py module.                                                                         
+PYTHON_LDFLAGS=[$($PYTHON -c "from distutils import sysconfig
+print '-L'+ sysconfig.get_config_var('LIBPL')+' '+ '-lpython'+ sysconfig.get_config_var('VERSION')")]
+PYTHON_CPPLAGS=[$($PYTHON -c "from distutils import sysconfig
+print sysconfig.get_python_inc()")]
+PYTHON_CPPLAGS="-I$PYTHON_CPPLAGS"
+       HAVE_PYTHON=1
+       BINDINGS_SUBDIRS="python"
+   else
+       AC_MSG_ERROR([python >= 2.4 not found on the system. Please install python 2.4 and its development packages. You can d\
+isable the python bindings by passing --disable-python to configure.])
+   fi
 fi
+
 AC_SUBST(HAVE_PYTHON)
+AC_SUBST(PYTHON_CPPLAGS)
+AC_SUBST(PYTHON_LDFLAGS)
 AC_SUBST(BINDINGS_SUBDIRS)
 
 AC_OUTPUT
