@@ -821,6 +821,8 @@ posix_readv (call_frame_t *frame,
     data_t *buf_data = get_new_data ();
     reply_dict = get_new_dict ();
 
+    reply_dict->is_locked = 1;
+    buf_data->is_locked = 1;
     buf_data->data = buf;
     buf_data->len = op_ret;
 
