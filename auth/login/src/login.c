@@ -1,7 +1,7 @@
 #include <fnmatch.h>
 #include "authenticate.h"
 
-auth_result_t auth (dict_t *input_params, dict_t *config_params)
+auth_result_t gf_auth (dict_t *input_params, dict_t *config_params)
 {
   char *username = NULL, *password = NULL;
   data_t *allow_user = NULL, *username_data = NULL, *password_data = NULL;
@@ -22,7 +22,7 @@ auth_result_t auth (dict_t *input_params, dict_t *config_params)
 
   brick_name = data_to_str (dict_get (input_params, "remote-subvolume"));
   if (!brick_name) {
-    gf_log ("authenticate/login",
+    gf_log ("auth/login",
 	    GF_LOG_ERROR,
 	    "remote-subvolume not specified");
     return AUTH_REJECT;

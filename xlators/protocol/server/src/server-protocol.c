@@ -45,7 +45,6 @@
 #define SERVER_PRIV(frame ) ((server_proto_priv_t *) TRANSPORT_OF(frame)->xl_private)
 #define BOUND_XL(frame) ((xlator_t *) STATE (frame)->bound_xl)
 
-static dict_t *auth_modules = NULL;
 
 /*
  * str_to_ptr - convert a string to pointer
@@ -281,7 +280,7 @@ server_reply (call_frame_t *frame,
 	      dict_t *refs)
 {
   server_reply_t *entry = NULL;
-  transport_t *trans = frame->this->private;;
+  transport_t *trans = ((server_private_t *)frame->this->private)->trans;
   server_conf_t *conf = NULL;
 
   entry = calloc (1, sizeof (*entry));
@@ -5069,6 +5068,7 @@ mop_setvolume (call_frame_t *frame,
   int32_t remote_errno = 0;
   dict_t *dict = get_new_dict ();
   server_proto_priv_t *priv;
+  server_private_t *server_priv;
   data_t *name_data;
   char *name;
   xlator_t *xl;
@@ -5077,6 +5077,7 @@ mop_setvolume (call_frame_t *frame,
 
   priv = SERVER_PRIV (frame);
 
+  server_priv = TRANSPORT_OF (frame)->xl->private;
   name_data = dict_get (params,
 			"remote-subvolume");
   if (!name_data) {
@@ -5100,13 +5101,13 @@ mop_setvolume (call_frame_t *frame,
   _sock = &(TRANSPORT_OF (frame))->peerinfo.sockaddr;
   dict_set (params, "peer", str_to_data(inet_ntoa (_sock->sin_addr)));
 
-  if (!auth_modules) {
+  if (!server_priv->auth_modules) {
     gf_log (TRANSPORT_OF (frame)->xl->name, 
 	    GF_LOG_ERROR,
 	    "Authentication module not initialized");
   }
 
-  if (authenticate (params, config_params, auth_modules) == AUTH_ACCEPT) {
+  if (gf_authenticate (params, config_params, server_priv->auth_modules) == AUTH_ACCEPT) {
     gf_log (TRANSPORT_OF (frame)->xl->name,  GF_LOG_DEBUG,
 	    "accepted client from %s:%d",
 	    inet_ntoa (_sock->sin_addr), ntohs (_sock->sin_port));
@@ -5747,6 +5748,8 @@ init (xlator_t *this)
   transport_t *trans = NULL;
   server_conf_t *conf = NULL;
   server_reply_queue_t *queue = NULL;
+  server_private_t *server_priv = NULL;
+  int32_t error = 0;
 
   gf_log (this->name, GF_LOG_DEBUG, "protocol/server xlator loaded");
 
@@ -5771,7 +5774,19 @@ init (xlator_t *this)
    * but for transport objects corresponding to connected clients, trans->xl_private
    * points to serv_proto_priv_t
    */
-  this->private = trans;
+  server_priv = calloc (1, sizeof (*server_priv));
+  server_priv->trans = trans;
+
+  server_priv->auth_modules = get_new_dict ();
+  dict_foreach (this->options, get_auth_types, server_priv->auth_modules);
+  error = gf_auth_init (server_priv->auth_modules);
+  
+  if (error) {
+    dict_destroy (server_priv->auth_modules);
+    return error;
+  }
+
+  this->private = server_priv;
 
   queue = calloc (1, sizeof (server_reply_queue_t));
   pthread_mutex_init (&queue->lock, NULL);
@@ -5790,11 +5805,6 @@ init (xlator_t *this)
   }
  
   trans->xl_private = conf;
-
-  auth_modules = get_new_dict ();
-  dict_foreach (this->options, get_auth_types, auth_modules);
-  auth_init (auth_modules);
-
   pthread_create (&queue->thread, NULL, server_reply_proc, queue);
   return 0;
 }
@@ -5809,11 +5819,13 @@ init (xlator_t *this)
 void
 fini (xlator_t *this)
 {
-  if (auth_modules) {
-    dict_destroy (auth_modules);
-    auth_modules = NULL;
+  server_private_t *server_priv = this->private;
+  if (server_priv->auth_modules) {
+    dict_destroy (server_priv->auth_modules);
   }
 
+  free (server_priv);
+  this->private = NULL;
   return;
 }
 
@@ -5843,10 +5855,12 @@ notify (xlator_t *this,
 	server_conf_t *conf = this->private;
 
 	if (!priv) {
+	  int32_t error = 0;
 	  priv = (void *) calloc (1, sizeof (*priv));
 	  trans->xl_private = priv;
 	  priv->open_files = get_new_dict ();
 	  priv->open_dirs = get_new_dict ();
+
 	  pthread_mutex_init (&priv->lock, NULL);
 	}
 	

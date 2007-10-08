@@ -24,6 +24,7 @@
 #include "xlator.h"
 #include "logging.h"
 #include "call-stub.h"
+#include "authenticate.h"
 #include <pthread.h>
 
 #define DEFAULT_LOG_FILE       DATADIR"/log/glusterfs/glusterfsd.log"
@@ -68,7 +69,7 @@ struct server_proto_priv {
   dict_t *open_files;
   dict_t *open_dirs;
   xlator_t *bound_xl; /* to be set after an authenticated SETVOLUME */
-  struct list_head *auth_module;
+  dict_t *auth_modules;
 };
 
 struct open_file_cleanup {
@@ -86,6 +87,11 @@ typedef struct {
   server_reply_queue_t *queue;
   int32_t max_block_size;
 } server_conf_t;
+
+typedef struct {
+  dict_t *auth_modules;
+  transport_t *trans;
+} server_private_t;
 
 typedef struct _server_state server_state_t;
 

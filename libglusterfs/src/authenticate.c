@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <dlfcn.h>
+#include <errno.h>
 #include "authenticate.h"
 
 static void
@@ -14,12 +15,13 @@ init (dict_t *this,
 {
   void *handle = NULL;
   char *auth_file = NULL;
+  auth_handle_t *auth_handle = NULL;
   auth_fn_t authenticate;
 
   asprintf (&auth_file, "%s/%s.so", LIBDIR, key);
   handle = dlopen (auth_file, RTLD_LAZY);
   if (!handle) {
-    gf_log ("libglusterfs/",
+    gf_log ("libglusterfs/authenticate",
 	    GF_LOG_ERROR,
 	    "dlopen(%s): %s\n", 
 	    auth_file,
@@ -29,29 +31,60 @@ init (dict_t *this,
   }
   free (auth_file);
   
-  authenticate = dlsym (handle, "auth");
+  authenticate = dlsym (handle, "gf_auth");
   if (!authenticate) {
-    gf_log ("libglusterfs/scheduler",
+    gf_log ("libglusterfs/authenticate",
 	    GF_LOG_ERROR,
-	    "dlsym(authenticate) on %s\n", 
+	    "dlsym(gf_auth) on %s\n", 
 	    dlerror ());
     return;
   }
 
-  dict_set (this, key, data_from_static_ptr (authenticate));
+  auth_handle = calloc (1, sizeof (*auth_handle));
+  if (!auth_handle) {
+    *(int32_t *)data = ENOMEM;
+    gf_log ("libglusterfs/authenticate",
+	    GF_LOG_ERROR,
+	    "Out of memory");
+    return;
+  }
+
+  auth_handle->authenticate = authenticate;
+  auth_handle->handle = handle;
+
+  dict_set (this, key, data_from_dynptr (auth_handle, sizeof (*auth_handle)));
 }
 
-void
-auth_init (dict_t *auth_modules)
+static void
+fini (dict_t *this,
+      char *key,
+      data_t *value,
+      void *data)
 {
-  int32_t dummy;
-  dict_foreach (auth_modules, init, &dummy);
+  auth_handle_t *handle = data_to_ptr (value);
+  if (handle) {
+    dlclose (handle->handle);
+   }
+ }
+
+int32_t
+gf_auth_init (dict_t *auth_modules)
+{
+  int32_t error = 0;
+
+  dict_foreach (auth_modules, init, &error);
+  if (error) {
+    int32_t dummy;
+    dict_foreach (auth_modules, fini, &dummy);
+  }
+
+  return error;
 }
 
-auth_result_t authenticate (dict_t *input_params, dict_t *config_params, dict_t *auth_modules) 
+auth_result_t gf_authenticate (dict_t *input_params, dict_t *config_params, dict_t *auth_modules) 
 {
   dict_t *results = NULL;
-  int32_t result = AUTH_ACCEPT, auth_dont_care = 1;
+  int64_t result = AUTH_DONT_CARE;
 
   results = get_new_dict ();
   auto void map (dict_t *this,
@@ -60,7 +93,7 @@ auth_result_t authenticate (dict_t *input_params, dict_t *config_params, dict_t 
 		 void *data)
     {
       dict_t *res = data;
-      auth_fn_t authenticate = data_to_ptr (value);
+      auth_fn_t authenticate = ((auth_handle_t *)data_to_ptr (value))->authenticate;
       dict_set (res, key, int_to_data (authenticate (input_params, config_params)));
     }
 
@@ -71,15 +104,26 @@ auth_result_t authenticate (dict_t *input_params, dict_t *config_params, dict_t 
 		    data_t *value,
 		    void *data)
     {
-      int32_t *res = data;
-      if (AUTH_REJECT == data_to_int64 (value))
-	*res = AUTH_REJECT;
-      if (AUTH_DONT_CARE != data_to_int64 (value))
-	auth_dont_care = 0;
+      int64_t *res = data;
+      int64_t val = data_to_int64 (value);
+      switch (val)
+	{
+	case AUTH_ACCEPT:
+	  if (AUTH_DONT_CARE == *res)
+	    *res = AUTH_ACCEPT;
+	  break;
+
+	case AUTH_REJECT:
+	  *res = AUTH_REJECT;
+	  break;
+
+	case AUTH_DONT_CARE:
+	  break;
+	}
     }
 
   dict_foreach (results, reduce, &result);
-  if (auth_dont_care) {
+  if (AUTH_DONT_CARE == result) {
     char *name = NULL;
     name = data_to_str (dict_get (input_params, "remote-subvolume"));
     gf_log ("auth",
@@ -90,4 +134,10 @@ auth_result_t authenticate (dict_t *input_params, dict_t *config_params, dict_t 
     
   dict_destroy (results);
   return result;
+}
+
+void gf_auth_fini (dict_t *auth_modules)
+{
+  int32_t dummy;
+  dict_foreach (auth_modules, fini, &dummy);
 }
