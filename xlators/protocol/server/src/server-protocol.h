@@ -69,7 +69,6 @@ struct server_proto_priv {
   dict_t *open_files;
   dict_t *open_dirs;
   xlator_t *bound_xl; /* to be set after an authenticated SETVOLUME */
-  dict_t *auth_modules;
 };
 
 struct open_file_cleanup {
