@@ -37,8 +37,6 @@
 
 #define BIG_FUSE_CHANNEL_SIZE 1048576
 
-call_pool_t pool;
-
 struct fuse_private {
   int fd;
   struct fuse *fuse;
@@ -343,7 +341,8 @@ fuse_entry_cbk (call_frame_t *frame,
 				 buf);
 
     if ((fuse_inode->ctx != inode->ctx) &&
-	list_empty (&fuse_inode->fds)) {
+	list_empty (&fuse_inode->fds) &&
+	!fuse_inode->ctx) {
       dict_t *swap = inode->ctx;
       inode->ctx = fuse_inode->ctx;
       fuse_inode->ctx = swap;
@@ -1833,9 +1832,6 @@ fuse_init (void *data, struct fuse_conn_info *conn)
   struct fuse_private *priv = trans->private;
   xlator_t *xl = trans->xl;
   int32_t ret;
-
-  LOCK_INIT (&pool.lock);
-  INIT_LIST_HEAD (&pool.all_frames);
 
   xl->name = "fuse";
   xl->fops = &fuse_xl_fops;
