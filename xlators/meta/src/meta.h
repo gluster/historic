@@ -37,7 +37,7 @@ typedef struct {
   meta_dirent_t *tree;
 } meta_private_t;
 
-#include "tree.h"
-#include "misc.h"
+//#include "tree.h"
+//#include "misc.h"
 
 #endif /* __META_H__ */
