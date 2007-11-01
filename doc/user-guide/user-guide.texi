@@ -10,7 +10,7 @@
 @copying
 This is the user manual for GlusterFS 1.3.
 
-Copyright @copyright{} 2007 Z Research, Inc. Permission is granted to
+Copyright @copyright{} 2007 @email{@b{Z}} Research, Inc. Permission is granted to
 copy, distribute and/or modify this document under the terms of the
 @acronym{GNU} Free Documentation License, Version 1.2 or any later
 version published by the Free Software Foundation; with no Invariant
@@ -21,8 +21,9 @@ Documentation License''.
 
 @titlepage
 @title GlusterFS 1.3 User Guide [DRAFT]
-@subtitle Real Soon Now, 2007
-@author Vikas Gorur
+@subtitle Nov 5, 2007
+@author Vikas Gorur 
+@author @email{@b{Z}} @b{Research}
 
 @page
 @vskip 0pt plus 1filll
@@ -528,21 +529,6 @@ userspace implementation polls @code{/dev/fuse}, and when a request arrives,
 processes it and writes the result back to @code{/dev/fuse}. The kernel then
 reads from the device file and returns the result to the user process. 
 
-lorem ipsum filler text. lorem ipsum filler text. lorem ipsum filler
-text. lorem ipsum filler text. lorem ipsum filler text. lorem ipsum
-filler text. lorem ipsum filler text. lorem ipsum filler text. lorem
-ipsum filler text. lorem ipsum filler text. lorem ipsum filler
-text. lorem ipsum filler text. lorem ipsum filler text. lorem ipsum
-filler text. lorem ipsum filler text. lorem ipsum filler text. lorem
-ipsum filler text. lorem ipsum filler text. lorem ipsum filler
-text. lorem ipsum filler text. lorem ipsum filler text. lorem ipsum
-filler text. lorem ipsum filler text. lorem ipsum filler text. lorem
-ipsum filler text. lorem ipsum filler text. lorem ipsum filler
-text. lorem ipsum filler text. lorem ipsum filler text. lorem ipsum
-filler text. lorem ipsum filler text. lorem ipsum filler text. lorem
-ipsum filler text. lorem ipsum filler text. lorem ipsum filler
-text. lorem ipsum filler text.
-
 @node Translator
 @section Translator
 
@@ -586,13 +572,17 @@ root node, and then on to the application.
 
 So what might a translator tree look like?
 
+@tex
+\vfill
+@end tex
+
 @break
 
 @center{@image{fuse,44pc,}}
-@center Fig 1. GlusterFS control flow
+@center{Fig 1. Control flow in GlusterFS}
 
 @center{@image{xlator,44pc,}}
-@center Fig 2. A sample GlusterFS translator tree
+@center{Fig 2. A sample translator tree}
 
 @node Volume specification file
 @section Volume specification file
@@ -757,21 +747,52 @@ and server to communicate; @command{ib-sdp}, which uses a
 @acronym{TCP} connection over InfiniBand, and @command{ibverbs}, which
 uses high-speed InfiniBand connections.
 
+Each transport module comes in two different versions, one to be used on
+the server side and the other on the client side.
+
 @node TCP
 @subsubsection TCP
+
+The @acronym{TCP} transport module uses a @acronym{TCP/IP} connection between
+the server and the client.
+
+@example
+  option transport-type tcp/client
+  option transport-type tcp/server
+@end example
+
+The @acronym{TCP} client module accepts the following options:
 
 @cartouche
 @table @code
 @item non-blocking-connect [no|off|on|yes] (on)
-
+Whether to make the connection attempt asynchronous.
 @item remote-port <n> (6996)
-
+Server port to connect to.
 @item remote-host <hostname> *
+Hostname or @acronym{IP} address of the server.
+@end table
+@end cartouche
+
+The @acronym{TCP} server module accepts the following options:
+
+@cartouche
+@table @code
+@item bind-address <address> (0.0.0.0)
+The local interface on which the server should listen to requests. Default is to
+listen on all interfaces.
+@item listen-port <n> (6996)
+The local port to listen on.
 @end table
 @end cartouche
 
 @node IB-SDP
 @subsubsection IB-SDP
+@example
+  option transport-type ib-sdp/client
+  option transport-type ib-sdp/server
+@end example
+
 kernel implements socket interface for ib hardware. SDP is over ib-verbs.
 This module accepts the same options as @command{tcp}
 
@@ -779,6 +800,10 @@ This module accepts the same options as @command{tcp}
 @subsubsection ibverbs
 
 @cindex infiniband transport
+
+InfiniBand is a scalable switched fabric interconnect mechanism 
+primarily used in high-performance computing. InfiniBand can deliver
+data throughput of the order of 96 Gbit/s, with latencies of 1-2 ms.
 
 The @command{ib-verbs} transport accesses the InfiniBand hardware through
 the ``verbs'' @acronym{API}, which is the lowest level of software access possible
@@ -789,9 +814,12 @@ best to use @command{ib-verbs}. Use @command{ib-sdp} only if you cannot get
 If you are familiar with InfiniBand jargon,
 the mode is used by GlusterFS is ``reliable connection-oriented channel transfer''.
 
-(Mellanox notes).
+The @command{ib-verbs} transport module accepts the following options:
 
-The @command{ib-verbs} transport module accepts the following options.
+@tex
+\vfill
+@end tex
+@break
 
 @cartouche
 @table @code
@@ -829,17 +857,24 @@ ib-verbs is preferred over ib-sdp.
 type procotol/client
 @end example
 
-client protocol.
+The client translator enables the GlusterFS client to access a remote server's
+translator tree.
 
 @cartouche
 @table @code
 
 @item transport-type [tcp,ib-sdp,ib-verbs] (tcp/client)
-
+The transport type to use. You should use the client versions of all the
+transport modules (@command{tcp/client}, @command{ib-sdp/client}, 
+@command{ib-verbs/client}).
 @item remote-subvolume <volume_name> *
+The name of the volume on the remote host to attach to. Note that
+this is @emph{not} the name of the @command{protocol/server} volume on the
+server. It should be any volume under the server.
 @item inode-lru-limit <n> (1000)
 @item transport-timeout <n> (120- seconds)
-
+Time to wait for the completion of a request. If no response arrives within this
+time, the transport connection will be broken, and a new connection will be attempted.
 @end table
 @end cartouche
 
@@ -849,17 +884,39 @@ client protocol.
 type protocol/server
 @end example
 
+The server translator exports a translator tree and makes it accessible to
+remote GlusterFS clients.
+@tex
+\vfill
+@end tex
+@break
+
 @cartouche
 @table @code
 @item client-volume-filename <path> (<CONFDIR>/glusterfs-client.vol)
-
+The volume specification file to use for the client. This is the file the
+client will receive when it is invoked with the @command{--server} option 
+(@ref{Client}).
 @item transport-type [tcp,ib-verbs,ib-sdp] (tcp/server)
-
+The transport to use. You should use the server versions of all the transport
+modules (@command{tcp/server}, @command{ib-sdp/server}, @command{ib-verbs/server}).
 @end table
 @end cartouche
 
 @node Clustering Translators
 @section Clustering Translators
+
+The clustering translators are the most important GlusterFS
+translators, since it is these that make GlusterFS a cluster
+filesystem. These translators together enable GlusterFS to access an
+arbitrarily large amount of storage, and provide @acronym{RAID}-like
+redundancy and distribution over the entire cluster.
+
+There are three clustering translators: @strong{unify}, @strong{afr},
+and @strong{stripe}.  The unify translator aggregates storage from
+many server nodes. The afr translator provides file replication. The stripe
+translator allows a file to be spread across many server nodes. The following sections
+look at each of these translators in detail.
 
 @menu
 * Unify::                       
@@ -879,16 +936,52 @@ type protocol/server
 type cluster/unify
 @end example
 
-unify unifies its subvolumes.
-it has children, and will do stuff on them.
+The unify translator presents a `unified' view of all its sub-volumes. That is,
+it makes the union of all its sub-volumes appear as a single volume. It is the
+unify translator that gives GlusterFS the ability to access an arbitrarily 
+large amount of storage.
 
-scheduler is used for creates. 
- rr, random
- nufa - prefers local. otherwise does rr
- alu - adaptive least usage. Various criteria. order of preference. entry & exit
-       threshold.
+For unify to work correctly, certain invariants need to be maintained across
+the entire network. These are:
+
+@cindex unify invariants
+@itemize
+@item The directory structure of all the sub-volumes must be identical.
+@item A particular file can exist on only one of the sub-volumes. Phrasing it in another way, a pathname such as @command{/home/calvin/homework.txt}) is unique across the entire cluster.
+@end itemize
+
+@tex
+\vfill
+@end tex
+@break
+
+@center{@image{unify,44pc,}}
+
+Looking at the second requirement, you might wonder how one can
+accomplish storing redundant copies of a file, if no file can exist
+multiple times.  To answer, we must remember that these invariants are
+from @emph{unify's perspective}.  A translator such as @acronym{AFR} at a lower
+level in the translator tree than unify may subvert this picture. 
+
+The first invariant might seem quite tedious to ensure. We shall see
+later that this is not so, since unify's @emph{self-heal} mechanism
+takes care of maintaining it.
+
+The second invariant implies that unify needs some way to decide which file goes where.
+Unify makes use of @emph{scheduler} modules for this purpose.
+
+When a file needs to be created, unify's scheduler decides upon the
+sub-volume to be used to store the file. There are many schedules
+available, each using a different algorithm and suitable for different
+purposes.
+
+The various schedulers are described in detail in the sections that follow.
 
 @subsubsection ALU
+
+@example
+  option scheduler alu
+@end example
 
 ALU stands for "Adaptive Least Usage". It is the most advanced
 scheduler available in GlusterFS. It balances the load across volumes,
@@ -970,43 +1063,76 @@ are allowed. For example: @command{option alu.limits.min-free-disk 5GB}.
 
 @subsubsection Round Robin (RR)
 
+@example
+  option scheduler rr
+@end example
+
 Round-Robin (RR) scheduler creates files in a round-robin
 fashion. Each client will have its own round-robin loop. When your
 files are mostly similar in size and I/O access pattern, this
-scheduler is a good choice. RR scheduler now checks for free disk size
-of the server before scheduling, so you can know when to add
-another server brick. The default value of min-free-disk is 5% and is
-checked every 10 seconds (by default) if there is any create call
-happening.
+scheduler is a good choice. RR scheduler checks for free disk space
+on the server before scheduling, so you can know when to add
+another server node. The default value of min-free-disk is 5% and is
+checked on file creation calls, with atleast 10 seconds (by default) 
+elapsing between two checks.
 
+Options:
 @cartouche
 @table @code
 @item rr.limits.min-free-disk <%> (5)
+Minimum free disk space a node must have for RR to schedule a file to it.
 @item rr.refresh-interval <t> (10 seconds)
+Time between two successive free disk space checks.
 @end table
 @end cartouche
+
+@subsubsection Random
+@example
+  option scheduler random
+@end example
+
+The random scheduler schedules file creation randomly among its child nodes.
+Like the round-robin scheduler, it also checks for a minimum amount of free disk
+space before scheduling a file to a node.
 
 @cartouche
 @table @code
 @item random.limits.min-free-disk <%> (5)
+Minimum free disk space a node must have for random to schedule a file to it.
 @item random.refresh-interval <t> (10 seconds)
+Time between two successive free disk space checks.
 @end table
 @end cartouche
 
 @subsubsection NUFA
+@example
+  option scheduler nufa
+@end example
 
-Non-Uniform Filesystem Scheduler similar to NUMA
-@footnote{http://en.wikipedia.org/wiki/Non-Uniform_Memory_Access}
-memory design. It is mainly used in HPC environments where you are
-required to run the filesystem server and client within the same
-cluster. Under such environment, NUFA scheduler gives the local system
-first priority for file creation over other nodes.
+It is common in many GlusterFS computing environments for all deployed
+machines to act as both servers and clients. For example, a
+research lab may have 40 workstations each with its own storage. All
+of these workstations might act as servers exporting a volume as well
+as clients accessing the entire cluster's storage.  In such a
+situation, it makes sense to store locally created files on the local
+workstation itself (assuming files are accessed most by the
+workstation that created them). The @acronym{NUFA} scheduler accomplishes that.
+
+@acronym{NUFA} gives the local system first priority for file creation
+over other nodes. If the local volume does not have more free disk space
+than a specified amount (5% by default) then @acronym{NUFA} schedules files
+among the other child volumes in a round-robin fashion.
 
 @cartouche
 @table @code
 @item nufa.limits.min-free-disk <%> (5)
+Minimum disk space that must be free (local or remote) for @acronym{NUFA} to schedule a
+file to it.
 @item nufa.refresh-interval <t> (10 seconds)
+Time between two successive free disk space checks.
 @item nufa.local-volume-name <volume> 
+The name of the volume corresponding to the local system. This volume must be
+one of the children of the unify volume.
 @end table
 @end cartouche
 
@@ -1018,20 +1144,35 @@ Namespace volume needed because:
 
 namespace files are simply touched. on every lookup it is checked.
 
-@cindex self heal (unify)
-@subsubsection Self Heal
-Self heal:
- two rules:
-   - dir structure should be consistent.
-   - file should exist on only one node.
-
 @cartouche
 @table @code
 @item namespace <volume> *
+Name of the namespace volume (which should be one of the unify volume's children).
 @item self-heal [on|off] (on)
+Enable/disable self-heal. Unless you know what you are doing, do not disable self-heal.
 @item inode-lru-limit <n> (1000)
 @end table
 @end cartouche
+
+@cindex self heal (unify)
+@subsubsection Self Heal
+    * When a 'lookup()/stat()' call is made on directory for the first
+time, a self-heal call is made, which checks for the consistancy of
+its child nodes. If an entry is present in storage node, but not in
+namespace, that entry is created in namespace, and vica-versa. There
+is an writedir() API introduced which is used for the same. It also
+checks for permissions, and uid/gid consistencies.
+
+    * This check is also done when an server goes down and comes up.
+
+    * If one starts with an empty namespace export, but has data in
+storage nodes, a 'find .>/dev/null' or 'ls -lR >/dev/null' should help
+to build namespace in one shot. Even otherwise, namespace is built on
+demand when a file is looked up for the first time.
+
+NOTE: There are some issues (Kernel 'Oops' msgs) seen with fuse-2.6.3,
+when someone deletes namespace in backend, when glusterfs is
+running. But with fuse-2.6.5, this issue is not there.
 
 @node Automatic File Replication
 @subsection Automatic File Replication (AFR)
@@ -1157,6 +1298,12 @@ type cluster/stripe
 @end example
 
 uses extended attrs to store info.
+
+@tex
+\vfill
+@end tex
+@break
+@center{@image{stripe,44pc,}}
 
 @cartouche
 @table @code
@@ -1685,15 +1832,26 @@ vserver thing)
 @chapter Performance
 - effect of direct_io mode.
 
-@section glfs4 patched fuse
-channel size between fuse kernel module and libfuse tuned to 1MB
+@section Patched FUSE
+The GlusterFS project maintains a patched version of @acronym{FUSE} meant to be used 
+with GlusterFS. The patches increase GlusterFS performance. It is recommended that
+all users use the patched @acronym{FUSE}.
 
-kernel read-ahead boundry extended upto 1MB
+The patched @acronym{FUSE} tarball can be downloaded from:
 
-st_blksize returned in stat()/fstat() tuned to 1MB, to make cp and
-similar commands perform I/O in that block size
+@indicateurl{ftp://ftp.zresearch.com/pub/gluster/glusterfs/fuse/}
 
-flock() locking support [note: needs some rework in glusterfs for perfect compliance]
+The specific changes made to @acronym{FUSE} are:
+
+@itemize
+@item The communication channel size between @acronym{FUSE} kernel module and GlusterFS has been increased to 1MB, permitting large reads and writes to be sent in bigger chunks.
+
+@item The kernel's read-ahead boundry has been extended upto 1MB.
+
+@item Block size returned in the @command{stat()}/@command{fstat()} calls tuned to 1MB, to make cp and similar commands perform I/O using that block size.
+
+@item flock() locking support added (although some rework in GlusterFS is needed for perfect compliance).
+@end itemize
 
 @section DNS failover
 GlusterFS client will try connecting to all the IP addresses of a
