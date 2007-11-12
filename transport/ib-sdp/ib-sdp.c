@@ -150,4 +150,3 @@ ib_sdp_bail (transport_t *this)
 
   return 0;
 }
-

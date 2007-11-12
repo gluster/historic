@@ -31,7 +31,7 @@ ioc_page_get (ioc_inode_t *ioc_inode,
 {
   ioc_table_t *table = ioc_inode->table;
   ioc_page_t *page = NULL;
-  off_t rounded_offset = floor (offset, table->page_size);
+  off_t rounded_offset = gf_floor (offset, table->page_size);
   int8_t found = 0;
 
   if (list_empty (&ioc_inode->pages)) {
@@ -175,7 +175,7 @@ ioc_page_create (ioc_inode_t *ioc_inode,
 {
   ioc_table_t *table = ioc_inode->table;
   ioc_page_t *page = NULL;
-  off_t rounded_offset = floor (offset, table->page_size);
+  off_t rounded_offset = gf_floor (offset, table->page_size);
   ioc_page_t *newpage = calloc (1, sizeof (*newpage));
   
   if (ioc_inode)
@@ -438,7 +438,7 @@ ioc_frame_fill (ioc_page_t *page,
 
     /* we have to copy from offset to either end of this page or till the 
      * requested size */
-    copy_size = min (page->size - src_offset,
+    copy_size = gf_min (page->size - src_offset,
 		     size - dst_offset);
 
     if (copy_size < 0) {

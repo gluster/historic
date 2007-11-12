@@ -240,8 +240,8 @@ static posix_lock_t *
 add_locks (posix_lock_t *l1, posix_lock_t *l2)
 {
   posix_lock_t *sum = calloc (1, sizeof (posix_lock_t));
-  sum->fl_start = min (l1->fl_start, l2->fl_start);
-  sum->fl_end   = max (l1->fl_end, l2->fl_end);
+  sum->fl_start = gf_min (l1->fl_start, l2->fl_start);
+  sum->fl_end   = gf_max (l1->fl_end, l2->fl_end);
 
   return sum;
 }

@@ -669,8 +669,8 @@ dispatch_requests (call_frame_t *frame,
   int8_t might_need_validate = 0;  /* if a page exists, do we need to validate it? */
   int8_t need_validate = 0;
 
-  rounded_offset = floor (offset, table->page_size);
-  rounded_end = roof (offset + size, table->page_size);
+  rounded_offset = gf_floor (offset, table->page_size);
+  rounded_end = gf_roof (offset + size, table->page_size);
   trav_offset = rounded_offset;
 
   /* once a frame does read, it should be waiting on something */
@@ -693,8 +693,8 @@ dispatch_requests (call_frame_t *frame,
     /* look for requested region in the cache */
     trav = ioc_page_get (ioc_inode, trav_offset);
 
-    local_offset = max (trav_offset, offset);
-    trav_size = min (((offset+size) - local_offset), table->page_size);
+    local_offset = gf_max (trav_offset, offset);
+    trav_size = gf_min (((offset+size) - local_offset), table->page_size);
 
     if (!trav) {
       /* page not in cache, we need to generate page fault */
@@ -1053,7 +1053,7 @@ ioc_get_priority_list (const char *opt_str, struct list_head *first)
     if (tmp_str2 && (*tmp_str2))
       return -1;
     else
-      max_pri = max (max_pri, curr->priority);
+      max_pri = gf_max (max_pri, curr->priority);
     stripe_str = strtok_r (NULL, ",", &tmp_str);
   }
 

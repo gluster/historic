@@ -27,6 +27,7 @@
 #include "glusterfs.h"
 #include "logging.h"
 #include "common-utils.h"
+#include "fd.h"
 #include "dict.h"
 
 #define FIRST_CHILD(xl) (xl->children->xlator)
@@ -37,8 +38,6 @@ struct _dir_entry_t;
 typedef struct _dir_entry_t dir_entry_t;
 struct file_context;
 typedef struct file_context file_ctx_t;
-struct _fd;
-typedef struct _fd fd_t;
 struct _loc;
 typedef struct _loc loc_t;
 
@@ -48,16 +47,6 @@ typedef int32_t (*event_notify_fn_t) (xlator_t *this,
 				      ...);
 
 #include "list.h"
-
-struct _fd {
-  struct list_head inode_list;
-  pthread_mutex_t lock;
-  int32_t ref;
-  struct _inode *inode;
-  dict_t *ctx;
-};
-
-
 #include "stack.h"
 #include "inode.h"
 

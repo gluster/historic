@@ -33,7 +33,7 @@ ra_page_get (ra_file_t *file,
 {
   //  ra_conf_t *conf = file->conf;
   ra_page_t *page = file->pages.next;
-  off_t rounded_offset = floor (offset, file->page_size);
+  off_t rounded_offset = gf_floor (offset, file->page_size);
 
   while (page != &file->pages && page->offset < rounded_offset)
     page = page->next;
@@ -50,7 +50,7 @@ ra_page_create (ra_file_t *file,
 {
   //  ra_conf_t *conf = file->conf;
   ra_page_t *page = file->pages.next;
-  off_t rounded_offset = floor (offset, file->page_size);
+  off_t rounded_offset = gf_floor (offset, file->page_size);
 
   while (page != &file->pages && page->offset < rounded_offset)
     page = page->next;
@@ -190,7 +190,7 @@ ra_frame_fill (ra_page_t *page,
     else
       dst_offset = page->offset - local->offset;
 
-    copy_size = min (page->size - src_offset,
+    copy_size = gf_min (page->size - src_offset,
 		     local->size - dst_offset);
 
     if (copy_size < 0) {

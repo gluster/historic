@@ -1462,8 +1462,8 @@ unify_statfs_cbk (call_frame_t *frame,
       dict_buf = &local->statvfs_buf;
 
       if (dict_buf->f_bsize != 0) {
-        bsize  = max (dict_buf->f_bsize, stbuf->f_bsize);
-        frsize = max (dict_buf->f_frsize, stbuf->f_frsize);
+        bsize  = gf_max (dict_buf->f_bsize, stbuf->f_bsize);
+        frsize = gf_max (dict_buf->f_frsize, stbuf->f_frsize);
         unify_normalize_statvfs(dict_buf, bsize, frsize);
         unify_normalize_statvfs(stbuf, bsize, frsize);
       } else {

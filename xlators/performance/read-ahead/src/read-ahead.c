@@ -298,10 +298,10 @@ read_ahead (call_frame_t *frame,
     return;
 
   ra_size = file->page_size * file->page_count;
-  ra_offset = floor (file->offset, file->page_size);
+  ra_offset = gf_floor (file->offset, file->page_size);
   cap = file->size ? file->size : file->offset + ra_size;
 
-  while (ra_offset < min (file->offset + ra_size, cap)) {
+  while (ra_offset < gf_min (file->offset + ra_size, cap)) {
     ra_file_lock (file);
     trav = ra_page_get (file, ra_offset);
     ra_file_unlock (file);
@@ -318,7 +318,7 @@ read_ahead (call_frame_t *frame,
 
   trav = file->pages.next;
   cap = file->size ? file->size : ra_offset + ra_size;
-  while (trav_offset < min(ra_offset + ra_size, cap)) {
+  while (trav_offset < gf_min(ra_offset + ra_size, cap)) {
     char fault = 0;
     ra_file_lock (file);
     trav = ra_page_get (file, trav_offset);
@@ -366,8 +366,8 @@ dispatch_requests (call_frame_t *frame,
   call_frame_t *ra_frame;
   char need_atime_update = 1;
 
-  rounded_offset = floor (local->offset, file->page_size);
-  rounded_end = roof (local->offset + local->size, file->page_size);
+  rounded_offset = gf_floor (local->offset, file->page_size);
+  rounded_end = gf_roof (local->offset + local->size, file->page_size);
 
   trav_offset = rounded_offset;
   trav = file->pages.next;
@@ -467,7 +467,7 @@ ra_readv (call_frame_t *frame,
 	    offset, file->page_count);
     if (file->expected < (conf->page_size * conf->page_count)) {
       file->expected += size;
-      file->page_count = min ((file->expected / file->page_size),
+      file->page_count = gf_min ((file->expected / file->page_size),
 			      conf->page_count);
     }
   }
@@ -501,7 +501,7 @@ ra_readv (call_frame_t *frame,
 
   dispatch_requests (frame, file);
 
-  flush_region (frame, file, 0, floor (offset, file->page_size));
+  flush_region (frame, file, 0, gf_floor (offset, file->page_size));
 
   ra_frame_return (frame);
 

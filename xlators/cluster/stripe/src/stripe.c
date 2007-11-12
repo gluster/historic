@@ -2583,8 +2583,8 @@ stripe_readv (call_frame_t *frame,
      * which child node. Always '0-<stripe_size>' part of the file resides in
      * the first child.
      */
-    rounded_start = floor (offset, stripe_size);
-    rounded_end = roof (offset+size, stripe_size);
+    rounded_start = gf_floor (offset, stripe_size);
+    rounded_end = gf_roof (offset+size, stripe_size);
     num_stripe = (rounded_end - rounded_start) / stripe_size;
 
     local = calloc (1, sizeof (stripe_local_t));
@@ -2606,7 +2606,7 @@ stripe_readv (call_frame_t *frame,
       rframe = copy_frame (frame);
       rlocal = calloc (1, sizeof (stripe_local_t));
 
-      frame_size = min (roof (frame_offset+1, stripe_size),
+      frame_size = gf_min (gf_roof (frame_offset+1, stripe_size),
 			(offset + size)) - frame_offset;
       
       rlocal->node_index = index;

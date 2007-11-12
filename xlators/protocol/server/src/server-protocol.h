@@ -20,11 +20,14 @@
 #ifndef _SERVER_PROTOCOL_H_
 #define _SERVER_PROTOCOL_H_
 
+#define _FDTABLE
+
 #include "glusterfs.h"
 #include "xlator.h"
 #include "logging.h"
 #include "call-stub.h"
 #include "authenticate.h"
+#include "fd.h"
 #include <pthread.h>
 
 #define DEFAULT_LOG_FILE       DATADIR"/log/glusterfs/glusterfsd.log"
@@ -66,8 +69,7 @@ typedef struct _server_reply_queue server_reply_queue_t;
 struct server_proto_priv {
   pthread_mutex_t lock;
   char disconnected;
-  dict_t *open_files;
-  dict_t *open_dirs;
+  fdtable_t *fdtable;
   xlator_t *bound_xl; /* to be set after an authenticated SETVOLUME */
 };
 
@@ -96,4 +98,6 @@ typedef struct _server_state server_state_t;
 
 typedef struct open_file_cleanup open_file_cleanup_t;
 typedef struct server_proto_priv server_proto_priv_t;
+
+
 #endif
