@@ -54,12 +54,6 @@
 static int32_t
 server_inode_prune (xlator_t *bound_xl);
 
-static void *
-str_to_ptr (char *string)
-{
-  return (void *)strtoul (string, NULL, 16);
-}
-
 static inode_t *
 dummy_inode (inode_table_t *table)
 {
@@ -326,11 +320,17 @@ server_fchmod (call_frame_t *frame,
 {  
   data_t *fd_data = dict_get (params, "FD");
   data_t *mode_data = dict_get (params, "MODE");
-  char *fd_str = NULL;
-  fd_t *fd = NULL;
   mode_t mode = 0;
+  server_proto_priv_t *priv = SERVER_PRIV (frame);
+  int32_t fd_no = -1;
+  fd_t *fd = NULL;
 
-  if (!fd_data || !mode_data) {
+  if (fd_data) {
+    fd_no = data_to_int32 (fd_data);
+    fd = gf_fd_fdptr_get (priv->fdtable, fd_no);
+  }
+
+  if (!fd || !mode_data) {
     struct stat stbuf = {0,};
     server_fchmod_cbk (frame,
 		       NULL,
@@ -341,8 +341,6 @@ server_fchmod (call_frame_t *frame,
     return 0;
   }
 
-  fd_str = data_to_str (fd_data);
-  fd = str_to_ptr (fd_str);
   mode = data_to_uint64 (mode_data);
 
   STACK_WIND (frame, 
@@ -4613,10 +4611,16 @@ server_lk (call_frame_t *frame,
   data_t *pid_data = dict_get (params, "PID");
   struct flock lock = {0, };
   int32_t cmd = 0;
-  char *fd_str = NULL;
   fd_t *fd = NULL;
+  int32_t fd_no = -1;
+  server_proto_priv_t *priv = SERVER_PRIV (frame);
 
-  if (!fd_data ||
+  if (fd_data) {
+    fd_no = data_to_int32 (fd_data);
+    fd = gf_fd_fdptr_get (priv->fdtable, fd_no);
+  }
+
+  if (!fd ||
       !cmd_data ||
       !type_data ||
       !whence_data ||
@@ -4639,9 +4643,6 @@ server_lk (call_frame_t *frame,
   lock.l_start =  data_to_int64 (start_data);
   lock.l_len =  data_to_int64 (len_data);
   lock.l_pid =  data_to_uint32 (pid_data);
-
-  fd_str = data_to_str (fd_data);
-  fd = str_to_ptr (fd_str);
 
   STACK_WIND (frame, 
 	      server_lk_cbk, 
@@ -4673,11 +4674,17 @@ server_writedir (call_frame_t *frame,
   data_t *flag_data = dict_get (params, "FLAGS");
   data_t *fd_data = dict_get (params, "FD");
   dir_entry_t *entry = NULL;
-  char *fd_str = NULL; 
   fd_t *fd = NULL; 
   int32_t nr_count = 0;
+  int32_t fd_no = -1;
+  server_proto_priv_t *priv = SERVER_PRIV (frame);
 
-  if (!fd_data || !flag_data || !buf_data || !count_data) {
+  if (fd_data) {
+    fd_no = data_to_int32 (fd_data);
+    fd = gf_fd_fdptr_get (priv->fdtable, fd_no);
+  }
+
+  if (!fd || !flag_data || !buf_data || !count_data) {
     server_writedir_cbk (frame,
 			 NULL,
 			 frame->this,
@@ -4777,9 +4784,6 @@ server_writedir (call_frame_t *frame,
     }
   }
 
-  fd_str = data_to_str (fd_data);
-  fd = str_to_ptr (fd_str);
-  
   STACK_WIND (frame, 
 	      server_writedir_cbk, 
 	      bound_xl,
@@ -5746,36 +5750,38 @@ server_protocol_cleanup (transport_t *trans)
 
   frame = get_frame_for_transport (trans);
   pthread_mutex_lock (&priv->lock);
-  if (priv->fdtable) {
-    int32_t i = 0;
-    pthread_mutex_lock (&priv->fdtable->lock);
-    {
-      for (i=0; i < priv->fdtable->max_fds; i++)
-	{
-	  if (priv->fdtable->fds[i]) {
-	    mode_t st_mode = priv->fdtable->fds[i]->inode->st_mode ;
-	    fd_t *fd = priv->fdtable->fds[i];
-	    if (S_ISDIR (st_mode)) {
-	      STACK_WIND (frame,
-			  server_nop_cbk,
-			  bound_xl,
-			  bound_xl->fops->closedir,
-			  fd);
-	    } else {
-	      STACK_WIND (frame,
-			  server_nop_cbk,
-			  bound_xl,
-			  bound_xl->fops->close,
-			  fd);
+  {
+    if (priv->fdtable) {
+      int32_t i = 0;
+      pthread_mutex_lock (&priv->fdtable->lock);
+      {
+	for (i=0; i < priv->fdtable->max_fds; i++)
+	  {
+	    if (priv->fdtable->fds[i]) {
+	      mode_t st_mode = priv->fdtable->fds[i]->inode->st_mode ;
+	      fd_t *fd = priv->fdtable->fds[i];
+	      if (S_ISDIR (st_mode)) {
+		STACK_WIND (frame,
+			    server_nop_cbk,
+			    bound_xl,
+			    bound_xl->fops->closedir,
+			    fd);
+	      } else {
+		STACK_WIND (frame,
+			    server_nop_cbk,
+			    bound_xl,
+			    bound_xl->fops->close,
+			    fd);
+	      }
 	    }
 	  }
-	}
+      }
+      pthread_mutex_unlock (&priv->fdtable->lock);
+      gf_fd_fdtable_destroy (priv->fdtable);
+      priv->fdtable = NULL;
     }
-    pthread_mutex_unlock (&priv->fdtable->lock);
-    gf_fd_fdtable_destroy (priv->fdtable);
-    priv->fdtable = NULL;
   }
-
+  pthread_mutex_unlock (&priv->lock);
   /* ->unlock () with NULL path will cleanup
      lock manager's internals by remove all
      entries related to this transport
