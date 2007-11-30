@@ -33,7 +33,7 @@ mkdir -p /mnt
 cp -f /usr/bin/dialog /usr/bin/dialog.bin
 cat > /usr/bin/dialog <<EOF
 #!/bin/sh
-/usr/bin/dialog.bin --backtitle 'Gluster v1.3 (bulde)                   Copyright (c) 2006,2007 Z RESEARCH Inc.' --aspect 32 "\$@"
+/usr/bin/dialog.bin --backtitle 'Gluster v1.4 (bulde)                   Copyright (c) 2006,2007 Z RESEARCH Inc.' --aspect 32 "\$@"
 EOF
 killall -9 udevd
 
@@ -79,5 +79,6 @@ echo " * Loading kernel modules ..."
 
 echo " * Disabling console blanking ..."
 setterm -blank 0
+setterm -repeat off
 
 exec /etc/rc.d/rc.slave

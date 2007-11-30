@@ -15,14 +15,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
-aclocal
+
+set -e
+set -x
+aclocal -I .
+autoheader
+libtoolize --force --automake --copy
+automake --gnu --include-deps --copy --add-missing
 autoconf
-automake --add-missing --copy --foreign
 
 for autogensh in ramdisk/autogen.sh extensions/*/autogen.sh; do
     sh $autogensh
 done
 
-mkdir -p tarballs
+#mkdir -p tarballs
 #wget -Ptarballs/ -nH ftp://ftp.zresearch.com/pub/gluster/external/*
-

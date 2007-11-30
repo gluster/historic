@@ -14,7 +14,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
-kernel-prepare.%: PACKAGE_NAME=linux-2.6.21.4
+kernel-prepare.%: PACKAGE_NAME=linux-2.6.23.9
 kernel-prepare.%: LIVE_PREPARE_CMD=cp $(PATCHES_DIR)/$(PACKAGE_NAME)/config-$(KERNEL_ARCH) .config
 kernel-prepare.%: LIVE_CONFIGURE_CMD=
 kernel-prepare.%: LIVE_BUILD_CMD=make -j 8 modules_prepare CROSS_COMPILE=$(CROSS)- ARCH=$(KERNEL_ARCH)

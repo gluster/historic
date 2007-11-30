@@ -1,6 +1,12 @@
 
-AC_INIT([gluster], [1.3], [gluster-devel@nongnu.org])
-AM_INIT_AUTOMAKE
+AC_INIT([gluster], [1.4], [gluster-devel@nongnu.org])
+AM_INIT_AUTOMAKE([1.8])
+
+AC_PREREQ([2.57])
+
+AC_CONFIG_SRCDIR([ChangeLog])
+
+AM_CONFIG_HEADER([config.h])
 
 AC_CONFIG_FILES([Makefile 
 

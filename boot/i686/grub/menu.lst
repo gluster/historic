@@ -1,14 +1,22 @@
 default 0
-timeout 10
+timeout 15
 # splashimage (cd)/boot/grub/gluster-logo.xpm.gz
 
 # Pretty colours
 color cyan/blue white/blue
 
 title -= Gluster Server =-
-kernel (cd)/boot/linux.master.i686 ramdisk_size=65536 quiet
+kernel (cd)/boot/linux.master.i686 ramdisk_size=65536 
+initrd (cd)/boot/initrd.master.i686.gz
+
+title -= Gluster Server (Safe Mode) =-
+kernel (cd)/boot/linux.master.i686 ramdisk_size=65536 acpi=off noapic
 initrd (cd)/boot/initrd.master.i686.gz
 
 title -= Gluster Client =-
-kernel (cd)/boot/linux.slave.i686 ramdisk_size=65536 quiet
+kernel (cd)/boot/linux.slave.i686 ramdisk_size=65536 
+initrd (cd)/boot/initrd.slave.i686.gz
+
+title -= Gluster Client (Safe Mode) =-
+kernel (cd)/boot/linux.slave.i686 ramdisk_size=65536 acpi=off noapic
 initrd (cd)/boot/initrd.slave.i686.gz

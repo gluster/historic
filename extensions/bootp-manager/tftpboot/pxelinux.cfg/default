@@ -1,11 +1,15 @@
 DEFAULT gluster-client
+IMPLICIT 0
 PROMPT 1
 NOESCAPE 1
-TIMEOUT 10
+# 15 seconds timeout
+TIMEOUT 150
 ALLOWOPTIONS 1
-MENU TITLE Gluster PXE Boot
 LABEL gluster-client
-    MENU LABEL
     KERNEL linux.slave
-    APPEND initrd=initrd.slave.gz quiet gluster_bootp=yes ramdisk_size=65536
+    APPEND initrd=initrd.slave.gz gluster_bootp=yes ramdisk_size=65536
+
+LABEL safe
+    KERNEL linux.slave
+    APPEND initrd=initrd.slave.gz gluster_bootp=yes ramdisk_size=65536 acpi=off noapic
 
