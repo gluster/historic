@@ -1,0 +1,221 @@
+diff -pruN iputils-20070202/arping.c iputils-20070202.patched/arping.c
+--- iputils-20070202/arping.c	2007-02-02 04:55:46.000000000 -0800
++++ iputils-20070202.patched/arping.c	2007-11-29 08:05:07.000000000 -0800
+@@ -168,12 +168,17 @@ void catcher(void)
+ 	if (start.tv_sec==0)
+ 		start = tv;
+ 
+-	if (count-- == 0 || (timeout && MS_TDIFF(tv,start) > timeout*1000 + 500))
+-		finish();
++	if (timeout && MS_TDIFF(tv,start) > timeout*1000 + 500)
++ 		finish();
+ 
+-	if (last.tv_sec==0 || MS_TDIFF(tv,last) > 500) {
++	if ((!timeout) && (count == 0))
++		finish();
++ 
++	if ( count!=0  && (last.tv_sec==0 || MS_TDIFF(tv,last) > 500 ) ) {
+ 		send_pack(s, src, dst, &me, &he);
+-		if (count == 0 && unsolicited)
++		if (count >= 0)
++			count--;
++		if (count==0 && unsolicited)
+ 			finish();
+ 	}
+ 	alarm(1);
+diff -pruN iputils-20070202/doc/docbook2man-spec.pl iputils-20070202.patched/doc/docbook2man-spec.pl
+--- iputils-20070202/doc/docbook2man-spec.pl	2007-02-02 04:55:46.000000000 -0800
++++ iputils-20070202.patched/doc/docbook2man-spec.pl	2007-11-29 08:05:07.000000000 -0800
+@@ -52,7 +52,7 @@ Software Foundation, 675 Mass Ave, Cambr
+ 
+ =cut
+ 
+-# $Id: docbook2man-spec.pl,v 1.1 2000/07/21 20:22:30 rosalia Exp $
++# $Id: docbook2man-spec.pl 116 2007-10-28 20:17:29Z noahm $
+ 
+ use SGMLS;			# Use the SGMLS package.
+ use SGMLS::Output;		# Use stack-based output.
+@@ -428,7 +428,7 @@ sub arg_start
+ 	output ' ';
+ 
+ 	if($_[0]->attribute('CHOICE')->value =~ /opt/i) {
+-		output '[ ';
++		output '[';
+ 	}
+ 	bold_on();
+ }
+@@ -441,7 +441,7 @@ sub arg_end
+ 		font_off();
+ 	}
+ 	if($_[0]->attribute('CHOICE')->value =~ /opt/i) {
+-		output '] ';
++		output ']';
+ 	}
+ }
+ 
+diff -pruN iputils-20070202/doc/Makefile iputils-20070202.patched/doc/Makefile
+--- iputils-20070202/doc/Makefile	2007-02-02 04:55:46.000000000 -0800
++++ iputils-20070202.patched/doc/Makefile	2007-11-29 08:05:07.000000000 -0800
+@@ -6,7 +6,7 @@ all: html
+ 
+ html: $(HTMLFILES) iputils.html
+ 
+-man: $(MANFILES)
++man: $(MANFILES) fix_sgml2man
+ 
+ # docbook scripts are incredibly dirty in the sense that they leak
+ # lots of some strange temporary junk directories and files.
+@@ -33,6 +33,9 @@ $(MANFILES): index.db
+ 	@set -e; cd tmp.db2man; nsgmls ../$< | sgmlspl ../docbook2man-spec.pl ;	mv $@ ..
+ 	@-rm -rf tmp.db2man
+ 
++fix_sgml2man:
++	@sed -i -e 's!\\fB\\fIdestination\\fB\\fR \[\\fB/\\fIport\\fB\\fR\]!\\fB\\fIdestination\\fB\\fR[\\fB/\\fIport\\fB\\fR]!g' tracepath.8
++
+ clean:
+ 	@rm -rf $(MANFILES) $(HTMLFILES) iputils.html tmp.db2html tmp.db2man
+ 
+diff -pruN iputils-20070202/doc/tracepath.sgml iputils-20070202.patched/doc/tracepath.sgml
+--- iputils-20070202/doc/tracepath.sgml	2007-02-02 04:55:46.000000000 -0800
++++ iputils-20070202.patched/doc/tracepath.sgml	2007-11-29 08:05:07.000000000 -0800
+@@ -15,8 +15,9 @@ traces path to a network host discoverin
+ <refsynopsisdiv>
+ <cmdsynopsis>
+ <command>tracepath</command>
++<arg choice="opt">-n</arg>
+ <arg choice="req"><replaceable/destination/</arg>
+-<arg choice="opt"><replaceable/port/</arg>
++<arg choice="opt">/<replaceable/port/</arg>
+ </cmdsynopsis>
+ </refsynopsisdiv>
+ 
+diff -pruN iputils-20070202/Makefile iputils-20070202.patched/Makefile
+--- iputils-20070202/Makefile	2007-02-02 04:55:46.000000000 -0800
++++ iputils-20070202.patched/Makefile	2007-11-29 08:05:07.000000000 -0800
+@@ -16,7 +16,7 @@ CC=gcc
+ CCOPT=-D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall -g
+ CFLAGS=$(CCOPT) $(GLIBCFIX) $(DEFINES) 
+ 
+-IPV4_TARGETS=tracepath ping clockdiff rdisc arping tftpd rarpd
++IPV4_TARGETS=tracepath ping arping
+ IPV6_TARGETS=tracepath6 traceroute6 ping6
+ TARGETS=$(IPV4_TARGETS) $(IPV6_TARGETS)
+ 
+@@ -25,7 +25,6 @@ TAG:=`date +s%Y%m%d`
+ 
+ all: $(TARGETS)
+ 
+-
+ tftpd: tftpd.o tftpsubs.o
+ ping: ping.o ping_common.o
+ ping6: ping6.o ping_common.o
+@@ -37,7 +36,6 @@ rdisc_srv: rdisc_srv.o
+ rdisc_srv.o: rdisc.c
+ 	$(CC) $(CFLAGS) -DRDISC_SERVER -o rdisc_srv.o rdisc.c
+ 
+-
+ check-kernel:
+ ifeq ($(KERNEL_INCLUDE),)
+ 	@echo "Please, set correct KERNEL_INCLUDE"; false
+diff -pruN iputils-20070202/ping6.c iputils-20070202.patched/ping6.c
+--- iputils-20070202/ping6.c	2007-02-02 04:55:46.000000000 -0800
++++ iputils-20070202.patched/ping6.c	2007-11-29 08:05:07.000000000 -0800
+@@ -414,7 +414,7 @@ int main(int argc, char *argv[])
+ 			fprintf(stderr, "ping: unknown iface %s\n", device);
+ 			exit(2);
+ 		}
+-		cmsg = (struct cmsghdr*)cmsgbuf;
++		cmsg = (struct cmsghdr*)(cmsgbuf+cmsglen);
+ 		cmsglen += CMSG_SPACE(sizeof(*ipi));
+ 		cmsg->cmsg_len = CMSG_LEN(sizeof(*ipi));
+ 		cmsg->cmsg_level = SOL_IPV6;
+@@ -486,7 +486,6 @@ int main(int argc, char *argv[])
+ 	/*
+ 	 *	select icmp echo reply as icmp type to receive
+ 	 */
+-
+ 	ICMP6_FILTER_SETBLOCKALL(&filter);
+ 
+ 	if (!working_recverr) {
+diff -pruN iputils-20070202/ping.c iputils-20070202.patched/ping.c
+--- iputils-20070202/ping.c	2007-02-02 04:55:46.000000000 -0800
++++ iputils-20070202.patched/ping.c	2007-11-29 08:05:07.000000000 -0800
+@@ -242,7 +242,7 @@ main(int argc, char **argv)
+ 			if (argc == 1)
+ 				options |= F_NUMERIC;
+ 		} else {
+-			hp = gethostbyname(target);
++			hp = gethostbyname2(target, AF_INET);
+ 			if (!hp) {
+ 				fprintf(stderr, "ping: unknown host %s\n", target);
+ 				exit(2);
+@@ -858,9 +858,36 @@ void pr_icmph(__u8 type, __u8 code, __u3
+ 		case ICMP_SR_FAILED:
+ 			printf("Source Route Failed\n");
+ 			break;
++		case ICMP_NET_UNKNOWN:
++			printf("Destination Net Unknown\n");
++			break;
++		case ICMP_HOST_UNKNOWN:
++			printf("Destination Host Unknown\n");
++			break;
++		case ICMP_HOST_ISOLATED:
++			printf("Source Host Isolated\n");
++			break;
++		case ICMP_NET_ANO:
++			printf("Destination Net Prohibited\n");
++			break;
++		case ICMP_HOST_ANO:
++			printf("Destination Host Prohibited\n");
++			break;
++		case ICMP_NET_UNR_TOS:
++			printf("Destination Net Unreachable for Type of Service\n");
++			break;
++		case ICMP_HOST_UNR_TOS:
++			printf("Destination Host Unreachable for Type of Service\n");
++			break;
+ 		case ICMP_PKT_FILTERED:
+ 			printf("Packet filtered\n");
+ 			break;
++		case ICMP_PREC_VIOLATION:
++			printf("Precedence Violation\n");
++			break;
++		case ICMP_PREC_CUTOFF:
++			printf("Precedence Cutoff\n");
++			break;
+ 		default:
+ 			printf("Dest Unreachable, Bad Code: %d\n", code);
+ 			break;
+diff -pruN iputils-20070202/ping_common.c iputils-20070202.patched/ping_common.c
+--- iputils-20070202/ping_common.c	2007-02-02 04:55:46.000000000 -0800
++++ iputils-20070202.patched/ping_common.c	2007-11-29 08:05:07.000000000 -0800
+@@ -818,7 +818,8 @@ void finish(void)
+ 	}
+ 	if (pipesize > 1)
+ 		printf(", pipe %d", pipesize);
+-	if (ntransmitted > 1 && (!interval || (options&(F_FLOOD|F_ADAPTIVE)))) {
++	if (ntransmitted > 1 && nreceived && 
++			(!interval || (options&(F_FLOOD|F_ADAPTIVE)))) {
+ 		int ipg = (1000000*(long long)tv.tv_sec+tv.tv_usec)/(ntransmitted-1);
+ 		printf(", ipg/ewma %d.%03d/%d.%03d ms",
+ 		       ipg/1000, ipg%1000, rtt/8000, (rtt/8)%1000);
+@@ -852,4 +853,3 @@ void status(void)
+ 	}
+ 	fprintf(stderr, "\n");
+ }
+-
+diff -pruN iputils-20070202/tracepath.c iputils-20070202.patched/tracepath.c
+--- iputils-20070202/tracepath.c	2007-02-02 04:55:46.000000000 -0800
++++ iputils-20070202.patched/tracepath.c	2007-11-29 08:05:07.000000000 -0800
+@@ -309,9 +309,9 @@ main(int argc, char **argv)
+ 		base_port = atoi(p+1);
+ 	} else
+ 		base_port = 44444;
+-	he = gethostbyname(argv[0]);
++	he = gethostbyname2(argv[0], AF_INET);
+ 	if (he == NULL) {
+-		herror("gethostbyname");
++		herror("gethostbyname2");
+ 		exit(1);
+ 	}
+ 	memcpy(&target.sin_addr, he->h_addr, 4);
