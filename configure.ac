@@ -34,8 +34,6 @@ AC_CONFIG_FILES([Makefile
 		xlators/storage/Makefile
 		xlators/storage/posix/Makefile
 		xlators/storage/posix/src/Makefile
-		xlators/storage/bdb/Makefile
-		xlators/storage/bdb/src/Makefile
 		xlators/cluster/Makefile
 		xlators/cluster/unify/Makefile
 		xlators/cluster/unify/src/Makefile
@@ -234,63 +232,6 @@ fi
 AC_SUBST(IBVERBS_SUBDIR)
 # end IBVERBS section
 
-
-# Berkely-DB section
-# storage/bdb requires Berkeley-DB version 4.6.21 or higher
-_GLFS_DB_VERSION_MAJOR=4
-_GLFS_DB_VERSION_MINOR=6
-_GLFS_DB_VERSION_PATCH=21
-AC_ARG_ENABLE([db],
-	      AC_HELP_STRING([--disable-bdb],
-			     [Do not build the Berkeley-DB translator]))
-
-if test "x$enable_bdb" != "xno"; then
-   AC_CHECK_HEADERS([db.h],
-                    [HAVE_BDB="yes"],
-                    [HAVE_BDB="no"])
-   if test "x$HAVE_BDB" = "xyes"; then
-      AC_CHECK_LIB([db],
-                   [db_create],
-	           [HAVE_BDB="yes"],
-	           [HAVE_BDB="no"])
-   fi
-
-   if test "x$HAVE_BDB" = "xyes"; then
-      AC_TRY_COMPILE([#include <db.h>],
-	 	      #if (DB_VERSION_MAJOR < $_GLFS_DB_VERSION_MAJOR) ||\
-		          (DB_VERSION_MAJOR == $_GLFS_DB_VERSION_MAJOR && \
-		           DB_VERSION_MINOR < $_GLFS_DB_VERSION_MINOR) || \
-		          (DB_VERSION_MAJOR == $_GLFS_DB_VERSION_MAJOR && \
-		           DB_VERSION_MINOR == $_GLFS_DB_VERSION_MINOR && \
-			   DB_VERSION_PATCH < $_GLFS_DB_VERSION_PATCH)
-		      #error "bdb older than required"
-		      #endif
-		      ,
-		     [HAVE_BDB_VERSION="yes"],
-		     [HAVE_BDB_VERSION="no"])
-   fi		     
-fi
-
-if test "x$enable_bdb" = "xyes" -a "x$HAVE_BDB" = "xno"; then
-   echo "Berkeley-DB requested but not found."
-   exit 1
-fi
-
-
-BUILD_BDB=no
-if test "x$enable_bdb" != "xno" -a "x$HAVE_BDB" = "xyes"; then
-      BDB_SUBDIR=bdb	       
-      BUILD_BDB=yes
-fi
-
-if test "x$HAVE_BDB_VERSION" == "xno"; then
-   BDB_SUBDIR=""
-   BUILD_BDB=no
-fi
-
-AC_SUBST(BDB_SUBDIR)
-# end BDB section
-
 dnl FreeBSD > 5 has execinfo as a Ported library for giving a workaround
 dnl solution to GCC backtrace functionality
 
@@ -420,8 +361,4 @@ echo "Fuse client        : $BUILD_FUSE_CLIENT"
 echo "Python bindings    : $BUILD_PYTHON_BINDINGS"
 echo "Infiniband verbs   : $BUILD_IBVERBS"
 echo "epoll IO multiplex : $BUILD_EPOLL"
-echo "Berkeley-DB        : $BUILD_BDB"
-if test "x$HAVE_BDB" = "xyes" -a "x$HAVE_BDB_VERSION" = "xno"; then
-   echo "Berkeley-DB version $_GLFS_DB_VERSION_MAJOR.$_GLFS_DB_VERSION_MINOR.$_GLFS_DB_VERSION_PATCH or higher required"
-fi
 echo
