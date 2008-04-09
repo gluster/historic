@@ -1453,7 +1453,7 @@ ib_verbs_disconnect (transport_t *this)
   char need_unref = 0;
 
   gf_log ("transport/ib-verbs",
-	  GF_LOG_CRITICAL,
+	  GF_LOG_DEBUG,
 	  "%s: peer disconnected, cleaning up",
 	  this->xl->name);
 
