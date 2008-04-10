@@ -286,7 +286,7 @@ subtract_locks (posix_lock_t *big, posix_lock_t *small)
 
     memcpy (v.locks[1], small, sizeof (posix_lock_t));
     memcpy (v.locks[2], big, sizeof (posix_lock_t));
-    v.locks[2]->fl_start = small->fl_end;
+    v.locks[2]->fl_start = small->fl_end + 1;
   }
   /* one edge coincides with big */
   else if (small->fl_start == big->fl_start) {
@@ -294,7 +294,7 @@ subtract_locks (posix_lock_t *big, posix_lock_t *small)
     v.locks[1] = calloc (1, sizeof (posix_lock_t));
     
     memcpy (v.locks[0], big, sizeof (posix_lock_t));
-    v.locks[0]->fl_start   = small->fl_end;
+    v.locks[0]->fl_start = small->fl_end + 1;
     
     memcpy (v.locks[1], small, sizeof (posix_lock_t));
   }
