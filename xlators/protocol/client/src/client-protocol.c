@@ -5120,9 +5120,6 @@ client_protocol_handshake (xlator_t *this,
   client_proto_priv_t *priv;
   dict_t *request;
   dict_t *options;
-  char *remote_subvolume = NULL;
-  char *username = NULL;
-  char *password = NULL;
 
   priv = trans->xl_private;
   options = this->options;
