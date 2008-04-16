@@ -47,6 +47,7 @@
 #include "stack.h"
 #include "defaults.h"
 #include "common-utils.h"
+#include <sys/xattr.h>
 
 #define CHILDDOWN ENOTCONN
 
@@ -2784,7 +2785,6 @@ unify_lk (call_frame_t *frame,
   return 0;
 }
 
-#include <attr/xattr.h>
 
 int32_t
 unify_setxattr_cbk (call_frame_t *frame,
@@ -2902,9 +2902,6 @@ unify_setxattr_cbk (call_frame_t *frame,
   return 0;
 }
 
-
-
-#include <attr/xattr.h>
 /**
  * unify_sexattr - This function should be sent to all the storage nodes, which 
  *    contains the file, (excluding namespace).
