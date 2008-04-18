@@ -22,7 +22,6 @@
 #include <fnmatch.h>
 #include <sys/time.h>
 #include <stdlib.h>
-#include <linux/limits.h>
 
 #include "glusterfs.h"
 #include "afr.h"
@@ -35,6 +34,7 @@
 #include "call-stub.h"
 #include "defaults.h"
 #include "common-utils.h"
+#include "compat.h"
 
 enum {
   AFR_LABEL_1,

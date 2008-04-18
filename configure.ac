@@ -79,9 +79,6 @@ AC_CONFIG_FILES([Makefile
 		xlators/encryption/Makefile
 		xlators/encryption/rot-13/Makefile
 		xlators/encryption/rot-13/src/Makefile
-		xlators/bindings/Makefile
-		xlators/bindings/python/Makefile
-		xlators/bindings/python/src/Makefile
 		scheduler/Makefile
 		scheduler/alu/Makefile
 		scheduler/alu/src/Makefile
@@ -189,7 +186,7 @@ AC_SUBST(LIBGLUSTERFSCLIENT_SUBDIR)
 # MOD_GLUSTERFS section
 AC_ARG_ENABLE([mod_glusterfs],
 	      AC_HELP_STRING([--disable-mod_glusterfs],
-			     [Do not build glusterfs module for webserver. Currently supported module is for apache-1.3.9]))
+			     [Do not build glusterfs module for webserver. Currently supported module is for apache-1.3.x]))
 
 if test "x$enable_mod_glusterfs" != "xno"; then
    AC_ARG_WITH([apxs],
@@ -198,7 +195,7 @@ if test "x$enable_mod_glusterfs" != "xno"; then
     if test "x$with_apxs" != "x"; then
         APXS_BIN=$with_apxs
     else
-	APXS_BIN="apxs"
+	APXS_BIN=$PATH
     fi
     AC_CHECK_TOOL([APXS],[apxs], ["no"], [$APXS_BIN])
     echo "APXS = $APXS";
@@ -433,7 +430,7 @@ dnl	GF_BSD_HOST_OS=1
         GF_TRANSPORT_DIRS="tcp unix"
         LIBTOOL=glibtool
         GF_DARWIN_LIBGLUSTERFS_CFLAGS="-fnested-functions"
-	GF_DARWIN_BOOSTER_CFLAGS="-dynamiclib"
+	GF_DARWIN_BOOSTER_CFLAGS="-dynamiclib -undefined suppress -flat_namespace"
         GF_DARWIN_BUNDLE_CFLAGS="-bundle -undefined suppress -flat_namespace"
 	GF_DARWIN_FUSE_LDADD="-liconv"
 esac
@@ -447,48 +444,12 @@ AC_SUBST(GF_DARWIN_BOOSTER_CFLAGS)
 AC_SUBST(GF_DARWIN_BUNDLE_CFLAGS)
 AC_SUBST(GF_DARWIN_FUSE_LDADD)
 
-# PYTHON section
-AM_PATH_PYTHON([2.4], [HAVE_PYTHON=yes], [HAVE_PYTHON=no])
-
-AC_ARG_ENABLE([python],
-              AC_HELP_STRING([--disable-python],
-                             [Do not build the python bindings.]))
-
-if test "x$enable_python" != "xno"; then
-   AC_CHECK_HEADER([python$PYTHON_VERSION/Python.h],
-		   [HAVE_PYTHON_DEVEL=yes],
-                   [HAVE_PYTHON_DEVEL=no])
-fi
-
-if test "x$enable_python" = "xyes" -a "x$HAVE_PYTHON_DEVEL" = "xno" ; then
-   echo "Python requested but not available"
-   exit
-fi
-
-BUILD_PYTHON_BINDINGS=no
-if test "x$enable_python" != "xno" -a "x$HAVE_PYTHON_DEVEL" = "xyes"; then
-   PYTHON_LDFLAGS=[$($PYTHON -c "from distutils import sysconfig
-print '-L'+ sysconfig.get_config_var('LIBPL')+' '+ '-lpython'+ sysconfig.get_config_var('VERSION')")]
-   PYTHON_CPPLAGS=[$($PYTHON -c "from distutils import sysconfig
-print sysconfig.get_python_inc()")]
-   PYTHON_CPPLAGS="-I$PYTHON_CPPLAGS"
-   BINDINGS_SUBDIRS="python"
-
-   BUILD_PYTHON_BINDINGS=yes
-fi
-
-AC_SUBST(PYTHON_CPPLAGS)
-AC_SUBST(PYTHON_LDFLAGS)
-AC_SUBST(BINDINGS_SUBDIRS)
-# end PYTHON section
-
 AC_OUTPUT
 
 echo
 echo "GlusterFS configure summary"
 echo "==========================="
 echo "Fuse client        : $BUILD_FUSE_CLIENT"
-echo "Python bindings    : $BUILD_PYTHON_BINDINGS"
 echo "Infiniband verbs   : $BUILD_IBVERBS"
 echo "epoll IO multiplex : $BUILD_EPOLL"
 echo "Berkeley-DB        : $BUILD_BDB"
