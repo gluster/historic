@@ -881,8 +881,6 @@ init (xlator_t *this)
     }
   }
 
-  conf->flush_behind = 0;
-
   this->private = conf;
   return 0;
 }
