@@ -1510,7 +1510,8 @@ posix_setxattr (call_frame_t *frame,
     op_errno = errno;
     if ((op_ret == -1) && (op_errno != ENOENT)) {
       gf_log (this->name, GF_LOG_WARNING, 
-	      "setxattr on %s: %s", loc->path, strerror (op_errno));
+	      "setxattr on %s with key (%s): %s", 
+	      loc->path, trav->key, strerror (op_errno));
       break;
     }
     trav = trav->next;
