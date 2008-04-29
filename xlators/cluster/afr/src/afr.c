@@ -5838,8 +5838,8 @@ afr_check_xattr_cbk (call_frame_t *frame,
 {
   if (op_ret == -1) {
     gf_log (this->name, GF_LOG_CRITICAL, 
-	    "[CRITICAL]: '%s' doesn't support Extended attribute", 
-	    (char *)cookie);
+	    "[CRITICAL]: '%s' doesn't support Extended attribute: %s", 
+	    (char *)cookie, strerror (op_errno));
   } else {
     gf_log (this->name, GF_LOG_DEBUG, 
 	    "'%s' supports Extended attribute", (char *)cookie);
@@ -5946,6 +5946,9 @@ notify (xlator_t *this,
 	default_notify (this, event, data);
     }
     break;
+  case GF_EVENT_PARENT_UP:
+    break;
+
   default:
     {
       default_notify (this, event, data);
@@ -6047,6 +6050,12 @@ init (xlator_t *this)
     trav = trav->next;
   }
   this->private = pvt;
+
+  trav = this->children;
+  while (trav) {
+    trav->xlator->notify (trav->xlator, GF_EVENT_PARENT_UP, this);
+    trav = trav->next;
+  }
 
   return 0;
 }
