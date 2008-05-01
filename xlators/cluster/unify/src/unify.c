@@ -349,7 +349,8 @@ unify_lookup (call_frame_t *frame,
   
   if (local->list) {
     if (S_ISDIR (loc->inode->st_mode) && 	 
-	(priv->inode_generation > loc->inode->generation)) {
+	(priv->self_heal && 
+	 (priv->inode_generation > loc->inode->generation))) {
       gf_log (this->name, GF_LOG_ERROR,
 	      "returning ESTALE for %s [translator generation (%d) inode generation (%d)]", 
 	      loc->path, priv->inode_generation, loc->inode->generation);
