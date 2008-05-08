@@ -336,7 +336,6 @@ ioc_fault_cbk (call_frame_t *frame,
       } else {
 	/* TODO: we have got a response to our request and no data */
       }
-      page->ready = 1;
       page->size = op_ret;
       if (page->waitq) {
 	/* wake up all the frames waiting on this page, including 
@@ -618,7 +617,7 @@ ioc_page_wakeup (ioc_page_t *page)
   page->waitq = NULL;
 
   trav = waitq;
-
+  trav->ready = 1;
   gf_log (page->inode->table->xl->name, GF_LOG_DEBUG,
 	  "page is %p && waitq = %p", page, waitq);
   
