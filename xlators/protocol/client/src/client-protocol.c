@@ -2012,6 +2012,8 @@ client_setdents (call_frame_t *frame,
     while (trav) {
       len += strlen (trav->name);
       len += 1;
+      len += strlen (trav->link);
+      len += 1;
       len += 256; // max possible for statbuf;
       trav = trav->next;
     }
@@ -2068,9 +2070,10 @@ client_setdents (call_frame_t *frame,
 		  ctime,
 		  ctime_nsec);
       }
-      this_len = sprintf (ptr, "%s/%s", 
+      this_len = sprintf (ptr, "%s/%s%s\n", 
 			  trav->name,
-			  tmp_buf);
+			  tmp_buf,
+			  trav->link);
       
       free (tmp_buf);
       trav = trav->next;
@@ -3384,7 +3387,19 @@ client_getdents_cbk (call_frame_t *frame,
       trav->buf.st_ctim.tv_nsec = ctime_nsec;
 #endif
 
-    }    
+    }
+
+    ender = strchr (buffer_ptr, '\n');
+    count = ender - buffer_ptr;
+    *ender = '\0';
+    if (S_ISLNK (trav->buf.st_mode)) {
+      trav->link = strdup (buffer_ptr);
+    } else
+      trav->link = "";
+
+    bread = count + 1;
+    buffer_ptr += bread;
+
     prev->next = trav;
     prev = trav;
   }
@@ -3396,6 +3411,8 @@ client_getdents_cbk (call_frame_t *frame,
   while (trav) {
     prev->next = trav->next;
     free (trav->name);
+    if (S_ISLNK (trav->buf.st_mode))
+      free (trav->link);
     free (trav);
     trav = prev->next;
   }
