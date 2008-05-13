@@ -5036,6 +5036,7 @@ init (xlator_t *this)
     
   trans->xl_private = priv;
 
+#ifndef GF_DARWIN_HOST_OS
   lim.rlim_cur = 1048576;
   lim.rlim_max = 1048576;
 
@@ -5051,6 +5052,7 @@ init (xlator_t *this)
       gf_log (this->name, GF_LOG_ERROR, "max open fd set to 64k");
     }
   }
+#endif
 
   return 0;
 }
