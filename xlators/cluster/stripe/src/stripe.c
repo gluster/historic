@@ -407,8 +407,9 @@ stripe_stack_unwind_inode_lookup_cbk (call_frame_t *frame,
     callcnt = --local->call_count;
     
     if (op_ret == -1) {
-      gf_log (this->name, GF_LOG_WARNING, "%s returned errno %d",
-	      ((call_frame_t *)cookie)->this->name, op_errno);
+      if (op_errno != ENOENT)
+	gf_log (this->name, GF_LOG_WARNING, "%s returned errno %d",
+		((call_frame_t *)cookie)->this->name, op_errno);
       if (op_errno == ENOTCONN) {
 	local->failed = 1;
       }
@@ -2900,7 +2901,8 @@ stripe_readv_cbk (call_frame_t *frame,
       main_local->replies[index].count  = count;
       main_local->replies[index].vector = iov_dup (vector, count);
       main_local->replies[index].stbuf = *stbuf;
-      dict_copy (frame->root->rsp_refs, main_frame->root->rsp_refs);
+      if (frame->root->rsp_refs)
+	dict_copy (frame->root->rsp_refs, main_frame->root->rsp_refs);
     }
     callcnt = ++main_local->call_count;
   }
