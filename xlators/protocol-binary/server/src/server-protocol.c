@@ -5688,6 +5688,7 @@ init (xlator_t *this)
   lim.rlim_cur = 1048576;
   lim.rlim_max = 1048576;
 
+#ifndef GF_DARWIN_HOST_OS
   if (setrlimit (RLIMIT_NOFILE, &lim) == -1) {
     gf_log (this->name, GF_LOG_WARNING, "WARNING: Failed to set 'ulimit -n 1048576': %s",
 	    strerror(errno));
@@ -5700,6 +5701,7 @@ init (xlator_t *this)
       gf_log (this->name, GF_LOG_ERROR, "max open fd set to 64k");
     }
   }
+#endif /* GF_DARWIN_HOST_OS */
 
   trans->xl_private = conf;
   pthread_create (&queue->thread, NULL, server_reply_proc, queue);

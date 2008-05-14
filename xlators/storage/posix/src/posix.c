@@ -30,6 +30,10 @@
 #include <errno.h>
 #include <ftw.h>
 
+#ifndef GF_BSD_HOST_OS
+#include <alloca.h>
+#endif /* GF_BSD_HOST_OS */
+
 #include "glusterfs.h"
 #include "dict.h"
 #include "logging.h"
@@ -2277,14 +2281,14 @@ posix_readdir (call_frame_t *frame,
       /* TODO - consider endianness here */
       this_entry = (void *)(buf + filled);
       this_entry->d_ino = entry->d_ino;
-      this_entry->d_type = entry->d_type;
       this_entry->d_len = entry->d_reclen;
-
-#ifdef GF_LINUX_HOST_OS
-      this_entry->d_off = entry->d_off;
-#endif
-#ifdef GF_DARWIN_HOST_OS
       this_entry->d_off = telldir(dir);
+
+#ifndef GF_SOLARIS_HOST_OS
+      this_entry->d_type = entry->d_type;
+#endif
+
+#ifdef GF_DARWIN_HOST_OS
       /* d_reclen in Linux == d_namlen in Darwin */
       this_entry->d_len = entry->d_namlen; 
 #endif
@@ -2295,7 +2299,7 @@ posix_readdir (call_frame_t *frame,
     }
 
     STACK_UNWIND (frame, filled, 0, buf);
-    free (buf);
+    freee (buf);
   }
 
   return 0;
@@ -2510,6 +2514,7 @@ init (xlator_t *this)
   lim.rlim_cur = 1048576;
   lim.rlim_max = 1048576;
 
+#ifndef GF_DARWIN_HOST_OS
   if (setrlimit (RLIMIT_NOFILE, &lim) == -1) {
     gf_log (this->name, GF_LOG_WARNING, "WARNING: Failed to set 'ulimit -n 1048576': %s",
 	    strerror(errno));
@@ -2522,6 +2527,7 @@ init (xlator_t *this)
       gf_log (this->name, GF_LOG_ERROR, "max open fd set to 64k");
     }
   }
+#endif
 
   this->private = (void *)_private;
   return 0;
