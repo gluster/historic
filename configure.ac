@@ -464,7 +464,4 @@ echo "Berkeley-DB        : $BUILD_BDB"
 echo "libglusterfsclient : $BUILD_LIBGLUSTERFSCLIENT"
 echo "mod_glusterfs      : $BUILD_MOD_GLUSTERFS"
 
-if test "x$HAVE_BDB" = "xyes" -a "x$HAVE_BDB_VERSION" = "xno"; then
-   echo "Berkeley-DB version $_GLFS_DB_VERSION_MAJOR.$_GLFS_DB_VERSION_MINOR.$_GLFS_DB_VERSION_PATCH or higher required"
-fi
 echo
