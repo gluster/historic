@@ -88,10 +88,10 @@ unify_local_wipe (unify_local_t *local)
 {
   /* Free the strdup'd variables in the local structure */
   if (local->path) {
-    freee (local->path);
+    FREE (local->path);
   }
   if (local->name) {
-    freee (local->name);
+    FREE (local->name);
   }
 }
 
@@ -264,7 +264,7 @@ unify_lookup_cbk (call_frame_t *frame,
 	  list = calloc (1, sizeof (int16_t) * (local->index + 1));
 	  memcpy (list, local->list, sizeof (int16_t) * local->index);
 	  /* Make the end of the list as -1 */
-	  freee (local->list);
+	  FREE (local->list);
 	  local->list = list;
 	}
 	local->list [local->index] = -1;
@@ -285,7 +285,7 @@ unify_lookup_cbk (call_frame_t *frame,
     }
     if (local->op_ret == -1) {
       if (!local->revalidate && local->list)
-	freee (local->list);
+	FREE (local->list);
     }
 
     if ((local->op_ret >= 0) && local->failed && local->revalidate) {
@@ -3560,7 +3560,7 @@ unify_rename_unlink_cbk (call_frame_t *frame,
   unify_local_t *local = frame->local;
 
   inode_destroy (local->new_inode);
-  freee (local->new_list);
+  FREE (local->new_list);
   unify_local_wipe (local);
   
   local->stbuf.st_ino = local->st_ino;
@@ -3579,7 +3579,7 @@ unify_ns_rename_undo_cbk (call_frame_t *frame,
   unify_local_t *local = frame->local;
 
   inode_destroy (local->new_inode);
-  freee (local->new_list);
+  FREE (local->new_list);
   unify_local_wipe (local);
   
   local->stbuf.st_ino = local->st_ino;
@@ -3692,7 +3692,7 @@ unify_rename_cbk (call_frame_t *frame,
 
     /* Need not send 'unlink' to storage node */
     inode_destroy (local->new_inode);
-    freee (local->new_list);
+    FREE (local->new_list);
     unify_local_wipe (local);
 
     STACK_UNWIND (frame, local->op_ret, local->op_errno, &local->stbuf);
@@ -3721,7 +3721,7 @@ unify_ns_rename_cbk (call_frame_t *frame,
     gf_log (this->name, GF_LOG_ERROR, 
 	    "fop failed on namespace (%d)", op_errno);
     inode_destroy (local->new_inode);
-    freee (local->new_list);
+    FREE (local->new_list);
     unify_local_wipe (local);
     STACK_UNWIND (frame, op_ret, op_errno, buf);
     return 0;
@@ -3774,7 +3774,7 @@ unify_ns_rename_cbk (call_frame_t *frame,
     gf_log (this->name, GF_LOG_CRITICAL,
 	    "CRITICAL: source file not in storage node, rename successful on namespace :O");
     inode_destroy (local->new_inode);
-    freee (local->new_list);
+    FREE (local->new_list);
     unify_local_wipe (local);
     STACK_UNWIND (frame, -1, EIO, NULL);
   }
@@ -3831,7 +3831,7 @@ unify_rename_lookup_cbk (call_frame_t *frame,
        * send errno with EIO, 
        */
       inode_destroy (local->new_inode);
-      freee (local->new_list);
+      FREE (local->new_list);
       unify_local_wipe (local);
       gf_log (this->name, GF_LOG_ERROR, 
 	      "returning EIO, source file (%s) present only on namespace",
@@ -4354,7 +4354,7 @@ init (xlator_t *this)
   if (!_private->sched_ops) {
     gf_log (this->name, GF_LOG_CRITICAL, 
 	    "Error while loading scheduler. Exiting");
-    freee (_private);
+    FREE (_private);
     return -1;
   }
   _private->namespace = ns_xl;
@@ -4420,7 +4420,7 @@ init (xlator_t *this)
     if (ret == -1) {
       gf_log (this->name, GF_LOG_CRITICAL,
 	      "Initializing scheduler failed, Exiting");
-      freee (_private);
+      FREE (_private);
       return -1;
     }
 
@@ -4434,7 +4434,7 @@ init (xlator_t *this)
     } else {
       gf_log (this->name, GF_LOG_CRITICAL, 
 	      "initializing namespace node failed, Exiting");
-      freee (_private);
+      FREE (_private);
       return -1;
     }
   }
@@ -4457,8 +4457,8 @@ fini (xlator_t *this)
   unify_private_t *priv = this->private;
   priv->sched_ops->fini (this);
   LOCK_DESTROY (&priv->lock);
-  freee (priv->xl_array);
-  freee (priv);
+  FREE (priv->xl_array);
+  FREE (priv);
   return;
 }
 
