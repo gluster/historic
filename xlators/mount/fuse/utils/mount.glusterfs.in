@@ -1,5 +1,5 @@
 #!/bin/sh
-# (C) 2006, 2007 Z RESEARCH Inc. <http://www.zresearch.com>
+# (C) 2006, 2007, 2008 Z RESEARCH Inc. <http://www.zresearch.com>
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -121,6 +121,12 @@ main ()
     # $2=$(echo "$@" | sed -n 's/[^ ]* \([^ ]*\).*/\1/p');
     
     mount_point="$2";
+
+    # Simple check to avoid multiple identical mounts
+    if grep -q "glusterfs $mount_point fuse" /etc/mtab; then
+        echo "$0: according to mtab, GlusterFS is already mounted on $mount_point"
+        exit 1
+    fi
     
     fs_options=$(echo "$fs_options,$new_fs_options");
     
