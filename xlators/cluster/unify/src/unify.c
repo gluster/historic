@@ -102,6 +102,7 @@ dummy_inode (inode_table_t *table)
   inode_t *dummy;
 
   dummy = calloc (1, sizeof (*dummy));
+  ERR_ABORT (dummy);
 
   dummy->table = table;
 
@@ -262,6 +263,7 @@ unify_lookup_cbk (call_frame_t *frame,
 	if (!S_ISDIR (local->inode->st_mode)) {
 	  /* If its a file, big array is useless, allocate the smaller one */
 	  list = calloc (1, sizeof (int16_t) * (local->index + 1));
+	  ERR_ABORT (list);
 	  memcpy (list, local->list, sizeof (int16_t) * local->index);
 	  /* Make the end of the list as -1 */
 	  FREE (local->list);
@@ -1259,6 +1261,7 @@ unify_ns_create_cbk (call_frame_t *frame,
 
     /* Start the mapping list */
     list = calloc (1, sizeof (int16_t) * 3);
+    ERR_ABORT (list);
     dict_set (inode->ctx, this->name, data_from_ptr (list));
     list[0] = priv->child_count;
     list[2] = -1;
@@ -1291,6 +1294,7 @@ unify_ns_create_cbk (call_frame_t *frame,
 	    local->name);
 
     local->list = calloc (1, sizeof (int16_t) * 3);
+    ERR_ABORT (local->list);
     local->call_count = priv->child_count + 1;
     local->op_ret = -1;
     for (index = 0; index <= priv->child_count; index++) {
@@ -3326,6 +3330,7 @@ unify_ns_mknod_cbk (call_frame_t *frame,
   local->st_ino = buf->st_ino;
 
   list = calloc (1, sizeof (int16_t) * 3);
+  ERR_ABORT (list);
   list[0] = priv->child_count;
   list[2] = -1;
   dict_set (inode->ctx, this->name, data_from_ptr (list));
@@ -3487,6 +3492,7 @@ unify_ns_symlink_cbk (call_frame_t *frame,
   /* Start the mapping list */
 
   list = calloc (1, sizeof (int16_t) * 3);
+  ERR_ABORT (list);
   list[0] = priv->child_count; //namespace's index
   list[2] = -1;
   dict_set (inode->ctx, this->name, data_from_ptr (list));
@@ -3887,6 +3893,7 @@ unify_rename (call_frame_t *frame,
   local->name = strdup (newloc->path);
 
   local->new_list = calloc (priv->child_count + 2, sizeof (int16_t));
+  ERR_ABORT (local->new_list);
   if (!local->path || !local->name || !local->new_list) {
     gf_log (this->name, GF_LOG_CRITICAL, "Not enough memory :O");
     STACK_UNWIND (frame, -1, ENOMEM, NULL);
@@ -4350,6 +4357,7 @@ init (xlator_t *this)
   }  
 
   _private = calloc (1, sizeof (*_private));
+  ERR_ABORT (_private);
   _private->sched_ops = get_scheduler (scheduler->data);
   if (!_private->sched_ops) {
     gf_log (this->name, GF_LOG_CRITICAL, 
@@ -4379,6 +4387,7 @@ init (xlator_t *this)
     gf_log (this->name, GF_LOG_DEBUG, "Child node count is %d", count);
 
     _private->xl_array = calloc (1, sizeof (xlator_t) * (count + 1));
+    ERR_ABORT (_private->xl_array);
 
     count = 0;
     trav = this->children;
