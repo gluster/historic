@@ -1976,7 +1976,7 @@ posix_setdents (call_frame_t *frame,
 	/* Create a 0byte file here */
 	if (S_ISREG (trav->buf.st_mode)) {
 	  ret = open (pathname, O_CREAT|O_EXCL, trav->buf.st_mode);
-	  if (ret == -1) {
+	  if ((ret == -1) && (errno != EEXIST)) {
 	    gf_log (this->name,
 		    GF_LOG_ERROR,
 		    "Error creating file %s with mode (0%o)",
@@ -1987,7 +1987,7 @@ posix_setdents (call_frame_t *frame,
 	  }
 	} else if (S_ISLNK(trav->buf.st_mode)) {
 	  ret = symlink (trav->link, pathname);
-	  if (ret == -1) {
+	  if ((ret == -1) && (errno != EEXIST)) {
 	    gf_log (this->name, GF_LOG_ERROR,
 		    "error creating symlink %s", pathname);
 	  }
@@ -1995,7 +1995,7 @@ posix_setdents (call_frame_t *frame,
 		   S_ISCHR (trav->buf.st_mode) || 
 		   S_ISFIFO (trav->buf.st_mode)) {
 	  ret = mknod (pathname, trav->buf.st_mode, trav->buf.st_dev);
-	  if (ret == -1) {
+	  if ((ret == -1) && (errno != EEXIST)) {
 	    gf_log (this->name,
 		    GF_LOG_ERROR,
 		    "error creating device file %s",
