@@ -4073,7 +4073,8 @@ unify_incver_cbk (call_frame_t *frame,
 int32_t 
 unify_incver (call_frame_t *frame,
 	      xlator_t *this,
-	      const char *path)
+	      const char *path,
+	      fd_t *fd)
 {
   unify_local_t *local = NULL;
   unify_private_t *priv = this->private;
@@ -4097,7 +4098,8 @@ unify_incver (call_frame_t *frame,
 		unify_incver_cbk,
 		priv->xl_array[index],
 		priv->xl_array[index]->fops->incver,
-		path);
+		path,
+		fd);
   }
 
   return 0;
