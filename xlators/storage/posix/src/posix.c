@@ -520,7 +520,7 @@ posix_mknod (call_frame_t *frame,
   
   if (op_ret == 0) {
 #ifndef HAVE_SET_FSID
-    chown (real_path, frame->root->uid, frame->root->gid);
+    lchown (real_path, frame->root->uid, frame->root->gid);
 #endif
     lstat (real_path, &stbuf);
   }
@@ -712,7 +712,7 @@ posix_symlink (call_frame_t *frame,
   
   if (op_ret == 0) {
 #ifndef HAVE_SET_FSID
-    chown (real_path, frame->root->uid, frame->root->gid);
+    lchown (real_path, frame->root->uid, frame->root->gid);
 #endif
     lstat (real_path, &stbuf);
   }
@@ -791,7 +791,7 @@ posix_link (call_frame_t *frame,
     
   if (op_ret == 0) {
 #ifndef HAVE_SET_FSID
-    chown (real_newpath, frame->root->uid, frame->root->gid);
+    lchown (real_newpath, frame->root->uid, frame->root->gid);
 #endif
     lstat (real_newpath, &stbuf);
   }
@@ -2140,7 +2140,7 @@ posix_setdents (call_frame_t *frame,
       /* Change the mode */
       chmod (pathname, trav->buf.st_mode);
       /* change the ownership */
-      chown (pathname, trav->buf.st_uid, trav->buf.st_gid);
+      lchown (pathname, trav->buf.st_uid, trav->buf.st_gid);
       if (flags & GF_SET_EPOCH_TIME)
 	utimes (pathname, tv); /* FIXME check return value */
 
