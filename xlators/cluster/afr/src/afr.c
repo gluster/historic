@@ -3829,7 +3829,11 @@ afr_readlink (call_frame_t *frame,
   }
 
   if (i == child_count) {
-    STACK_UNWIND (frame, -1, ENOTCONN, NULL);
+    GF_ERROR (this, "child_errno[] is not 0, returning ENOTCONN");
+    STACK_UNWIND (frame,
+		  -1,
+		  ENOTCONN,
+		  NULL);
     return 0;
   }
 
@@ -4455,6 +4459,15 @@ afr_unlink (call_frame_t *frame,
       ++local->call_count;
   }
 
+  if (local->call_count == 0) {
+    GF_ERROR (this, "child_errno[] is not 0, returning ENOTCONN");
+    STACK_UNWIND (frame,
+		  -1,
+		  ENOTCONN,
+		  NULL);
+    return 0;
+  }
+
   for (i = 0; i < child_count; i++) {
     if (child_errno[i] == 0){
       STACK_WIND(frame,
@@ -4527,6 +4540,15 @@ afr_rmdir (call_frame_t *frame,
   for (i = 0; i < child_count; i++) {
     if (child_errno[i] == 0)
       ++local->call_count;
+  }
+
+  if (local->call_count == 0) {
+    GF_ERROR (this, "child_errno[] is not 0, returning ENOTCONN");
+    STACK_UNWIND (frame,
+		  -1,
+		  ENOTCONN,
+		  NULL);
+    return 0;
   }
 
   for (i = 0; i < child_count; i++) {
@@ -5030,24 +5052,25 @@ afr_rename (call_frame_t *frame,
     }
   }
 
-  if (local->call_count > 0)
-    {
-      for(i = 0; i < child_count; i++) {
-	if (child_errno[i] == 0) {
-	  STACK_WIND (frame,
-		      afr_rename_cbk,
-		      children[i],
-		      children[i]->fops->rename,
-		      oldloc,
-		      newloc);
-	}
-      }
+  if (local->call_count == 0) {
+    GF_ERROR (this, "child_errno[] is not 0, returning ENOTCONN");
+    STACK_UNWIND (frame,
+		  -1,
+		  ENOTCONN,
+		  NULL);
+    return 0;
+  }
+
+  for(i = 0; i < child_count; i++) {
+    if (child_errno[i] == 0) {
+      STACK_WIND (frame,
+		  afr_rename_cbk,
+		  children[i],
+		  children[i]->fops->rename,
+		  oldloc,
+		  newloc);
     }
-  else
-    {
-      gf_log (this->name, GF_LOG_WARNING, "returning ENOTCONN");
-      STACK_UNWIND (frame, -1, ENOTCONN, NULL);
-    }
+  }
 
   return 0;
 }
@@ -5129,14 +5152,16 @@ afr_link (call_frame_t *frame,
     if (child_errno[i] == 0)
       break;
   }
+
   if (i == child_count) {
+    GF_ERROR (this, "child_errno[] is not 0, returning ENOTCONN");
     STACK_UNWIND (frame,
 		  -1,
 		  ENOTCONN,
-		  NULL,
-		  NULL);
+		  NULL, NULL);
     return 0;
   }
+
   local->child = i;
   STACK_WIND (frame,
 	      afr_link_cbk,
@@ -5224,6 +5249,15 @@ afr_chmod (call_frame_t *frame,
     if (child_errno[i] == 0) {
       local->call_count++;
     }
+  }
+
+  if (local->call_count == 0) {
+    GF_ERROR (this, "child_errno[] is not 0, returning ENOTCONN");
+    STACK_UNWIND (frame,
+		  -1,
+		  ENOTCONN,
+		  NULL);
+    return 0;
   }
 
   for(i = 0; i < child_count; i++) {
@@ -5319,6 +5353,15 @@ afr_chown (call_frame_t *frame,
     }
   }
 
+  if (local->call_count == 0) {
+    GF_ERROR (this, "child_errno[] is not 0, returning ENOTCONN");
+    STACK_UNWIND (frame,
+		  -1,
+		  ENOTCONN,
+		  NULL);
+    return 0;
+  }
+
   for(i = 0; i < child_count; i++) {
     if (child_errno[i] == 0) {
       STACK_WIND (frame,
@@ -5396,6 +5439,15 @@ afr_closedir (call_frame_t *frame,
   for (i = 0; i < child_count; i++) {
     if (afrfdp->fdstate[i])
       ++local->call_count;
+  }
+
+  if (local->call_count == 0) {
+    GF_ERROR (this, "child_errno[] is not 0, returning ENOTCONN");
+    STACK_UNWIND (frame,
+		  -1,
+		  ENOTCONN,
+		  NULL);
+    return 0;
   }
 
   for (i = 0; i < child_count; i++) {
