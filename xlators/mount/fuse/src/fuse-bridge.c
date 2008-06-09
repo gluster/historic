@@ -2321,6 +2321,8 @@ fuse_removexattr (fuse_req_t req,
   return;
 }
 
+static int gf_fuse_lk_log;
+
 static int32_t
 fuse_getlk_cbk (call_frame_t *frame,
 		void *cookie,
@@ -2336,8 +2338,20 @@ fuse_getlk_cbk (call_frame_t *frame,
 	    "%"PRId64": ERR => 0", frame->root->unique);
     fuse_reply_lock (state->req, lock);
   } else {
-    gf_log ("glusterfs-fuse", GF_LOG_ERROR,
-	    "%"PRId64": ERR => -1 (%d)", frame->root->unique, op_errno);
+    if (op_errno == ENOSYS)
+      {
+	gf_fuse_lk_log++;
+	if (!(gf_fuse_lk_log % 100))
+	  {
+	    gf_log ("glusterfs-fuse", GF_LOG_ERROR,
+		    "%"PRId64": ERR => -1 (%d)", frame->root->unique, op_errno);
+	  }
+      }
+    else
+      {
+	gf_log ("glusterfs-fuse", GF_LOG_ERROR,
+		"%"PRId64": ERR => -1 (%d)", frame->root->unique, op_errno);
+      }
     fuse_reply_err (state->req, op_errno);
   }
 
@@ -2387,8 +2401,20 @@ fuse_setlk_cbk (call_frame_t *frame,
 	    "%"PRId64": ERR => 0", frame->root->unique);
     fuse_reply_err (state->req, 0);
   } else {
-    gf_log ("glusterfs-fuse", GF_LOG_ERROR,
-	    "%"PRId64": ERR => -1 (%d)", frame->root->unique, op_errno);
+    if (op_errno == ENOSYS)
+      {
+	gf_fuse_lk_log++;
+	if (!(gf_fuse_lk_log % 100))
+	  {
+	    gf_log ("glusterfs-fuse", GF_LOG_ERROR,
+		    "%"PRId64": ERR => -1 (%d)", frame->root->unique, op_errno);
+	  }
+      }
+    else
+      {
+	gf_log ("glusterfs-fuse", GF_LOG_ERROR,
+		"%"PRId64": ERR => -1 (%d)", frame->root->unique, op_errno);
+      }
     fuse_reply_err (state->req, op_errno);
   }
 
