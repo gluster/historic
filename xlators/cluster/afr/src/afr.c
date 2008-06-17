@@ -6185,6 +6185,7 @@ afr_check_xattr_cbk (call_frame_t *frame,
     gf_log (this->name, GF_LOG_CRITICAL, 
 	    "[CRITICAL]: '%s' doesn't support Extended attribute: %s", 
 	    (char *)cookie, strerror (op_errno));
+    raise (SIGTERM);
   } else {
     gf_log (this->name, GF_LOG_DEBUG, 
 	    "'%s' supports Extended attribute", (char *)cookie);
