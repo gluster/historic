@@ -1293,30 +1293,6 @@ unify_create (call_frame_t *frame,
   return 0;
 }
 
-int32_t 
-unify_opendir_fail_cbk (call_frame_t *frame,
-			void *cookie,
-			xlator_t *this,
-			int32_t op_ret,
-			int32_t op_errno)
-{
-  int32_t callcnt = 0;
-  unify_local_t *local = frame->local;
-
-  LOCK (&frame->lock);
-  {
-    callcnt = --local->call_count;
-  }
-  UNLOCK (&frame->lock);
-
-  if (!callcnt) {
-    unify_local_wipe (local);
-    STACK_UNWIND (frame, local->op_ret, local->op_errno, local->fd);
-  }
-
-  return 0;
-}
-
 /**
  * unify_opendir_cbk - 
  */
@@ -1328,54 +1304,8 @@ unify_opendir_cbk (call_frame_t *frame,
 		   int32_t op_errno,
 		   fd_t *fd)
 {
-  int32_t callcnt = 0;
-  unify_local_t *local = frame->local;
-  unify_private_t *priv = this->private;
-  call_frame_t *prev_frame = cookie;
+  STACK_UNWIND (frame, op_ret, op_errno, fd);
 
-  LOCK (&frame->lock);
-  {
-    callcnt = --local->call_count;
-    
-    if (op_ret >= 0) {
-      local->op_ret = op_ret;
-    } else {
-      gf_log (this->name, GF_LOG_ERROR, 
-	      "operation failed on %s  (%d)", 
-	      prev_frame->this->name, op_errno);
-      local->op_errno = op_errno;
-      local->failed = 1;
-    }
-  }
-  UNLOCK (&frame->lock);
-
-  if (!callcnt) {
-    if (local->failed == 1 && dict_get (local->fd->inode->ctx, this->name)) {
-      int16_t *list = NULL;
-      int16_t index = 0;
-
-      list = data_to_ptr (dict_get (local->fd->inode->ctx, this->name));
-      /* return -1 to user */
-      local->op_ret = -1;
-      local->call_count =0;
-      for (index = 0; list[index] != -1; index++)
-	local->call_count++;
-      
-      for (index = 0; list[index] != -1; index++) {
-	char need_break = (list[index+1] == -1);
-	STACK_WIND (frame,
-		    unify_opendir_fail_cbk,
-		    priv->xl_array[list[index]],
-		    priv->xl_array[list[index]]->fops->closedir,
-		    local->fd);
-	if (need_break)
-	  break;
-      }
-      return 0;
-    }
-
-    STACK_UNWIND (frame, local->op_ret, local->op_errno, local->fd);
-  }
   return 0;
 }
 
@@ -1388,30 +1318,11 @@ unify_opendir (call_frame_t *frame,
 	       loc_t *loc,
 	       fd_t *fd)
 {
-  int16_t *list = NULL;
-  int16_t index = 0;
-  unify_local_t *local = NULL;
-  unify_private_t *priv = this->private;
-
   UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 
-  INIT_LOCAL (frame, local);
-  local->inode = loc->inode;
-  local->fd = fd;
-  list = data_to_ptr (dict_get (loc->inode->ctx, this->name));
-
-  for (index = 0; list[index] != -1; index++)
-    local->call_count++;
-
-  for (index = 0; list[index] != -1; index++) {
-    char need_break = list[index+1] == -1;
-    STACK_WIND (frame, unify_opendir_cbk,
-		priv->xl_array[list[index]],
-		priv->xl_array[list[index]]->fops->opendir,
-		loc, fd);
-    if (need_break)
-      break;
-  }
+  STACK_WIND (frame, unify_opendir_cbk,
+	      NS(this), NS(this)->fops->opendir,
+	      loc, fd);
 
   return 0;
 }
@@ -2217,7 +2128,6 @@ unify_fchmod (call_frame_t *frame,
 	      mode_t mode)
 {
   unify_local_t *local = NULL;
-  unify_private_t *priv = this->private;
 
   UNIFY_CHECK_FD_AND_UNWIND_ON_ERR(fd);
 
@@ -2239,31 +2149,11 @@ unify_fchmod (call_frame_t *frame,
 
   } else {
     /* this is an directory */
-    int16_t *list = NULL;
-    int16_t index = 0;
-
-    if (dict_get (fd->inode->ctx, this->name)) {
-      list = data_to_ptr (dict_get (fd->inode->ctx, this->name));
-    } else {
-      gf_log (this->name, GF_LOG_ERROR, 
-	      "returning EINVAL, no list found in inode ctx");
-      STACK_UNWIND (frame, -1, EINVAL, NULL);
-      return 0;
-    }
-    for (index = 0; list[index] != -1; index++)
-      local->call_count++;
+    local->call_count = 1;
     
-    for (index = 0; list[index] != -1; index++) {
-      char need_break = list[index+1] == -1;
-      STACK_WIND (frame,
-		  unify_buf_cbk,
-		  priv->xl_array[list[index]],
-		  priv->xl_array[list[index]]->fops->fchmod,
-		  fd,
-		  mode);
-      if (need_break)
-	break;
-    }
+    STACK_WIND (frame, unify_buf_cbk,
+		NS(this), NS(this)->fops->fchmod,
+		fd, mode);
   }
 
   return 0;
@@ -2280,7 +2170,6 @@ unify_fchown (call_frame_t *frame,
 	      gid_t gid)
 {
   unify_local_t *local = NULL;
-  unify_private_t *priv = this->private;
 
   UNIFY_CHECK_FD_AND_UNWIND_ON_ERR(fd);
 
@@ -2300,33 +2189,10 @@ unify_fchown (call_frame_t *frame,
     STACK_WIND (frame, unify_buf_cbk, NS(this),
 		NS(this)->fops->fchown,	fd, uid, gid);
   } else {
-    /* this is an directory */
-    int16_t *list = NULL;
-    int16_t index = 0;
-
-    if (dict_get (fd->inode->ctx, this->name)) {
-      list = data_to_ptr (dict_get (fd->inode->ctx, this->name));
-    } else {
-      gf_log (this->name, GF_LOG_ERROR, 
-	      "returning EINVAL, no list found in inode ctx");
-      STACK_UNWIND (frame, -1, EINVAL, NULL);
-      return 0;
-    }
-    for (index = 0; list[index] != -1; index++)
-      local->call_count++;
-    
-    for (index = 0; list[index] != -1; index++) {
-      char need_break = list[index+1] == -1;
-      STACK_WIND (frame,
-		  unify_buf_cbk,
-		  priv->xl_array[list[index]],
-		  priv->xl_array[list[index]]->fops->fchown,
-		  fd,
-		  uid,
-		  gid);
-      if (need_break)
-	break;
-    }
+    local->call_count = 1;
+    STACK_WIND (frame, unify_buf_cbk, 
+		NS(this), NS(this)->fops->fchown,
+		fd, uid, gid);
   }
   
   return 0;
@@ -2601,20 +2467,7 @@ unify_closedir_cbk (call_frame_t *frame,
 		    int32_t op_ret,
 		    int32_t op_errno)
 {
-  int32_t callcnt = 0;
-  unify_local_t *local = frame->local;
-
-  LOCK (&frame->lock);
-  {
-    callcnt = --local->call_count;
-    if (op_ret >= 0)
-      local->op_ret = op_ret;
-  }
-  UNLOCK (&frame->lock);
-  
-  if (!callcnt) {
-    STACK_UNWIND (frame, op_ret, op_errno);
-  }
+  STACK_UNWIND (frame, op_ret, op_errno);
   
   return 0;
 }
@@ -2627,36 +2480,10 @@ unify_closedir (call_frame_t *frame,
 		xlator_t *this,
 		fd_t *fd)
 {
-  int16_t *list = NULL;
-  int16_t index = 0;
-  unify_local_t *local = NULL;
-  unify_private_t *priv = this->private;
-
   UNIFY_CHECK_FD_AND_UNWIND_ON_ERR (fd);
 
-  INIT_LOCAL (frame, local);
-  
-  if (dict_get (fd->inode->ctx, this->name)) {
-    list = data_to_ptr (dict_get (fd->inode->ctx, this->name));
-  } else {
-    gf_log (this->name, GF_LOG_ERROR, 
-	    "returning EINVAL, no list found in inode ctx");
-    STACK_UNWIND (frame, -1, EINVAL, NULL);
-    return 0;
-  }
-  for (index = 0; list[index] != -1; index++)
-    local->call_count++;
-  
-  for (index = 0; list[index] != -1; index++) {
-    char need_break = list[index+1] == -1;
-    STACK_WIND (frame,
-		unify_closedir_cbk,
-		priv->xl_array[list[index]],
-		priv->xl_array[list[index]]->fops->closedir,
-		fd);
-    if (need_break)
-      break;
-  }
+  STACK_WIND (frame, unify_closedir_cbk,
+	      NS(this), NS(this)->fops->closedir, fd);
 
   return 0;
 }
@@ -2671,27 +2498,8 @@ unify_fsyncdir_cbk (call_frame_t *frame,
 		    int32_t op_ret,
 		    int32_t op_errno)
 {
-  int32_t callcnt = 0;
-  unify_local_t *local = frame->local;
-  call_frame_t *prev_frame = cookie;
+  STACK_UNWIND (frame, op_ret, op_errno);
 
-  LOCK (&frame->lock);
-  {
-    callcnt = --local->call_count;
-    
-    if (op_ret == -1) {
-      gf_log (this->name, GF_LOG_ERROR, 
-	      "fop failed on %s (%d)", prev_frame->this->name, op_errno);
-      local->op_errno = op_errno;
-    } else {
-      local->op_ret = op_ret;
-    }
-  }
-  UNLOCK (&frame->lock);
-  
-  if (!callcnt) {
-    STACK_UNWIND (frame, local->op_ret, local->op_errno);
-  }
   return 0;
 }
 
@@ -2704,37 +2512,10 @@ unify_fsyncdir (call_frame_t *frame,
 		fd_t *fd,
 		int32_t flags)
 {
-  int16_t *list = NULL;
-  int16_t index = 0;
-  unify_local_t *local = NULL;
-  unify_private_t *priv = this->private;
-
   UNIFY_CHECK_FD_AND_UNWIND_ON_ERR (fd);
 
-  INIT_LOCAL (frame, local);
-  
-  if (dict_get (fd->inode->ctx, this->name)) {
-    list = data_to_ptr (dict_get (fd->inode->ctx, this->name));
-  } else {
-    gf_log (this->name, GF_LOG_ERROR, 
-	    "returning EINVAL, no list found in inode ctx");
-    STACK_UNWIND (frame, -1, EINVAL, NULL);
-    return 0;
-  }
-  for (index = 0; list[index] != -1; index++)
-    local->call_count++;
-  
-  for (index = 0; list[index] != -1; index++) {
-    char need_break = list[index+1] == -1;
-    STACK_WIND (frame,
-		unify_fsyncdir_cbk,
-		priv->xl_array[list[index]],
-		priv->xl_array[list[index]]->fops->fsyncdir,
-		fd,
-		flags);
-    if (need_break)
-      break;
-  }
+  STACK_WIND (frame, unify_fsyncdir_cbk,
+	      NS(this), NS(this)->fops->fsyncdir, fd, flags);
 
   return 0;
 }
