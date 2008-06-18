@@ -5141,10 +5141,16 @@ client_protocol_handshake_reply (transport_t *trans,
       pthread_mutex_unlock (&(priv->lock));
     }
     
-    if (trans->xl->parent)
-      trans->xl->parent->notify (trans->xl->parent, 
-				 GF_EVENT_CHILD_UP, 
-				 trans->xl);
+    {
+      xlator_list_t *parent = trans->xl->parents;
+      while (parent) 
+	{
+	  parent->xlator->notify (parent->xlator, 
+				  GF_EVENT_CHILD_UP, 
+				  trans->xl);
+	  parent = parent->next;
+	}
+    }
   return ret;
 }
 
@@ -5284,8 +5290,15 @@ notify (xlator_t *this,
 	struct timeval tv = {0, 0};
 	client_proto_priv_t *priv = trans->xl_private;
 
-	if (this->parent)
-	  this->parent->notify (this->parent, GF_EVENT_CHILD_DOWN, this);
+	if (this->parents) 
+	  {
+	    xlator_list_t *parent = this->parents;
+	    while (parent) 
+	      {
+		parent->xlator->notify (parent->xlator, GF_EVENT_CHILD_DOWN, this);
+		parent = parent->next;
+	      }
+	  }
 
 	priv->n_minus_1 = 0;
 	priv->n = 1;
