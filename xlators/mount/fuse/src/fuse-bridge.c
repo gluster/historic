@@ -700,6 +700,9 @@ fuse_fd_cbk (call_frame_t *frame,
 	fuse_state_t *new_state = calloc (1, sizeof (*new_state));
 
 	new_state->fd = fd;
+	new_state->this = state->this;
+	new_state->pool = state->pool;
+
 	if (S_ISDIR (fd->inode->st_mode))
 	  FUSE_FOP_NOREPLY (new_state, GF_FOP_CLOSEDIR, closedir, fd);
 	else
@@ -1455,6 +1458,9 @@ fuse_create_cbk (call_frame_t *frame,
 	fuse_state_t *new_state = calloc (1, sizeof (*new_state));
 
 	new_state->fd = fd;
+	new_state->this = state->this;
+	new_state->pool = state->pool;
+
 	FUSE_FOP_NOREPLY (new_state, GF_FOP_CLOSE, close, fd);
       }
     }
