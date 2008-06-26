@@ -3140,20 +3140,31 @@ unify_rename_unlink_cbk (call_frame_t *frame,
 {
   unify_local_t *local = frame->local;
   call_frame_t *prev_frame = cookie;
+  int32_t callcnt = 0;
 
-  if (op_ret == -1)
-    gf_log (this->name, GF_LOG_ERROR,
-	    "child(%s): path (%s -> %s): %s", prev_frame->this->name, 
-	    local->path, local->name, strerror (op_errno));
+  LOCK (&frame->lock);
+  {
+    callcnt = --local->call_count;
+    if (op_ret == -1)
+      {
+	gf_log (this->name, GF_LOG_ERROR,
+		"child(%s): rename (%s -> %s): %s", prev_frame->this->name, 
+		local->path, local->name, strerror (op_errno));
+      }
+  }
+  UNLOCK (&frame->lock);
 
-  if (local->dummy_inode)
-    inode_destroy (local->dummy_inode);
-  if (local->new_list)
-    freee (local->new_list);
+  if (!callcnt)
+    {
+      if (local->dummy_inode)
+	inode_destroy (local->dummy_inode);
+      if (local->new_list)
+	freee (local->new_list);
 
-  unify_local_wipe (local);  
-  local->stbuf.st_ino = local->st_ino;
-  STACK_UNWIND (frame, local->op_ret, local->op_errno, &local->stbuf);
+      unify_local_wipe (local);  
+      local->stbuf.st_ino = local->st_ino;
+      STACK_UNWIND (frame, local->op_ret, local->op_errno, &local->stbuf);
+    }
   return 0;
 }
 
@@ -3221,16 +3232,16 @@ unify_rename_cbk (call_frame_t *frame,
   if (!callcnt) 
     {
       local->stbuf.st_ino = local->st_ino;
+      if (S_ISDIR (local->inode->st_mode))
+	{
+	  /* Rename of directories on few nodes failed. This situation should not happen */
+	  /* If it had failed, the above log should be printed, so no need to add another log here */
+	  unify_local_wipe (local);
+	  STACK_UNWIND (frame, local->op_ret, local->op_errno, &local->stbuf);
+	  return 0;
+	}
       if (local->op_ret == -1) 
 	{
-	  if (S_ISDIR (local->inode->st_mode))
-	    {
-	      /* Rename of directories on few nodes failed. This situation should not happen */
-	      /* If it had failed, the above log should be printed, so no need to add another log here */
-	      unify_local_wipe (local);
-	      STACK_UNWIND (frame, local->op_ret, local->op_errno, &local->stbuf);
-	      return 0;
-	    }
 	  /* Rename failed in storage node, successful on NS, hence, rename back the entries in NS */
 	  /* NOTE: this will be done only if the destination doesn't exists, if 
 	   * the destination exists, the job of correcting NS is left to self-heal
