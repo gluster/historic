@@ -571,6 +571,7 @@ unify_mkdir_cbk (call_frame_t *frame,
 	      "child(%s): path(%s): %s", 
 	      priv->xl_array[(long)cookie]->name, (local->path)?local->path:"", strerror (op_errno));
       local->failed = 1;
+      local->op_errno = op_errno;
     }
   
     if (op_ret >= 0) {
@@ -2016,6 +2017,8 @@ unify_unlink_cbk (call_frame_t *frame,
     callcnt = --local->call_count;
     if (op_ret == 0  || ((op_errno == ENOENT) && priv->optimist))
       local->op_ret = 0;
+    if (op_ret == -1)
+      local->op_errno = op_errno;
   }
   UNLOCK (&frame->lock);
 
@@ -2322,10 +2325,10 @@ unify_ns_close_cbk (call_frame_t *frame,
 
   LOCK (&frame->lock);
   {
-    if (op_ret >= 0) {
+    if (op_ret >= 0) 
       local->op_ret = op_ret;
+    if (op_ret == -1)
       local->op_errno = op_errno;
-    }
   }
   UNLOCK (&frame->lock);
 
@@ -2348,10 +2351,10 @@ unify_close_cbk (call_frame_t *frame,
 
   LOCK (&frame->lock);
   {
-    if (op_ret >= 0) { 
+    if (op_ret >= 0)
       local->op_ret = op_ret;
+    if (op_ret == -1)
       local->op_errno = op_errno;
-    }
   }
   UNLOCK (&frame->lock);
 
@@ -3738,8 +3741,8 @@ unify_link_cbk (call_frame_t *frame,
 {
   unify_local_t *local = frame->local;
 
-  if (op_ret >= 0)
-    local->stbuf = *buf;
+  if (op_ret >= 0) 
+      local->stbuf = *buf;
   local->stbuf.st_ino = local->st_ino;
 
   unify_local_wipe (local);
