@@ -374,7 +374,7 @@ unify_lookup (call_frame_t *frame,
     {
       gf_log (this->name, GF_LOG_ERROR, 
 	      "%s: Argument not right", loc?loc->path:"(null)");
-      STACK_UNWIND (frame, -1, EINVAL, NULL, NULL);
+      STACK_UNWIND (frame, -1, EINVAL, NULL, NULL, NULL);
       return 0;
     }
 
@@ -385,7 +385,7 @@ unify_lookup (call_frame_t *frame,
   if (!local->path) 
     {
       gf_log (this->name, GF_LOG_CRITICAL, "Not enough memory :O");
-      STACK_UNWIND (frame, -1, ENOMEM, loc->inode, NULL);
+      STACK_UNWIND (frame, -1, ENOMEM, loc->inode, NULL, NULL);
       return 0;
     }
 
@@ -413,7 +413,7 @@ unify_lookup (call_frame_t *frame,
 	    }
 	  loc->inode->generation = priv->inode_generation;
 	  unify_local_wipe (local);
-	  STACK_UNWIND (frame, -1, ESTALE, NULL, NULL);
+	  STACK_UNWIND (frame, -1, ESTALE, NULL, NULL, NULL);
 	  return 0;
 	} 
       if (!S_ISDIR (loc->inode->st_mode)) 
@@ -433,7 +433,7 @@ unify_lookup (call_frame_t *frame,
 			      loc->path, priv->xl_array[local->list[index]]->name);
 		    }
 		  unify_local_wipe (local);
-		  STACK_UNWIND (frame, -1, ESTALE, NULL, NULL);
+		  STACK_UNWIND (frame, -1, ESTALE, NULL, NULL, NULL);
 		  return 0;
 
 		}
