@@ -6359,6 +6359,7 @@ init (xlator_t *this)
     /* by default debugging is off */
     GF_DEBUG (this, "debug logs enabled");
     pvt->debug = 1;
+    this->trace = 1;
   }
 
   /* by default self-heal is on */
