@@ -2682,6 +2682,7 @@ init (xlator_t *this)
 		   "-o", "nonempty",
 #else
 		   "-o", "noexec",
+		   "-o", "daemon_timeout=1048576",
 #endif
 		   "-o", "allow_other",
 		   "-o", "default_permissions",
@@ -2692,7 +2693,7 @@ init (xlator_t *this)
 		   NULL };
 
 #ifdef GF_DARWIN_HOST_OS
-  argc = 15;
+  argc = 17;
 #else
   argc = 15;
 #endif
