@@ -1,3 +1,3 @@
-SUBDIRS = ip login
+SUBDIRS = addr login
 
 CLEANFILES = 
