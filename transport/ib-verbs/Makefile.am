@@ -1,2 +1,1 @@
-SUBDIRS= server client
-noinst_HEADERS = ib-verbs.h
+SUBDIRS = src
