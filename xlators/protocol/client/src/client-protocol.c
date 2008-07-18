@@ -1988,6 +1988,12 @@ client_setdents (call_frame_t *frame,
   dict_t *request = NULL;
   data_t *fd_data = NULL;
 
+  if (!entries || !count) {
+    /* No log is required as this can happen frequently */
+    STACK_UNWIND (frame, -1, EINVAL);
+    return 0;
+  }
+
   if (fd && fd->ctx)
     fd_data = dict_get (fd->ctx, this->name);
 
@@ -1999,6 +2005,7 @@ client_setdents (call_frame_t *frame,
     return 0;
   }
 
+  
   fd_str = strdup (data_to_str (fd_data));
   request = get_new_dict ();
   dict_set (request, "FD", str_to_data (fd_str));
