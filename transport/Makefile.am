@@ -1,3 +1,3 @@
-SUBDIRS = tcp ib-verbs
+SUBDIRS = socket ib-verbs
 
 CLEANFILES = 
