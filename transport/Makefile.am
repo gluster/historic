@@ -1,3 +1,3 @@
-SUBDIRS = socket ib-verbs
+SUBDIRS = socket $(IBVERBS_SUBDIR)
 
 CLEANFILES = 
