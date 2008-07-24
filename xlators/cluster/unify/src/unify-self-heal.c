@@ -584,7 +584,7 @@ gf_unify_self_heal (call_frame_t *frame,
 		   unify_sh_checksum_cbk,
 		   priv->xl_array[index],
 		   priv->xl_array[index],
-		   priv->xl_array[index]->mops->checksum,
+		   priv->xl_array[index]->fops->checksum,
 		   &tmp_loc,
 		   0);
     }

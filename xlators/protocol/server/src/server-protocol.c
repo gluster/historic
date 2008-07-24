@@ -5276,7 +5276,7 @@ server_checksum_cbk (call_frame_t *frame,
     dict_set (reply, "dir-checksum-data", data_from_dynptr (dir_checksum, 4096));
   }
 
-  server_reply (frame, GF_OP_TYPE_MOP_REPLY, GF_MOP_CHECKSUM,
+  server_reply (frame, GF_OP_TYPE_FOP_REPLY, GF_FOP_CHECKSUM,
 		reply, frame->root->rsp_refs);
 
   return 0;
@@ -5314,7 +5314,7 @@ server_checksum (call_frame_t *frame,
   STACK_WIND (frame,
 	      server_checksum_cbk,
 	      BOUND_XL (frame),
-	      BOUND_XL (frame)->mops->checksum,
+	      BOUND_XL (frame)->fops->checksum,
 	      &loc,
 	      flag);
 
@@ -6005,7 +6005,8 @@ static gf_op_t gf_fops[] = {
   server_setdents,
   server_rmelem,
   server_incver,
-  server_readdir
+  server_readdir,
+  server_checksum,
 };
 
 static gf_op_t gf_mops[] = {
@@ -6018,7 +6019,6 @@ static gf_op_t gf_mops[] = {
   mop_unlock,
   mop_listlocks,
   mop_fsck,
-  server_checksum,
 };
 
 /*

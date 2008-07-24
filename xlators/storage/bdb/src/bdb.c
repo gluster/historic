@@ -2989,7 +2989,6 @@ struct xlator_mops mops = {
   .stats    = bdb_stats,
   .lock     = mop_lock_impl,
   .unlock   = mop_unlock_impl,
-  .checksum = bdb_checksum,
 };
 
 struct xlator_fops fops = {
@@ -3033,4 +3032,5 @@ struct xlator_fops fops = {
   .fchmod      = bdb_fchmod,
   .setdents    = bdb_setdents,
   .getdents    = bdb_getdents,
+  .checksum    = bdb_checksum,
 };
