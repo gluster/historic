@@ -1483,16 +1483,6 @@ ib_verbs_init (transport_t *this)
   return 0;
 }
 
-static int32_t 
-ib_verbs_reset (transport_t *this)
-{
-  ib_verbs_private_t *priv = this->private;
-  int32_t ret= 0;
-
-  return ret;
-}
-
-
 static int32_t
 ib_verbs_except (transport_t *this)
 {
