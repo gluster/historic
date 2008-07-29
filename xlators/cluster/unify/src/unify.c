@@ -4332,7 +4332,6 @@ notify (xlator_t *this,
   struct sched_ops *sched = NULL;
 
   if (!priv) {
-    default_notify (this, event, data);
     return 0;
   }
 
