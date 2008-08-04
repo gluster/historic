@@ -1632,12 +1632,14 @@ afr_selfheal_open_cbk (call_frame_t *frame,
     } else {
       local->call_count = sync_file_cnt;
       for (i = 0; i < child_count; i++) {
-	if (afrfdp->fdstate[i])
+	if (sync_file_cnt && afrfdp->fdstate[i]) {
+	  sync_file_cnt --;
 	  STACK_WIND (frame,
 		      afr_selfheal_nosync_close_cbk,
 		      children[i],
 		      children[i]->fops->close,
 		      local->fd);
+	}
       }
     }
   }
