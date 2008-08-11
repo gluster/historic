@@ -515,10 +515,11 @@ unify_mkdir_cbk (call_frame_t *frame,
        */
       gf_log (this->name, GF_LOG_ERROR,
 	      "%s returned %d", priv->xl_array[(long)cookie]->name, op_errno);
-      local->failed = 1;
+      if (op_errno != EEXIST)
+	local->failed = 1;
     }
   
-    if (op_ret >= 0) {
+    if ((op_ret >= 0) || ((op_ret == -1) && (op_errno == EEXIST))) {
       local->op_ret = 0;
       /* This is to be used as hint from the inode and also mapping */
       local->list[local->index++] = (int16_t)(long)cookie;

@@ -5359,7 +5359,8 @@ mop_setspec (call_frame_t *frame,
     goto fail;
   }
   
-  ret = open (GLUSTERFSD_SPEC_PATH, O_WRONLY | O_CREAT | O_SYNC);
+  ret = open (GLUSTERFSD_SPEC_PATH, 
+	      O_WRONLY | O_CREAT | O_SYNC, S_IRUSR | S_IWUSR);
   spec_fd = ret;
   if (spec_fd < 0){
     remote_errno = errno;
