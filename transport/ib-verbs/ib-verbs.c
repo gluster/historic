@@ -950,23 +950,24 @@ ib_verbs_recv_completion_proc (void *data)
     ib_verbs_device_t *device;
     struct ibv_wc wc;
 
-    if (ibv_get_cq_event (chan,
-			  &event_cq,
-			  &event_ctx)) {
+    ret = ibv_get_cq_event (chan, &event_cq, &event_ctx);
+    if (ret) {
       gf_log ("transport/ib-verbs",
 	      GF_LOG_ERROR,
-	      "ibv_get_cq_event failed, terminating recv thread");
-      break;
+	      "ibv_get_cq_event failed, terminating recv thread: %d (%d)", ret, errno);
+      continue;
+      //break;
     }
     ibv_ack_cq_events (event_cq, 1);
 
     device = event_ctx;
 
-    if (ibv_req_notify_cq (event_cq, 0)) {
+    ret = ibv_req_notify_cq (event_cq, 0);
+    if (ret) {
       gf_log ("transport/ib-verbs",
 	      GF_LOG_ERROR,
-	      "ibv_req_notify_cq on %s failed, terminating recv thread",
-	      device->device_name);
+	      "ibv_req_notify_cq on %s failed, terminating recv thread: %d",
+	      device->device_name, ret);
       break;
     }
 
@@ -1070,13 +1071,13 @@ ib_verbs_send_completion_proc (void *data)
     ib_verbs_device_t *device;
     struct ibv_wc wc;
 
-    if (ibv_get_cq_event (chan,
-			  &event_cq,
-			  &event_ctx)) {
+    ret = ibv_get_cq_event (chan, &event_cq, &event_ctx);
+    if (ret) {
       gf_log ("transport/ib-verbs",
 	      GF_LOG_ERROR,
-	      "ibv_get_cq_event on failed, terminating send thread");
-      break;
+	      "ibv_get_cq_event on failed, terminating send thread: %d (%d)", ret, errno);
+      continue;
+      //break;
     }
     ibv_ack_cq_events (event_cq, 1);
     
