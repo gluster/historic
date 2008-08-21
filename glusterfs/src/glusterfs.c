@@ -592,7 +592,7 @@ main (int32_t argc, char *argv[])
 
   graph = xlator_graph_get (ctx, specfp);
   if (!graph) {
-    gf_log ("glusterfs", GF_LOG_ERROR, "Unable to get xlator graph");
+    gf_log ("glusterfs", GF_LOG_DEBUG, "Unable to get xlator graph");
     return -1;
   }
   fclose (specfp);
@@ -613,7 +613,7 @@ main (int32_t argc, char *argv[])
   ctx->graph = graph;
   if (xlator_graph_init (graph) == -1) 
     {
-      gf_log ("glusterfs", GF_LOG_ERROR, 
+      gf_log ("glusterfs", GF_LOG_DEBUG, 
 	      "Error while initializing translators. Exiting");
       if (ctx->mount_point) 
 	{
@@ -649,7 +649,7 @@ main (int32_t argc, char *argv[])
       if (!server_specified)
 	{
 	  gf_log ("glusterfs", GF_LOG_ERROR, 
-		  "Either protocol/volume should be defined in volume spec file, or mountpoint should be given");
+		  "either protocol/volume should be defined in volume spec file, or mountpoint should be given");
 	  return -1;
 	}
     }
