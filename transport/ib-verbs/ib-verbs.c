@@ -145,15 +145,22 @@ ib_verbs_destroy_post (ib_verbs_post_t *post)
 static int32_t
 ib_verbs_quota_get (ib_verbs_peer_t *peer)
 {
-  int32_t ret;
+  int32_t ret = -1;
+  ib_verbs_private_t *priv = peer->trans->private;
   /* TODO: handle the locking guy here gracefully
      if QP is destroyed while he is waiting
   */
   pthread_mutex_lock (&peer->lock);
-  while (!peer->quota) {
-    pthread_cond_wait (&peer->has_quota, &peer->lock);
+  while (1) {
+    if (!priv->connected || ret > 0) {
+      break;
+    }
+    if (!peer->quota) {
+      pthread_cond_wait (&peer->has_quota, &peer->lock);
+    } else {
+      ret = peer->quota--;
+    }
   }
-  ret = peer->quota--;
   pthread_mutex_unlock (&peer->lock);
   return ret;
 }
@@ -255,6 +262,7 @@ ib_verbs_writev (transport_t *this,
   ib_verbs_device_t *device = priv->device;
   ib_verbs_peer_t *ctrl_peer = NULL, *data_peer = &priv->peers[0];
   struct ibv_qp *ctrl_qp = NULL, *data_qp = data_peer->qp;
+  int quota_ret = -1;
 
   data_len = iov_length (vector, count);
 
@@ -287,7 +295,14 @@ ib_verbs_writev (transport_t *this,
 
   /* TODO hold write lock */
   if (ctrl_post) {
-    ib_verbs_quota_get (ctrl_peer);
+    quota_ret = ib_verbs_quota_get (ctrl_peer);
+    if (quota_ret == -1) {
+      gf_log ("transport/ib-verbs", GF_LOG_ERROR,
+	      "%s: quota_get returned -1", this->xl->name);
+      ib_verbs_put_post (&device->sendq, ctrl_post);
+      ib_verbs_destroy_post (data_post);
+      return -1;
+    }
     if (ib_verbs_post_send (ctrl_qp, ctrl_post, ctrl_len) != 0) {
       gf_log ("transport/ib-verbs",
 	      GF_LOG_ERROR,
@@ -299,7 +314,17 @@ ib_verbs_writev (transport_t *this,
       return -1;
     }
   }
-  ib_verbs_quota_get (data_peer);
+  quota_ret = ib_verbs_quota_get (data_peer);
+  if (quota_ret == -1) {
+    gf_log ("transport/ib-verbs", GF_LOG_ERROR,
+	    "%s: quota_get returned -1", this->xl->name);
+    if (data_post->aux) 
+      ib_verbs_destroy_post (data_post);
+    else
+      ib_verbs_put_post (&device->sendq, data_post);
+    return -1;
+  }
+
   if (ib_verbs_post_send (data_qp, data_post, data_len) != 0) {
     ib_verbs_quota_put (data_peer);
     if (data_post->aux)
@@ -1452,6 +1477,7 @@ ib_verbs_disconnect (transport_t *this)
   ib_verbs_private_t *priv = this->private;
   int32_t ret= 0;
   char need_unref = 0;
+  int i = 0;
 
   gf_log ("transport/ib-verbs", GF_LOG_DEBUG,
 	  "%s: peer disconnected, cleaning up",
@@ -1470,7 +1496,16 @@ ib_verbs_disconnect (transport_t *this)
 	      strerror (errno));
       ret = -errno;
     }
-    priv->connected = 0;
+
+    for (i=0; i<2; i++) {
+      pthread_mutex_lock (&priv->peers[i].lock);
+      {
+	priv->connected = 0;
+	pthread_cond_broadcast (&priv->peers[i].has_quota);
+      }
+      pthread_mutex_unlock (&priv->peers[i].lock);
+    }
+    
     priv->connection_in_progress = 0;
   }
   pthread_mutex_unlock (&priv->write_mutex);
