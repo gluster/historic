@@ -1,8 +1,10 @@
-xlator_PROGRAMS = io-threads.so
+xlator_LTLIBRARIES = io-threads.la
 xlatordir = $(libdir)/glusterfs/$(PACKAGE_VERSION)/xlator/performance
 
-io_threads_so_SOURCES = io-threads.c
-io_threads_so_LDADD = $(top_builddir)/libglusterfs/src/libglusterfs.la
+io_threads_la_LDFLAGS = -module -avoidversion 
+
+io_threads_la_SOURCES = io-threads.c
+io_threads_la_LIBADD = $(top_builddir)/libglusterfs/src/libglusterfs.la
 
 noinst_HEADERS = io-threads.h
 

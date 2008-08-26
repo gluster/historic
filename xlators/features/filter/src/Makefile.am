@@ -1,8 +1,10 @@
-xlator_PROGRAMS = filter.so
+xlator_LTLIBRARIES = filter.la
 xlatordir = $(libdir)/glusterfs/$(PACKAGE_VERSION)/xlator/features
 
-filter_so_SOURCES = filter.c
-filter_so_LDADD = $(top_builddir)/libglusterfs/src/libglusterfs.la
+filter_la_LDFLAGS = -module -avoidversion 
+
+filter_la_SOURCES = filter.c
+filter_la_LIBADD = $(top_builddir)/libglusterfs/src/libglusterfs.la
 
 noinst_HEADERS = filter.h
 
