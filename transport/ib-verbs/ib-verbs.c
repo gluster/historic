@@ -979,11 +979,10 @@ ib_verbs_recv_completion_proc (void *data)
     if (ret) {
       gf_log ("transport/ib-verbs",
 	      GF_LOG_ERROR,
-	      "ibv_get_cq_event failed, terminating recv thread: %d (%d)", ret, errno);
+	      "ibv_get_cq_event failed, terminating recv thread: %d (%d)",
+	      ret, errno);
       continue;
-      //break;
     }
-    ibv_ack_cq_events (event_cq, 1);
 
     device = event_ctx;
 
@@ -991,9 +990,9 @@ ib_verbs_recv_completion_proc (void *data)
     if (ret) {
       gf_log ("transport/ib-verbs",
 	      GF_LOG_ERROR,
-	      "ibv_req_notify_cq on %s failed, terminating recv thread: %d",
-	      device->device_name, ret);
-      break;
+	      "ibv_req_notify_cq on %s failed, terminating recv thread: %d (%d)",
+	      device->device_name, ret, errno);
+      continue;
     }
 
     device = (ib_verbs_device_t *) event_ctx;
@@ -1074,10 +1073,12 @@ ib_verbs_recv_completion_proc (void *data)
     if (ret < 0) {
       gf_log ("transport/ib-verbs",
 	      GF_LOG_ERROR,
-	      "ibv_poll_cq on `%s' returned error (%d)",
-	      device->device_name, ret);
-      break;
+	      "ibv_poll_cq on `%s' returned error %d (%d)",
+	      device->device_name, ret, errno);
+      continue;
     }
+
+    ibv_ack_cq_events (event_cq, 1);
   }
   return NULL;
 }
@@ -1100,20 +1101,20 @@ ib_verbs_send_completion_proc (void *data)
     if (ret) {
       gf_log ("transport/ib-verbs",
 	      GF_LOG_ERROR,
-	      "ibv_get_cq_event on failed, terminating send thread: %d (%d)", ret, errno);
+	      "ibv_get_cq_event on failed, terminating send thread: %d (%d)",
+	      ret, errno);
       continue;
-      //break;
     }
-    ibv_ack_cq_events (event_cq, 1);
     
     device = event_ctx;
 
-    if (ibv_req_notify_cq (event_cq, 0)) {
+    ret = ibv_req_notify_cq (event_cq, 0);
+    if (ret) {
       gf_log ("transport/ib-verbs",
 	      GF_LOG_ERROR,
-	      "ibv_req_notify_cq on %s failed, terminating send thread",
-	      device->device_name);
-      break;
+	      "ibv_req_notify_cq on %s failed, terminating send thread: %d (%d)",
+	      device->device_name, ret, errno);
+      continue;
     }
 
     while ((ret = ibv_poll_cq (event_cq, 1, &wc)) > 0) {
@@ -1155,10 +1156,12 @@ ib_verbs_send_completion_proc (void *data)
     if (ret < 0) {
       gf_log ("transport/ib-verbs",
 	      GF_LOG_ERROR,
-	      "ibv_poll_cq on `%s' returned error (%d)",
-	      device->device_name, ret);
-      break;
+	      "ibv_poll_cq on `%s' returned error %d (%d)",
+	      device->device_name, ret, errno);
+      continue;
     }
+
+    ibv_ack_cq_events (event_cq, 1);
   }
 
   return NULL;
