@@ -326,11 +326,11 @@ ib_verbs_writev (transport_t *this,
   }
 
   if (ib_verbs_post_send (data_qp, data_post, data_len) != 0) {
-    ib_verbs_quota_put (data_peer);
     if (data_post->aux)
       ib_verbs_destroy_post (data_post);
     else
       ib_verbs_put_post (&device->sendq, data_post);
+    ib_verbs_quota_put (data_peer);
     return -1;
   }
   /* unlock */
