@@ -1,3 +1,3 @@
-SUBDIRS = filter fixed-id posix-locks trash path-convertor squash
+SUBDIRS = posix-locks trash path-convertor filter
 
 CLEANFILES = 
