@@ -1,3 +1,3 @@
-SUBDIRS = posix-locks trash path-convertor filter
+SUBDIRS = posix-locks trash path-convertor filter quota
 
 CLEANFILES = 
