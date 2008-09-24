@@ -4393,6 +4393,8 @@ afr_link_cbk (call_frame_t *frame,
     }
     FREE (local->path);
     afr_loc_free (local->loc);    
+    loc_wipe (&local->locsrc);
+    loc_wipe (&local->locdst);
     STACK_UNWIND (frame,
 		  local->op_ret,
 		  local->op_errno,
@@ -4403,8 +4405,8 @@ afr_link_cbk (call_frame_t *frame,
 		afr_link_cbk,
 		children[local->child],
 		children[local->child]->fops->link,
-		local->loc,
-		local->path);
+		&local->locsrc,
+		&local->locdst);
   }
 
   return 0;
@@ -4415,7 +4417,7 @@ int32_t
 afr_link (call_frame_t *frame,
 	  xlator_t *this,
 	  loc_t *oldloc,
-	  const char *newpath)
+	  loc_t *newloc)
 {
   char *child_errno = NULL;
   afr_local_t *local = NULL;
@@ -4426,13 +4428,16 @@ afr_link (call_frame_t *frame,
   local = (void *) calloc (1, sizeof (afr_local_t));
   ERR_ABORT (local);
 
-  AFR_DEBUG_FMT(this, "oldloc->path %s newpath %s", oldloc->path, newpath);
+  AFR_DEBUG_FMT(this, "oldloc->path %s newpath %s",
+		oldloc->path, newloc->path);
 
   frame->local = local;
   local->op_ret = -1;
   local->op_errno = ENOENT;
   local->loc = afr_loc_dup(oldloc);
-  local->path = strdup(newpath);
+  local->path = strdup(newloc->path);
+  loc_copy (&local->locsrc, oldloc);
+  loc_copy (&local->locdst, newloc);
 
   child_errno = data_to_ptr (dict_get (oldloc->inode->ctx, this->name));
   for (i = 0; i < child_count; i++) {
@@ -4441,6 +4446,8 @@ afr_link (call_frame_t *frame,
   }
   if (i == child_count) {
     GF_ERROR (this, "child_errno[] is not 0, returning ENOTCONN");
+    loc_wipe (&local->locsrc);
+    loc_wipe (&local->locdst);
     STACK_UNWIND (frame,
 		  -1,
 		  ENOTCONN,
@@ -4454,7 +4461,7 @@ afr_link (call_frame_t *frame,
 	      children[i],
 	      children[i]->fops->link,
 	      oldloc,
-	      newpath);
+	      newloc);
 
   return 0;
 }
