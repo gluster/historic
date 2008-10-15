@@ -2354,12 +2354,12 @@ add_array (int32_t *dest, int32_t *src, int count)
  * xattrop - xattr operations - for internal use by GlusterFS
  * @optype: ADD_ARRAY:
  *            dict should contain:
- *               "key" ==> array of 32-bit numbers in network byte order
+ *               "key" ==> array of 32-bit numbers
  */
 
 int
 posix_xattrop (call_frame_t *frame, xlator_t *this,
-	       fd_t *fd, const char *path, int32_t optype, dict_t *xattr)
+	       fd_t *fd, const char *path, gf_xattrop_flags_t optype, dict_t *xattr)
 {
 	char            *real_path = NULL;
 	int32_t         *array = NULL;
@@ -2450,6 +2450,7 @@ posix_xattrop (call_frame_t *frame, xlator_t *this,
 			goto out;
 		} else {
 			size = dict_set_bin (xattr, trav->key, array, trav->value->len);
+
 			if (size != 0) {
 				gf_log (this->name, GF_LOG_ERROR,
 					"%s (%d): key=%s (%s)", path, _fd, 
@@ -2458,6 +2459,8 @@ posix_xattrop (call_frame_t *frame, xlator_t *this,
 				op_errno = EINVAL;
 				goto out;
 			}
+
+			array = NULL;
 		}
 
 		FREE (array);
@@ -2465,6 +2468,7 @@ posix_xattrop (call_frame_t *frame, xlator_t *this,
 	}
 	
 out:
+	FREE (array);
 	STACK_UNWIND (frame, op_ret, op_errno, xattr);
 	return 0;
 }
