@@ -1,3 +1,3 @@
-SUBDIRS = unify stripe afr dht
+SUBDIRS = unify stripe afr dht ha
 
 CLEANFILES = 
