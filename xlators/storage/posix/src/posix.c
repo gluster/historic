@@ -94,6 +94,8 @@ posix_lookup_xattr_fill (xlator_t *this, const char *real_path,
 	char        linkto[val_size];
 	char       *layout_p           = NULL;
 	char       *linkto_p           = NULL;
+	char       *data_pending       = NULL;
+	char       *metadata_pending   = NULL;
 	char       *entry_pending      = NULL;
         int         _fd                = -1;
 	dict_t     *xattr              = NULL;
@@ -147,8 +149,15 @@ posix_lookup_xattr_fill (xlator_t *this, const char *real_path,
 			      linkto_p, xattr_size);
 	}
 
-//	xattr_size = lgetxattr (real_path, "trusted.glusterfs.afr.metadata-pending");
-//	xattr_size = lgetxattr (real_path, "trusted.glusterfs.afr.data-pending");	
+	xattr_size = lgetxattr (real_path, "trusted.glusterfs.afr.data-pending",
+				data_pending, 0);
+	if (xattr_size != -1) {
+		data_pending = malloc (xattr_size);
+		lgetxattr (real_path, "trusted.glusterfs.afr.data-pending",
+			   data_pending, xattr_size);
+		dict_set_bin (xattr, "trusted.glusterfs.afr.data-pending",
+			      data_pending, xattr_size);
+	}
 
 	xattr_size = lgetxattr (real_path, "trusted.glusterfs.afr.entry-pending",
 				entry_pending, 0);
@@ -158,6 +167,16 @@ posix_lookup_xattr_fill (xlator_t *this, const char *real_path,
 			   entry_pending, xattr_size);
 		dict_set_bin (xattr, "trusted.glusterfs.afr.entry-pending",
 			      entry_pending, xattr_size);
+	}
+
+	xattr_size = lgetxattr (real_path, "trusted.glusterfs.afr.metadata-pending",
+				data_pending, 0);
+	if (xattr_size != -1) {
+		metadata_pending = malloc (xattr_size);
+		lgetxattr (real_path, "trusted.glusterfs.afr.metadata-pending",
+			   metadata_pending, xattr_size);
+		dict_set_bin (xattr, "trusted.glusterfs.afr.metadata-pending",
+			      metadata_pending, xattr_size);
 	}
 
 	if ((need_xattr > 0)
