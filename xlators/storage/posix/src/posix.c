@@ -3038,15 +3038,27 @@ posix_lk (call_frame_t *frame, xlator_t *this,
         return 0;
 }
 
-
 int32_t 
-posix_gf_file_lk (call_frame_t *frame, xlator_t *this,
-		  loc_t *loc, fd_t *fd, int32_t cmd, struct flock *lock)
+posix_inodelk (call_frame_t *frame, xlator_t *this,
+	       loc_t *loc, int32_t cmd, struct flock *lock)
 {
         frame->root->rsp_refs = NULL;
 
 	gf_log (this->name, GF_LOG_CRITICAL,
-		"\"features/posix-locks\" translator is not loaded. You need to use it for proper functioning of AFR");
+		"\"features/posix-locks\" translator is not loaded. You need to use it for proper functioning of GlusterFS");
+
+        STACK_UNWIND (frame, -1, ENOSYS);
+        return 0;
+}
+
+int32_t 
+posix_finodelk (call_frame_t *frame, xlator_t *this,
+		fd_t *fd, int32_t cmd, struct flock *lock)
+{
+        frame->root->rsp_refs = NULL;
+
+	gf_log (this->name, GF_LOG_CRITICAL,
+		"\"features/posix-locks\" translator is not loaded. You need to use it for proper functioning of GlusterFS");
 
         STACK_UNWIND (frame, -1, ENOSYS);
         return 0;
@@ -3054,14 +3066,28 @@ posix_gf_file_lk (call_frame_t *frame, xlator_t *this,
 
 
 int32_t 
-posix_gf_dir_lk (call_frame_t *frame, xlator_t *this,
-		 loc_t *loc, const char *basename, gf_dir_lk_cmd cmd, 
-		 gf_dir_lk_type type)
+posix_entrylk (call_frame_t *frame, xlator_t *this,
+	       loc_t *loc, const char *basename, gf_dir_lk_cmd cmd, 
+	       gf_dir_lk_type type)
 {
         frame->root->rsp_refs = NULL;
 
 	gf_log (this->name, GF_LOG_CRITICAL,
-		"\"features/posix-locks\" translator is not loaded. You need to use it for proper functioning of AFR");
+		"\"features/posix-locks\" translator is not loaded. You need to use it for proper functioning of GlusterFS");
+
+        STACK_UNWIND (frame, -1, ENOSYS);
+        return 0;
+}
+
+int32_t 
+posix_fentrylk (call_frame_t *frame, xlator_t *this,
+		fd_t *fd, const char *basename, gf_dir_lk_cmd cmd, 
+		gf_dir_lk_type type)
+{
+        frame->root->rsp_refs = NULL;
+
+	gf_log (this->name, GF_LOG_CRITICAL,
+		"\"features/posix-locks\" translator is not loaded. You need to use it for proper functioning of GlusterFS");
 
         STACK_UNWIND (frame, -1, ENOSYS);
         return 0;
@@ -3564,8 +3590,10 @@ struct xlator_fops fops = {
         .ftruncate   = posix_ftruncate,
         .fstat       = posix_fstat,
         .lk          = posix_lk,
-	.gf_file_lk  = posix_gf_file_lk,
-	.gf_dir_lk   = posix_gf_dir_lk,
+	.inodelk     = posix_inodelk,
+	.finodelk    = posix_finodelk,
+	.entrylk     = posix_entrylk,
+	.fentrylk    = posix_fentrylk,
         .fchown      = posix_fchown,
         .fchmod      = posix_fchmod,
         .setdents    = posix_setdents,
