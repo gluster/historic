@@ -1,3 +1,3 @@
-SUBDIRS = trace
+SUBDIRS = trace error-gen
 
 CLEANFILES = 
