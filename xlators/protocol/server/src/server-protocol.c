@@ -6419,7 +6419,8 @@ notify (xlator_t *this,
       {
 	gf_block_t *blk;
 	server_proto_priv_t *priv = trans->xl_private;
-	server_conf_t *conf = this->private;
+	server_private_t *server_priv = this->private;
+	server_conf_t *conf = server_priv->trans->xl_private;
 
 	if (!priv) {
 	  priv = (void *) calloc (1, sizeof (*priv));
