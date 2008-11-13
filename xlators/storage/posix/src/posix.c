@@ -2005,7 +2005,7 @@ posix_setdents (call_frame_t *frame,
       /* Change the mode */
       chmod (pathname, trav->buf.st_mode);
       /* change the ownership */
-      chown (pathname, trav->buf.st_uid, trav->buf.st_gid);
+      lchown (pathname, trav->buf.st_uid, trav->buf.st_gid);
       if (flags & GF_SET_EPOCH_TIME)
 	utimes (pathname, tv); /* FIXME check return value */
 
