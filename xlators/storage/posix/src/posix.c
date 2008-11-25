@@ -133,8 +133,10 @@ posix_lookup_xattr_fill (xlator_t *this, const char *real_path,
 	if (xattr_size != -1) {
 		layout[xattr_size] = '\0';
 		layout_p = memdup (layout, xattr_size);
-		dict_set_bin (xattr, "trusted.glusterfs.dht",
-			      layout_p, xattr_size);
+		ret = dict_set_bin (xattr, "trusted.glusterfs.dht",
+				    layout_p, xattr_size);
+		if (ret < 0)
+			gf_log (this->name, GF_LOG_ERROR, "dict set failed");
 	}
 
 	xattr_size = lgetxattr (real_path, "trusted.glusterfs.dht.linkto",
@@ -144,8 +146,10 @@ posix_lookup_xattr_fill (xlator_t *this, const char *real_path,
 	if (xattr_size != -1) {
 		linkto[xattr_size] = '\0';
 		linkto_p = strdup (linkto);
-		dict_set_bin (xattr, "trusted.glusterfs.dht.linkto",
-			      linkto_p, xattr_size);
+		ret = dict_set_bin (xattr, "trusted.glusterfs.dht.linkto",
+				    linkto_p, xattr_size);
+		if (ret < 0)
+			gf_log (this->name, GF_LOG_ERROR, "dict set failed");
 	}
 
 	xattr_size = lgetxattr (real_path, "trusted.glusterfs.afr.data-pending",
@@ -154,8 +158,10 @@ posix_lookup_xattr_fill (xlator_t *this, const char *real_path,
 		data_pending = malloc (xattr_size);
 		lgetxattr (real_path, "trusted.glusterfs.afr.data-pending",
 			   data_pending, xattr_size);
-		dict_set_bin (xattr, "trusted.glusterfs.afr.data-pending",
-			      data_pending, xattr_size);
+		ret = dict_set_bin (xattr, "trusted.glusterfs.afr.data-pending",
+				    data_pending, xattr_size);
+		if (ret < 0)
+			gf_log (this->name, GF_LOG_ERROR, "dict set failed");
 	}
 
 	xattr_size = lgetxattr (real_path, "trusted.glusterfs.afr.entry-pending",
@@ -164,8 +170,10 @@ posix_lookup_xattr_fill (xlator_t *this, const char *real_path,
 		entry_pending = malloc (xattr_size);
 		lgetxattr (real_path, "trusted.glusterfs.afr.entry-pending",
 			   entry_pending, xattr_size);
-		dict_set_bin (xattr, "trusted.glusterfs.afr.entry-pending",
-			      entry_pending, xattr_size);
+		ret = dict_set_bin (xattr, "trusted.glusterfs.afr.entry-pending",
+				    entry_pending, xattr_size);
+		if (ret < 0)
+			gf_log (this->name, GF_LOG_ERROR, "dict set failed");
 	}
 
 	xattr_size = lgetxattr (real_path, "trusted.glusterfs.afr.metadata-pending",
@@ -174,8 +182,10 @@ posix_lookup_xattr_fill (xlator_t *this, const char *real_path,
 		metadata_pending = malloc (xattr_size);
 		lgetxattr (real_path, "trusted.glusterfs.afr.metadata-pending",
 			   metadata_pending, xattr_size);
-		dict_set_bin (xattr, "trusted.glusterfs.afr.metadata-pending",
-			      metadata_pending, xattr_size);
+		ret = dict_set_bin (xattr, "trusted.glusterfs.afr.metadata-pending",
+				    metadata_pending, xattr_size);
+		if (ret < 0)
+			gf_log (this->name, GF_LOG_ERROR, "dict set failed");
 	}
 
 	if ((need_xattr > 0)
