@@ -936,7 +936,8 @@ __tcp_rwv (transport_t *this, struct iovec *vector, int count,
 	      /* done for now */
 	      break;
 	    }
-	  total_bytes_xferd += ret;
+	  if (ret > 0)
+		  total_bytes_xferd += ret;
 	}
       else
 	{
@@ -947,7 +948,8 @@ __tcp_rwv (transport_t *this, struct iovec *vector, int count,
 	      /* done for now */
 	      break;
 	    }
-	  total_bytes_rcvd += ret;
+	  if (ret > 0)
+		  total_bytes_rcvd += ret;
 	}
 
       if (ret == 0)
@@ -966,6 +968,10 @@ __tcp_rwv (transport_t *this, struct iovec *vector, int count,
 	  gf_log (this->xl->name, GF_LOG_ERROR,
 		  "%s failed (%s)", write ? "writev" : "readv",
 		  strerror (errno));
+	  if (write && !priv->connected && (errno == ECONNREFUSED))
+		  gf_log (this->xl->name, GF_LOG_ERROR,
+			  "possible mismatch of 'transport-type' in protocol server "
+			  "and client. check volume specfile");
 	  opcount = -1;
 	  break;
 	}
@@ -1634,10 +1640,9 @@ ib_verbs_handshake_pollin (transport_t *this)
 
 	  case IB_VERBS_HANDSHAKE_RECEIVED_DATA:
 	    if (strncmp (buf, "QP1:", 4)) {
-	      gf_log ("transport/ib-verbs",
-		      GF_LOG_CRITICAL,
-		      "%s: remote-host's transport type is different",
-		      this->xl->name);
+	      gf_log ("transport/ib-verbs", GF_LOG_CRITICAL,
+		      "%s: remote-host(%s)'s transport type is different",
+		      this->xl->name, this->peerinfo.identifier);
 	      ret = -1;
 	      goto unlock;
 	    }
@@ -1651,11 +1656,9 @@ ib_verbs_handshake_pollin (transport_t *this)
 			  &priv->peer.remote_psn);
 
 	    if (ret != 5) {
-	      gf_log ("transport/ib-verbs",
-		      GF_LOG_ERROR,
+	      gf_log ("transport/ib-verbs", GF_LOG_ERROR,
 		      "%s: %d conversions in handshake data rather than 5",
-		      this->xl->name,
-		      ret);
+		      this->xl->name, ret);
 	      ret = -1;
 	      goto unlock;
 	    }
@@ -1674,8 +1677,7 @@ ib_verbs_handshake_pollin (transport_t *this)
 	    priv->peer.quota = priv->peer.send_count;
 
 	    if (ib_verbs_connect_qp (this)) {
-	      gf_log ("transport/ib-verbs",
-		      GF_LOG_ERROR,
+	      gf_log ("transport/ib-verbs", GF_LOG_ERROR,
 		      "%s: failed to connect with remote QP",
 		      this->xl->name);
 	      ret = -1;
