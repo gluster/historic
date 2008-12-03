@@ -66,7 +66,6 @@ AC_CONFIG_FILES([Makefile
 		xlators/performance/Makefile
 		xlators/performance/write-behind/Makefile
 		xlators/performance/write-behind/src/Makefile
-		xlators/performance/write-behind/test/Makefile 
 		xlators/performance/read-ahead/Makefile
 		xlators/performance/read-ahead/src/Makefile
 		xlators/performance/io-threads/Makefile
@@ -127,6 +126,7 @@ AC_CONFIG_FILES([Makefile
 		extras/init.d/Makefile
 		extras/init.d/glusterfs-server.plist
 		extras/benchmarking/Makefile
+		extras/test/Makefile
 		glusterfs.spec])
 
 AC_CANONICAL_HOST
