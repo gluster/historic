@@ -432,14 +432,14 @@ insert_and_merge (pl_inode_t *inode, posix_lock_t *lock)
 	destroy_lock (conf);
 
 	delete_lock (inode, lock);
-	detroy_lock (lock);
+	destroy_lock (lock);
 
 	delete_lock (inode, sum);
-	detroy_lock (sum);
+	destroy_lock (sum);
 
 	for (i = 0; i < 3; i++) {
 	  if (v.locks[i]) {
-            if (v.locks[i].fl_type == F_UNLCK) {
+            if (v.locks[i]->fl_type == F_UNLCK) {
 		destroy_lock (v.locks[i]);
 		continue;
 	    }
@@ -469,7 +469,7 @@ insert_and_merge (pl_inode_t *inode, posix_lock_t *lock)
   if (lock->fl_type != F_UNLCK) {
     insert_lock (inode, lock);
   } else {
-    destroy_lock (inode, lock);
+    destroy_lock (lock);
   }
 }
 
