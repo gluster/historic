@@ -54,7 +54,6 @@
 
 #define UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR(_loc) do { \
   if (!(_loc && _loc->inode && _loc->inode->ctx)) {        \
-    TRAP_ON (!(_loc && _loc->inode && _loc->inode->ctx));  \
     STACK_UNWIND (frame, -1, EINVAL, NULL, NULL, NULL);    \
     return 0;                                              \
   }                                                        \
@@ -64,8 +63,6 @@
 #define UNIFY_CHECK_FD_CTX_AND_UNWIND_ON_ERR(_fd) do { \
   if (!(_fd && _fd->ctx &&                             \
 	dict_get (_fd->ctx, this->name))) {            \
-    TRAP_ON (!(_fd && _fd->ctx &&                      \
-	          dict_get (_fd->ctx, this->name)));   \
     STACK_UNWIND (frame, -1, EBADFD, NULL, NULL);      \
     return 0;                                          \
   }                                                    \
@@ -73,7 +70,6 @@
 
 #define UNIFY_CHECK_FD_AND_UNWIND_ON_ERR(_fd) do { \
   if (!(_fd && _fd->ctx)) {                        \
-    TRAP_ON (!(_fd && _fd->ctx));                  \
     STACK_UNWIND (frame, -1, EBADFD, NULL, NULL);  \
     return 0;                                      \
   }                                                \
@@ -411,7 +407,7 @@ unify_lookup_cbk (call_frame_t *frame,
 				if (!local->list) {
 					/* list is not allocated, allocate 
 					   the max possible range */
-					local->list = calloc (1, 2 * (priv->child_count + 2));
+					local->list = CALLOC (1, 2 * (priv->child_count + 2));
 					if (!local->list) {
 						gf_log (this->name, 
 							GF_LOG_CRITICAL, 
@@ -477,7 +473,7 @@ unify_lookup_cbk (call_frame_t *frame,
 				/* If its a file, big array is useless, 
 				   allocate the smaller one */
 				int16_t *list = NULL;
-				list = calloc (1, 2 * (local->index + 1));
+				list = CALLOC (1, 2 * (local->index + 1));
 				ERR_ABORT (list);
 				memcpy (list, local->list, 2 * local->index);
 				/* Make the end of the list as -1 */
@@ -1176,14 +1172,14 @@ unify_open_readlink_cbk (call_frame_t *frame,
 	} else {
 		char *tmp_str = strdup (local->loc1.path);
 		char *tmp_base = dirname (tmp_str);
-		local->name = calloc (1, ZR_PATH_MAX);
+		local->name = CALLOC (1, ZR_PATH_MAX);
 		strcpy (local->name, tmp_base);
 		strncat (local->name, "/", 1);
 		strcat (local->name, path);
 		FREE (tmp_str);
 	}
   
-	local->list = calloc (1, sizeof (int16_t) * 3);
+	local->list = CALLOC (1, sizeof (int16_t) * 3);
 	ERR_ABORT (local->list);
 	local->call_count = priv->child_count + 1;
 	local->op_ret = -1;
@@ -1590,7 +1586,7 @@ unify_ns_create_cbk (call_frame_t *frame,
 		local->op_ret = -1;
 
 		/* Start the mapping list */
-		list = calloc (1, sizeof (int16_t) * 3);
+		list = CALLOC (1, sizeof (int16_t) * 3);
 		ERR_ABORT (list);
 		dict_set (inode->ctx, this->name, data_from_ptr (list));
 		list[0] = priv->child_count;
@@ -1636,7 +1632,7 @@ unify_ns_create_cbk (call_frame_t *frame,
 			"File(%s) already exists on namespace, sending "
 			"open instead", local->loc1.path);
 
-		local->list = calloc (1, sizeof (int16_t) * 3);
+		local->list = CALLOC (1, sizeof (int16_t) * 3);
 		ERR_ABORT (local->list);
 		local->call_count = priv->child_count + 1;
 		local->op_ret = -1;
@@ -3132,7 +3128,7 @@ unify_ns_mknod_cbk (call_frame_t *frame,
 	local->stbuf = *buf;
 	local->st_ino = buf->st_ino;
 
-	list = calloc (1, sizeof (int16_t) * 3);
+	list = CALLOC (1, sizeof (int16_t) * 3);
 	ERR_ABORT (list);
 	list[0] = priv->child_count;
 	list[2] = -1;
@@ -3297,7 +3293,7 @@ unify_ns_symlink_cbk (call_frame_t *frame,
   
 	/* Start the mapping list */
 
-	list = calloc (1, sizeof (int16_t) * 3);
+	list = CALLOC (1, sizeof (int16_t) * 3);
 	ERR_ABORT (list);
 	list[0] = priv->child_count; //namespace's index
 	list[2] = -1;
@@ -3519,7 +3515,7 @@ unify_rename_cbk (call_frame_t *frame,
 
 			if (list) {				
 				for (index = 0; list[index] != -1; index++);
-				tmp_list = calloc (1, index * 2);
+				tmp_list = CALLOC (1, index * 2);
 				memcpy (tmp_list, list, index * 2);
 
 				for (index = 0; list[index] != -1; index++) {
@@ -4192,7 +4188,7 @@ init (xlator_t *this)
 	gf_log (this->name, GF_LOG_DEBUG, 
 		"namespace node specified as %s", data->data);
 	
-	_private = calloc (1, sizeof (*_private));
+	_private = CALLOC (1, sizeof (*_private));
 	ERR_ABORT (_private);
 	_private->sched_ops = get_scheduler (scheduler->data);
 	if (!_private->sched_ops) {
@@ -4227,7 +4223,7 @@ init (xlator_t *this)
 				" you may hit some performance penalty");
 		}
 		
-		_private->xl_array = calloc (1, 
+		_private->xl_array = CALLOC (1, 
 					     sizeof (xlator_t) * (count + 1));
 		ERR_ABORT (_private->xl_array);
 		
@@ -4293,7 +4289,7 @@ init (xlator_t *this)
 			xlator_list_t *xlparent = NULL;
 			xlator_list_t *parent = NULL;
 
-			xlparent = calloc (1, sizeof (*xlparent));
+			xlparent = CALLOC (1, sizeof (*xlparent));
 			xlparent->xlator = this;
 			if (!ns_xl->parents) {
 				ns_xl->parents = xlparent;

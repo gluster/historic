@@ -1,8 +1,8 @@
-sbin_PROGRAMS = glusterfs
+sbin_PROGRAMS = glusterfsd
 
-glusterfs_SOURCES = glusterfs.c fetch-spec.c
-glusterfs_LDADD = $(top_builddir)/libglusterfs/src/libglusterfs.la $(GF_LDADD)
-glusterfs_LDFLAGS = $(GF_LDFLAGS) $(GF_GLUSTERFS_LDFLAGS)
+glusterfsd_SOURCES = glusterfsd.c fetch-spec.c
+glusterfsd_LDADD = $(top_builddir)/libglusterfs/src/libglusterfs.la $(GF_LDADD)
+glusterfsd_LDFLAGS = $(GF_LDFLAGS) $(GF_GLUSTERFS_LDFLAGS)
 noinst_HEADERS = glusterfsd.h
 
 AM_CFLAGS = -fPIC -Wall -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D$(GF_HOST_OS)\
@@ -15,10 +15,10 @@ $(top_builddir)/libglusterfs/src/libglusterfs.la:
 	make -C $(top_builddir)/libglusterfs/src/ all
 
 uninstall-local:
-	rm -f $(DESTDIR)$(sbindir)/glusterfsd
+	rm -f $(DESTDIR)$(sbindir)/glusterfs
 
 install-data-local:
 	$(INSTALL) -d -m 755 $(DESTDIR)$(localstatedir)/run
 	$(INSTALL) -d -m 755 $(DESTDIR)$(localstatedir)/log/glusterfs
-	rm -f $(DESTDIR)$(sbindir)/glusterfsd
-	ln -s glusterfs $(DESTDIR)$(sbindir)/glusterfsd
+	rm -f $(DESTDIR)$(sbindir)/glusterfs
+	ln -s glusterfsd $(DESTDIR)$(sbindir)/glusterfs
