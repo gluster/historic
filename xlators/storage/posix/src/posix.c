@@ -2403,7 +2403,7 @@ posix_xattrop (call_frame_t *frame, xlator_t *this,
 		count = trav->value->len / sizeof (int32_t);
 		array = CALLOC (count, sizeof (int32_t));
 		
-		size = lgetxattr (real_path, trav->key, array, 
+		size = lgetxattr (real_path, trav->key, (char *)array, 
 				  trav->value->len);
 
 		op_errno = errno;
@@ -2515,7 +2515,7 @@ posix_fxattrop (call_frame_t *frame, xlator_t *this,
 		count = trav->value->len / sizeof (int32_t);
 		array = CALLOC (count, sizeof (int32_t));
 		
-		size = fgetxattr (_fd, trav->key, array, trav->value->len);
+		size = fgetxattr (_fd, trav->key, (char *)array, trav->value->len);
 
 		op_errno = errno;
 		if ((size == -1) && ((op_errno != ENODATA) && 
@@ -2547,7 +2547,7 @@ posix_fxattrop (call_frame_t *frame, xlator_t *this,
 			goto out;
 		}
 
-		size = fsetxattr (_fd, trav->key, array,
+		size = fsetxattr (_fd, trav->key, (char *)array,
 				  trav->value->len, 0);
 
 		op_errno = errno;
