@@ -240,7 +240,7 @@ posix_lookup (call_frame_t *frame, xlator_t *this,
         int32_t     op_ret             = -1;
         int32_t     op_errno           = 0;
         dict_t *    xattr              = NULL;
-
+        struct posix_private * priv      = NULL;
 
         VALIDATE_OR_GOTO (frame, out);
         VALIDATE_OR_GOTO (this, out);
@@ -248,6 +248,8 @@ posix_lookup (call_frame_t *frame, xlator_t *this,
 	VALIDATE_OR_GOTO (loc->path, out);
 
         MAKE_REAL_PATH (real_path, this, loc->path);
+
+        priv = this->private;
 
         op_ret   = lstat (real_path, &buf);
         op_errno = errno;
@@ -260,6 +262,18 @@ posix_lookup (call_frame_t *frame, xlator_t *this,
 		}
                 goto out;
         }
+
+	/* Make sure we don't access another mountpoint inside export dir.
+	 * It may cause inode number to repeat from single export point, 
+	 * which leads to severe problems.. 
+	 */
+	if (priv->base_stdev != buf.st_dev) {
+		op_errno = ENOENT;
+		gf_log (this->name, GF_LOG_WARNING, 
+			"%s: different mountpoint/device, returning "
+			"ENOENT", loc->path);
+		goto out;
+	}
 
         if (need_xattr && (op_ret == 0)) {
 		xattr = posix_lookup_xattr_fill (this, real_path,
@@ -3558,6 +3572,7 @@ init (xlator_t *this)
                 goto out;
         }
 
+	
         /* Check for Extended attribute support, if not present, log it */
         op_ret = lsetxattr (dir_data->data, 
 			    "trusted.glusterfs.test", "working", 8, 0);
@@ -3593,7 +3608,6 @@ init (xlator_t *this)
         }
 
         _private = CALLOC (1, sizeof (*_private));
-        _private->base_path = strdup (dir_data->data);
         if (!_private) {
                 gf_log (this->name, GF_LOG_ERROR, 
                         "out of memory :(");
@@ -3601,7 +3615,9 @@ init (xlator_t *this)
                 goto out;
         }
 
+        _private->base_path = strdup (dir_data->data);
         _private->base_path_length = strlen (_private->base_path);
+	_private->base_stdev = buf.st_dev;
 
         {
                 /* Stats related variables */
