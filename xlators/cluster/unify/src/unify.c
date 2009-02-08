@@ -53,7 +53,7 @@
 #include "compat.h"
 
 #define UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR(_loc) do { \
-  if (!(_loc && _loc->inode && _loc->inode->ctx)) {        \
+  if (!(_loc && _loc->inode)) {                            \
     STACK_UNWIND (frame, -1, EINVAL, NULL, NULL, NULL);    \
     return 0;                                              \
   }                                                        \
@@ -130,8 +130,7 @@ unify_loc_subvol (loc_t *loc, xlator_t *this)
 	subvol = NS (this);
 
 	if (!S_ISDIR (loc->inode->st_mode)) {
-		ret = dict_get_ptr (loc->inode->ctx, this->name,
-				    (void **) ((void *)&list));
+		ret = inode_ctx_get (loc->inode, this, VOID (&list));
 
 		if (!list)
 			goto out;
@@ -331,7 +330,6 @@ unify_lookup_cbk (call_frame_t *frame,
 		  struct stat *buf,
 		  dict_t *dict)
 {
-	int ret = 0;
 	int32_t callcnt = 0;
 	unify_private_t *priv = this->private;
 	unify_local_t *local = frame->local;
@@ -480,10 +478,10 @@ unify_lookup_cbk (call_frame_t *frame,
 				FREE (local->list);
 				local->list = list;
 				local->list [local->index] = -1;
-				/* Update the inode->ctx with proper array */
+				/* Update the inode's ctx with proper array */
 				/* TODO: log on failure */
-				ret = dict_set_ptr (local->loc1.inode->ctx, 
-						    this->name, local->list);
+				inode_ctx_put (local->loc1.inode, this, 
+					       (uint64_t)(long)local->list);
 			}
 
 			if (S_ISDIR(local->loc1.inode->st_mode)) {
@@ -552,7 +550,7 @@ unify_lookup (call_frame_t *frame,
 	int16_t *list = NULL;
 	long index = 0;
 
-	if (!(loc && loc->inode && loc->inode->ctx)) {
+	if (!(loc && loc->inode)) {
 		gf_log (this->name, GF_LOG_ERROR, 
 			"%s: Argument not right", loc?loc->path:"(null)");
 		STACK_UNWIND (frame, -1, EINVAL, NULL, NULL, NULL);
@@ -568,12 +566,11 @@ unify_lookup (call_frame_t *frame,
 		return 0;
 	}
 
-	if (dict_get (loc->inode->ctx, this->name) && 
+	if (!inode_ctx_get (loc->inode, this, NULL) && 
 	    loc->inode->st_mode && 
 	    !S_ISDIR (loc->inode->st_mode)) {
 		/* check if revalidate or fresh lookup */
-		local->list = data_to_ptr (dict_get (loc->inode->ctx, 
-						     this->name));
+		inode_ctx_get (loc->inode, this, VOID (&local->list));
 	}
 
 	if (local->list) {
@@ -631,11 +628,10 @@ unify_lookup (call_frame_t *frame,
 		}
 	} else {
 		if (loc->inode->st_mode) {
-			if (dict_get (loc->inode->ctx, this->name)) {
-				local->inode_generation = 
-					data_to_int64 (dict_get (
-							       loc->inode->ctx,
-							       this->name));
+			if (inode_ctx_get (loc->inode, this, NULL)) {
+				inode_ctx_get (loc->inode, 
+					       this, 
+					       VOID(&local->inode_generation));
 			}
 		}
 		/* This is first call, there is no list */
@@ -692,7 +688,7 @@ unify_stat (call_frame_t *frame,
 			    NS(this)->fops->stat, loc);
 	} else {
 		/* File */
-		list = data_to_ptr (dict_get (loc->inode->ctx, this->name));
+		inode_ctx_get (loc->inode, this, VOID (&list));
     
 		for (index = 0; list[index] != -1; index++)
 			local->call_count++;
@@ -793,8 +789,8 @@ unify_mkdir_cbk (call_frame_t *frame,
   
 	if (!callcnt) {
 		if (!local->failed) {
-			dict_set (local->loc1.inode->ctx, this->name, 
-				  data_from_int64 (priv->inode_generation));
+			inode_ctx_put (local->loc1.inode, this, 
+				       priv->inode_generation);
 		}
 		
 		tmp_inode = local->loc1.inode;
@@ -1221,7 +1217,7 @@ unify_open (call_frame_t *frame,
 	loc_copy (&local->loc1, loc);
 	local->fd    = fd;
 	local->flags = flags;
-	list = data_to_ptr (dict_get (loc->inode->ctx, this->name));
+	inode_ctx_get (loc->inode, this, VOID (&list));
 	local->list = list;
 	file_list[0] = priv->child_count; /* Thats namespace */
 	file_list[2] = -1;
@@ -1398,7 +1394,6 @@ unify_create_lookup_cbk (call_frame_t *frame,
 			 struct stat *buf,
 			 dict_t *dict)
 {
-	int ret = 0;
 	int32_t callcnt = 0;
 	int16_t index = 0;
 	unify_private_t *priv = this->private;
@@ -1440,8 +1435,8 @@ unify_create_lookup_cbk (call_frame_t *frame,
 
 		local->stbuf.st_ino = local->st_ino;
 		/* TODO: log on failure */
-		ret = dict_set_ptr (local->loc1.inode->ctx, 
-				    this->name, local->list);
+		inode_ctx_put (local->loc1.inode, this, 
+			       (uint64_t)(long)local->list);
 
 		if (local->index != 2) {
 			/* Lookup failed, can't do open */
@@ -1593,7 +1588,7 @@ unify_ns_create_cbk (call_frame_t *frame,
 		/* Start the mapping list */
 		list = CALLOC (1, sizeof (int16_t) * 3);
 		ERR_ABORT (list);
-		dict_set (inode->ctx, this->name, data_from_ptr (list));
+		inode_ctx_put (inode, this, (uint64_t)(long)list);
 		list[0] = priv->child_count;
 		list[2] = -1;
 
@@ -1762,8 +1757,7 @@ unify_chmod (call_frame_t *frame,
 				    loc, mode);
 		}    
 	} else {
-		local->list = data_to_ptr (dict_get (loc->inode->ctx, 
-						     this->name));
+		inode_ctx_get (loc->inode, this, VOID (&local->list));
       
 		for (index = 0; local->list[index] != -1; index++) {
 			local->call_count++;
@@ -1818,8 +1812,7 @@ unify_chown (call_frame_t *frame,
 				    loc, uid, gid);
 		}    
 	} else {
-		local->list = data_to_ptr (dict_get (loc->inode->ctx, 
-						     this->name));
+		inode_ctx_get (loc->inode, this, VOID (&local->list));
       
 		for (index = 0; local->list[index] != -1; index++) {
 			local->call_count++;
@@ -1937,8 +1930,7 @@ unify_truncate (call_frame_t *frame,
 			    loc);
 	} else {
 		local->op_ret = 0;
-		local->list = data_to_ptr (dict_get (loc->inode->ctx, 
-						     this->name));
+		inode_ctx_get (loc->inode, this, VOID (&local->list));
       
 		for (index = 0; local->list[index] != -1; index++) {
 			local->call_count++;
@@ -1999,8 +1991,7 @@ unify_utimens (call_frame_t *frame,
 				    loc, tv);
 		}
 	} else {
-		local->list = data_to_ptr (dict_get (loc->inode->ctx, 
-						     this->name));
+		inode_ctx_get (loc->inode, this, VOID (&local->list));
       
 		for (index = 0; local->list[index] != -1; index++) {
 			local->call_count++;
@@ -2052,8 +2043,8 @@ unify_readlink (call_frame_t *frame,
 	int16_t index = 0;
   
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
-
-	list = data_to_ptr (dict_get (loc->inode->ctx, this->name));
+	
+	inode_ctx_get (loc->inode, this, VOID (&list));
 
 	for (index = 0; list[index] != -1; index++)
 		entry_count++;
@@ -2133,7 +2124,7 @@ unify_unlink (call_frame_t *frame,
 	INIT_LOCAL (frame, local);
 	loc_copy (&local->loc1, loc);
 
-	list = data_to_ptr (dict_get (loc->inode->ctx, this->name));
+	inode_ctx_get (loc->inode, this, VOID (&list));
 
 	for (index = 0; list[index] != -1; index++)
 		local->call_count++;
@@ -2784,7 +2775,7 @@ unify_setxattr (call_frame_t *frame,
 		return 0;
 	}
 
-	list = data_to_ptr (dict_get (loc->inode->ctx, this->name));
+	inode_ctx_get (loc->inode, this, VOID (&list));
 
 	for (index = 0; list[index] != -1; index++) {
 		if (NS(this) != priv->xl_array[list[index]]) {
@@ -2904,7 +2895,7 @@ unify_getxattr (call_frame_t *frame,
 		return 0;
 	}
 
-	list = data_to_ptr (dict_get (loc->inode->ctx, this->name));
+	inode_ctx_get (loc->inode, this, VOID (&list));
 
 	for (index = 0; list[index] != -1; index++) {
 		if (NS(this) != priv->xl_array[list[index]]) {
@@ -3009,7 +3000,7 @@ unify_removexattr (call_frame_t *frame,
 		return 0;
 	}
 
-	list = data_to_ptr (dict_get (loc->inode->ctx, this->name));
+	inode_ctx_get (loc->inode, this, VOID (&list));
 
 	for (index = 0; list[index] != -1; index++) {
 		if (NS(this) != priv->xl_array[list[index]]) {
@@ -3137,7 +3128,7 @@ unify_ns_mknod_cbk (call_frame_t *frame,
 	ERR_ABORT (list);
 	list[0] = priv->child_count;
 	list[2] = -1;
-	dict_set (inode->ctx, this->name, data_from_ptr (list));
+	inode_ctx_put (inode, this, (uint64_t)(long)list);
 
 	sched_ops = priv->sched_ops;
 
@@ -3302,7 +3293,7 @@ unify_ns_symlink_cbk (call_frame_t *frame,
 	ERR_ABORT (list);
 	list[0] = priv->child_count; //namespace's index
 	list[2] = -1;
-	dict_set (inode->ctx, this->name, data_from_ptr (list));
+	inode_ctx_put (inode, this, (uint64_t)(long)list);
 
 	sched_ops = priv->sched_ops;
 
@@ -3512,10 +3503,9 @@ unify_rename_cbk (call_frame_t *frame,
 
 			int32_t idx = 0;
 			int16_t *tmp_list = NULL;
-			if (local->loc2.inode && local->loc2.inode->ctx) {
-				list = data_to_ptr (
-					dict_get (local->loc2.inode->ctx, 
-						  this->name));
+			if (local->loc2.inode) {
+				inode_ctx_get (local->loc2.inode, 
+					       this, VOID (&list));
 			}
 
 			if (list) {				
@@ -3687,7 +3677,7 @@ unify_rename (call_frame_t *frame,
 		return 0;
 	}
   
-	local->list = data_to_ptr (dict_get (oldloc->inode->ctx, this->name));
+	inode_ctx_get (oldloc->inode, this, VOID (&local->list));
 	STACK_WIND (frame,
 		    unify_ns_rename_cbk,
 		    NS(this),
@@ -3793,7 +3783,7 @@ unify_link (call_frame_t *frame,
 	loc_copy (&local->loc1, oldloc);
 	loc_copy (&local->loc2, newloc);
 
-	local->list = data_to_ptr (dict_get (oldloc->inode->ctx, this->name));
+	inode_ctx_get (oldloc->inode, this, VOID (&local->list));
 
 	STACK_WIND (frame,
 		    unify_ns_link_cbk,
