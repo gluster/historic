@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2006, 2007, 2008 Z RESEARCH, Inc. <http://www.zresearch.com>
+  Copyright (c) 2006, 2007, 2008, 2009 Z RESEARCH, Inc. <http://www.zresearch.com>
   This file is part of GlusterFS.
 
   GlusterFS is free software; you can redistribute it and/or modify
@@ -125,13 +125,14 @@ unify_loc_subvol (loc_t *loc, xlator_t *this)
 	long             index = 0;
 	xlator_t        *subvol_i = NULL;
 	int              ret = 0;
+	uint64_t         tmp_list = 0;
 
 	priv   = this->private;
 	subvol = NS (this);
 
 	if (!S_ISDIR (loc->inode->st_mode)) {
-		ret = inode_ctx_get (loc->inode, this, (uint64_t *) (&list));
-
+		ret = inode_ctx_get (loc->inode, this, &tmp_list);
+		list = (int16_t *)(long)tmp_list;
 		if (!list)
 			goto out;
 
@@ -569,8 +570,10 @@ unify_lookup (call_frame_t *frame,
 	if (!inode_ctx_get (loc->inode, this, NULL) && 
 	    loc->inode->st_mode && 
 	    !S_ISDIR (loc->inode->st_mode)) {
+		uint64_t tmp_list = 0;
 		/* check if revalidate or fresh lookup */
-		inode_ctx_get (loc->inode, this, (uint64_t *) (&local->list));
+		inode_ctx_get (loc->inode, this, &tmp_list);
+		local->list = (int16_t *)(long)tmp_list;
 	}
 
 	if (local->list) {
@@ -629,9 +632,8 @@ unify_lookup (call_frame_t *frame,
 	} else {
 		if (loc->inode->st_mode) {
 			if (inode_ctx_get (loc->inode, this, NULL)) {
-				inode_ctx_get (loc->inode, 
-					       this, 
-					       (uint64_t *)(&local->inode_generation));
+				inode_ctx_get (loc->inode, this, 
+					       &local->inode_generation);
 			}
 		}
 		/* This is first call, there is no list */
@@ -669,6 +671,7 @@ unify_stat (call_frame_t *frame,
 	unify_private_t *priv = this->private;
 	int16_t index = 0;
 	int16_t *list = NULL;
+	uint64_t tmp_list = 0;
 
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 
@@ -688,8 +691,9 @@ unify_stat (call_frame_t *frame,
 			    NS(this)->fops->stat, loc);
 	} else {
 		/* File */
-		inode_ctx_get (loc->inode, this, (uint64_t *) (&list));
-    
+		inode_ctx_get (loc->inode, this, &tmp_list);
+    		list = (int16_t *)(long)tmp_list;
+
 		for (index = 0; list[index] != -1; index++)
 			local->call_count++;
     
@@ -1209,6 +1213,7 @@ unify_open (call_frame_t *frame,
 	int16_t *list = NULL;
 	int16_t index = 0;
 	int16_t file_list[3] = {0,};
+	uint64_t tmp_list = 0;
 
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 
@@ -1217,7 +1222,9 @@ unify_open (call_frame_t *frame,
 	loc_copy (&local->loc1, loc);
 	local->fd    = fd;
 	local->flags = flags;
-	inode_ctx_get (loc->inode, this, (uint64_t *) (&list));
+	inode_ctx_get (loc->inode, this, &tmp_list);
+	list = (int16_t *)(long)tmp_list;
+
 	local->list = list;
 	file_list[0] = priv->child_count; /* Thats namespace */
 	file_list[2] = -1;
@@ -1737,7 +1744,8 @@ unify_chmod (call_frame_t *frame,
 	unify_private_t *priv = this->private;
 	int32_t index = 0;
 	int32_t callcnt = 0;
-  
+	uint64_t tmp_list = 0;
+		
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 
 	/* Initialization */
@@ -1757,8 +1765,9 @@ unify_chmod (call_frame_t *frame,
 				    loc, mode);
 		}    
 	} else {
-		inode_ctx_get (loc->inode, this, (uint64_t *) (&local->list));
-      
+		inode_ctx_get (loc->inode, this, &tmp_list);
+		local->list = (int16_t *)(long)tmp_list;
+
 		for (index = 0; local->list[index] != -1; index++) {
 			local->call_count++;
 			callcnt++;
@@ -1793,7 +1802,8 @@ unify_chown (call_frame_t *frame,
 	unify_private_t *priv = this->private;
 	int32_t index = 0;
 	int32_t callcnt = 0;
-  
+  	uint64_t tmp_list = 0;
+
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 
 	/* Initialization */
@@ -1812,8 +1822,9 @@ unify_chown (call_frame_t *frame,
 				    loc, uid, gid);
 		}    
 	} else {
-		inode_ctx_get (loc->inode, this, (uint64_t *) (&local->list));
-      
+		inode_ctx_get (loc->inode, this, &tmp_list);
+		local->list = (int16_t *)(long)tmp_list;
+
 		for (index = 0; local->list[index] != -1; index++) {
 			local->call_count++;
 			callcnt++;
@@ -1912,7 +1923,8 @@ unify_truncate (call_frame_t *frame,
 	unify_private_t *priv = this->private;
 	int32_t index = 0;
 	int32_t callcnt = 0;
-  
+  	uint64_t tmp_list = 0;
+
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 
 	/* Initialization */
@@ -1930,8 +1942,9 @@ unify_truncate (call_frame_t *frame,
 			    loc);
 	} else {
 		local->op_ret = 0;
-		inode_ctx_get (loc->inode, this, (uint64_t *) (&local->list));
-      
+		inode_ctx_get (loc->inode, this, &tmp_list);
+		local->list = (int16_t *)(long)tmp_list;
+
 		for (index = 0; local->list[index] != -1; index++) {
 			local->call_count++;
 			callcnt++;
@@ -1972,6 +1985,7 @@ unify_utimens (call_frame_t *frame,
 	unify_private_t *priv = this->private;
 	int32_t index = 0;
 	int32_t callcnt = 0;
+  	uint64_t tmp_list = 0;
   
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 
@@ -1991,8 +2005,9 @@ unify_utimens (call_frame_t *frame,
 				    loc, tv);
 		}
 	} else {
-		inode_ctx_get (loc->inode, this, (uint64_t *) (&local->list));
-      
+		inode_ctx_get (loc->inode, this, &tmp_list);
+		local->list = (int16_t *)(long)tmp_list;
+
 		for (index = 0; local->list[index] != -1; index++) {
 			local->call_count++;
 			callcnt++;
@@ -2041,10 +2056,12 @@ unify_readlink (call_frame_t *frame,
 	int32_t entry_count = 0;
 	int16_t *list = NULL;
 	int16_t index = 0;
+  	uint64_t tmp_list = 0;
   
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 	
-	inode_ctx_get (loc->inode, this, (uint64_t *) (&list));
+	inode_ctx_get (loc->inode, this, &tmp_list);
+	list = (int16_t *)(long)tmp_list;
 
 	for (index = 0; list[index] != -1; index++)
 		entry_count++;
@@ -2117,6 +2134,7 @@ unify_unlink (call_frame_t *frame,
 	unify_local_t *local = NULL;
 	int16_t *list = NULL;
 	int16_t index = 0;
+  	uint64_t tmp_list = 0;
 
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 
@@ -2124,7 +2142,8 @@ unify_unlink (call_frame_t *frame,
 	INIT_LOCAL (frame, local);
 	loc_copy (&local->loc1, loc);
 
-	inode_ctx_get (loc->inode, this, (uint64_t *) (&list));
+	inode_ctx_get (loc->inode, this, &tmp_list);
+	list = (int16_t *)(long)tmp_list;
 
 	for (index = 0; list[index] != -1; index++)
 		local->call_count++;
@@ -2744,6 +2763,7 @@ unify_setxattr (call_frame_t *frame,
 	int16_t *list = NULL;
 	int16_t index = 0;
 	int32_t call_count = 0;
+  	uint64_t tmp_list = 0;
 	data_pair_t *trav = dict->members_list;
 
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
@@ -2775,7 +2795,8 @@ unify_setxattr (call_frame_t *frame,
 		return 0;
 	}
 
-	inode_ctx_get (loc->inode, this, (uint64_t *) (&list));
+	inode_ctx_get (loc->inode, this, &tmp_list);
+	list = (int16_t *)(long)tmp_list;
 
 	for (index = 0; list[index] != -1; index++) {
 		if (NS(this) != priv->xl_array[list[index]]) {
@@ -2879,6 +2900,7 @@ unify_getxattr (call_frame_t *frame,
 	int16_t index = 0;
 	int16_t count = 0;
 	unify_local_t *local = NULL;
+  	uint64_t tmp_list = 0;
 
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 	INIT_LOCAL (frame, local);
@@ -2895,7 +2917,8 @@ unify_getxattr (call_frame_t *frame,
 		return 0;
 	}
 
-	inode_ctx_get (loc->inode, this, (uint64_t *) (&list));
+	inode_ctx_get (loc->inode, this, &tmp_list);
+	list = (int16_t *)(long)tmp_list;
 
 	for (index = 0; list[index] != -1; index++) {
 		if (NS(this) != priv->xl_array[list[index]]) {
@@ -2981,6 +3004,7 @@ unify_removexattr (call_frame_t *frame,
 	int16_t *list = NULL;
 	int16_t index = 0;
 	int32_t call_count = 0;
+  	uint64_t tmp_list = 0;
 
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (loc);
 
@@ -3000,7 +3024,8 @@ unify_removexattr (call_frame_t *frame,
 		return 0;
 	}
 
-	inode_ctx_get (loc->inode, this, (uint64_t *) (&list));
+	inode_ctx_get (loc->inode, this, &tmp_list);
+	list = (int16_t *)(long)tmp_list;
 
 	for (index = 0; list[index] != -1; index++) {
 		if (NS(this) != priv->xl_array[list[index]]) {
@@ -3503,9 +3528,12 @@ unify_rename_cbk (call_frame_t *frame,
 
 			int32_t idx = 0;
 			int16_t *tmp_list = NULL;
+			uint64_t tmp_list_int64 = 0;
 			if (local->loc2.inode) {
 				inode_ctx_get (local->loc2.inode, 
-					       this, (uint64_t *) (&list));
+					       this, &tmp_list_int64);
+				list = (int16_t *)(long)tmp_list_int64;
+
 			}
 
 			if (list) {				
@@ -3664,6 +3692,7 @@ unify_rename (call_frame_t *frame,
 	      loc_t *newloc)
 {
 	unify_local_t *local = NULL;
+  	uint64_t tmp_list = 0;
 
 	/* Initialization */
 	INIT_LOCAL (frame, local);
@@ -3677,7 +3706,9 @@ unify_rename (call_frame_t *frame,
 		return 0;
 	}
   
-	inode_ctx_get (oldloc->inode, this, (uint64_t *) (&local->list));
+	inode_ctx_get (oldloc->inode, this, &tmp_list);
+	local->list = (int16_t *)(long)tmp_list;
+
 	STACK_WIND (frame,
 		    unify_ns_rename_cbk,
 		    NS(this),
@@ -3773,6 +3804,7 @@ unify_link (call_frame_t *frame,
 	    loc_t *newloc)
 {
 	unify_local_t *local = NULL;
+  	uint64_t tmp_list = 0;
 
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (oldloc);
 	UNIFY_CHECK_INODE_CTX_AND_UNWIND_ON_ERR (newloc);
@@ -3783,7 +3815,8 @@ unify_link (call_frame_t *frame,
 	loc_copy (&local->loc1, oldloc);
 	loc_copy (&local->loc2, newloc);
 
-	inode_ctx_get (oldloc->inode, this, (uint64_t *) (&local->list));
+	inode_ctx_get (oldloc->inode, this, &tmp_list);
+	local->list = (int16_t *)(long)tmp_list;
 
 	STACK_WIND (frame,
 		    unify_ns_link_cbk,
