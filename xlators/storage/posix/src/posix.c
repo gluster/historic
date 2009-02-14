@@ -1777,7 +1777,10 @@ posix_flush (call_frame_t *frame, xlator_t *this,
 	pfd = (struct posix_fd *)(long)tmp_pfd;
 
         _fd = pfd->fd;
+
         /* do nothing */
+	posix_xattr_cache_flush_all (this);
+
         op_ret = 0;
 
  out:
