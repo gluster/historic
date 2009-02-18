@@ -1535,7 +1535,6 @@ posix_readv (call_frame_t *frame, xlator_t *this,
                         "read failed: %s", strerror (op_errno));
                 goto out;
         }
-	op_ret = -1;
 
         priv->read_value    += size;
         priv->interval_read += size;
@@ -1543,6 +1542,7 @@ posix_readv (call_frame_t *frame, xlator_t *this,
         vec.iov_base = buf;
         vec.iov_len  = op_ret;
 
+	op_ret = -1;
         reply_dict = get_new_dict ();
         if (!reply_dict) {
                 gf_log (this->name, GF_LOG_ERROR,
