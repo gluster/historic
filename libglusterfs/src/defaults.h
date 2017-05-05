@@ -1,200 +1,273 @@
+/*
+   Copyright (c) 2006, 2007, 2008 Z RESEARCH, Inc. <http://www.zresearch.com>
+   This file is part of GlusterFS.
+
+   GlusterFS is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published
+   by the Free Software Foundation; either version 3 of the License,
+   or (at your option) any later version.
+
+   GlusterFS is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see
+   <http://www.gnu.org/licenses/>.
+*/
+
+/* libglusterfs/src/defaults.h:
+       This file contains definition of default fops and mops functions.
+*/
+
 #ifndef _DEFAULTS_H
 #define _DEFAULTS_H
 
-#include "layout.h"
+#ifndef _CONFIG_H
+#define _CONFIG_H
+#include "config.h"
+#endif
+
 #include "xlator.h"
 
+/* Management Operations */
 
-layout_t *
-default_getlayout (struct xlator *xl,
-		   layout_t *layout);
-layout_t *
-default_setlayout (struct xlator *xl,
-		   layout_t *layout);
-int
-default_open (struct xlator *xl,
-	      const char *path,
-	      int flags,
-	      mode_t mode,
-	      struct file_context *ctx);
-int
-default_getattr (struct xlator *xl,
-		 const char *path,
-		 struct stat *stbuf);
-int
-default_readlink (struct xlator *xl,
-		  const char *path,
-		  char *dest,
-		  size_t size);
-int
-default_mknod (struct xlator *xl,
-	       const char *path,
-	       mode_t mode,
-	       dev_t dev,
-	       uid_t uid,
-	       gid_t gid);
+int32_t default_stats (call_frame_t *frame,
+		       xlator_t *this,
+		       int32_t flags);
 
-int
-default_mkdir (struct xlator *xl,
-	       const char *path,
-	       mode_t mode,
-	       uid_t uid,
-	       gid_t gid);
-int
-default_unlink (struct xlator *xl,
-		const char *path);
-int
-default_rmdir (struct xlator *xl,
-	       const char *path);
-int
-default_symlink (struct xlator *xl,
-		 const char *oldpath,
-		 const char *newpath,
-		 uid_t uid,
-		 gid_t gid);
-int
-default_rename (struct xlator *xl,
-		const char *oldpath,
-		const char *newpath,
-		uid_t uid,
-		gid_t gid);
-int
-default_link (struct xlator *xl,
-	      const char *oldpath,
-	      const char *newpath,
-	      uid_t uid,
-	      gid_t gid);
-int
-default_chmod (struct xlator *xl,
-	       const char *path,
-	       mode_t mode);
-int
-default_chown (struct xlator *xl,
-	       const char *path,
-	       uid_t uid,
-	       gid_t gid);
-int
-default_truncate (struct xlator *xl,
-		  const char *path,
-		  off_t offset);
-int
-default_utime (struct xlator *xl,
-	       const char *path,
-	       struct utimbuf *buf);
-int
-default_read (struct xlator *xl,
-	      const char *path,
-	      char *buf,
-	      size_t size,
-	      off_t offset,
-	      struct file_context *ctx);
+int32_t default_getspec (call_frame_t *frame,
+			 xlator_t *this,
+			 const char *key,
+			 int32_t flag);
 
-int
-default_write (struct xlator *xl,
-	       const char *path,
-	       const char *buf,
-	       size_t size,
-	       off_t offset,
-	       struct file_context *ctx);
+int32_t default_checksum (call_frame_t *frame,
+			  xlator_t *this,
+			  loc_t *loc,
+			  int32_t flag);
 
-int
-default_statfs (struct xlator *xl,
-		const char *path,
-		struct statvfs *buf);
-int
-default_flush (struct xlator *xl,
-	       const char *path,
-	       struct file_context *ctx);
-int
-default_release (struct xlator *xl,
-		 const char *path,
-		 struct file_context *ctx);
-int
-default_fsync (struct xlator *xl,
-	       const char *path,
-	       int flags,
-	       struct file_context *ctx);
-int
-default_setxattr (struct xlator *xl,
-		  const char *path,
-		  const char *name,
-		  const char *value,
-		  size_t size,
-		  int flags);
-int
-default_getxattr (struct xlator *xl,
-		  const char *path,
-		  const char *name,
-		  char *value,
-		  size_t size);
-int
-default_listxattr (struct xlator *xl,
-		   const char *path,
-		   char *list,
-		   size_t size);
-int
-default_removexattr (struct xlator *xl,
-		     const char *path,
-		     const char *name);
-int
-default_opendir (struct xlator *this,
-		 const char *path,
-		 struct file_context *ctx);
-char *
-default_readdir (struct xlator *this,
-		 const char *path,
-		 off_t offset);
-int
-default_releasedir (struct xlator *this,
-		    const char *path,
-		    struct file_context *ctx);
-int
-default_fsyncdir (struct xlator *this,
-		  const char *path,
-		  int flags,
-		  struct file_context *ctx);
-int
-default_access (struct xlator *xl,
-		const char *path,
-		mode_t mode);
-int
-default_ftruncate (struct xlator *xl,
-		   const char *path,
-		   off_t offset,
-		   struct file_context *ctx);
-int
-default_fgetattr (struct xlator *xl,
-		  const char *path,
-		  struct stat *buf,
-		  struct file_context *ctx);
-int
-default_bulk_getattr (struct xlator *xl,
-		      const char *path,
-		      struct bulk_stat *bstbuf);
 
-int 
-default_stats (struct xlator *this,
-	       struct xlator_stats *stats);
+/* FileSystem operations */
+int32_t default_lookup (call_frame_t *frame,
+			xlator_t *this,
+			loc_t *loc,
+			dict_t *xattr_req);
 
-int 
-default_fsck (struct xlator *this);
+int32_t default_stat (call_frame_t *frame,
+		      xlator_t *this,
+		      loc_t *loc);
 
-int 
-default_lock (struct xlator *this, 
-	      const char *name);
+int32_t default_fstat (call_frame_t *frame,
+		       xlator_t *this,
+		       fd_t *fd);
 
-int 
-default_unlock (struct xlator *this, 
-		const char *name);
+int32_t default_chmod (call_frame_t *frame,
+		       xlator_t *this,
+		       loc_t *loc,
+		       mode_t mode);
 
-int 
-default_nslookup (struct xlator *this, 
-		  const char *name,
-		  dict_t *ns);
+int32_t default_fchmod (call_frame_t *frame,
+			xlator_t *this,
+			fd_t *fd,
+			mode_t mode);
 
-int 
-default_nsupdate (struct xlator *this, 
-		  const char *name,
-		  dict_t *ns);
+int32_t default_chown (call_frame_t *frame,
+		       xlator_t *this,
+		       loc_t *loc,
+		       uid_t uid,
+		       gid_t gid);
+
+int32_t default_fchown (call_frame_t *frame,
+			xlator_t *this,
+			fd_t *fd,
+			uid_t uid,
+			gid_t gid);
+
+int32_t default_truncate (call_frame_t *frame,
+			  xlator_t *this,
+			  loc_t *loc,
+			  off_t offset);
+
+int32_t default_ftruncate (call_frame_t *frame,
+			   xlator_t *this,
+			   fd_t *fd,
+			   off_t offset);
+
+int32_t default_utimens (call_frame_t *frame,
+			 xlator_t *this,
+			 loc_t *loc,
+			 struct timespec tv[2]);
+
+int32_t default_access (call_frame_t *frame,
+			xlator_t *this,
+			loc_t *loc,
+			int32_t mask);
+
+int32_t default_readlink (call_frame_t *frame,
+			  xlator_t *this,
+			  loc_t *loc,
+			  size_t size);
+
+int32_t default_mknod (call_frame_t *frame,
+		       xlator_t *this,
+		       loc_t *loc,
+		       mode_t mode,
+		       dev_t rdev);
+
+int32_t default_mkdir (call_frame_t *frame,
+		       xlator_t *this,
+		       loc_t *loc,
+		       mode_t mode);
+
+int32_t default_unlink (call_frame_t *frame,
+			xlator_t *this,
+			loc_t *loc);
+
+int32_t default_rmdir (call_frame_t *frame,
+		       xlator_t *this,
+		       loc_t *loc);
+
+int32_t default_symlink (call_frame_t *frame,
+			 xlator_t *this,
+			 const char *linkpath,
+			 loc_t *loc);
+
+int32_t default_rename (call_frame_t *frame,
+			xlator_t *this,
+			loc_t *oldloc,
+			loc_t *newloc);
+
+int32_t default_link (call_frame_t *frame,
+		      xlator_t *this,
+		      loc_t *oldloc,
+		      loc_t *newloc);
+
+int32_t default_create (call_frame_t *frame,
+			xlator_t *this,
+			loc_t *loc,
+			int32_t flags,
+			mode_t mode, fd_t *fd);
+
+int32_t default_open (call_frame_t *frame,
+		      xlator_t *this,
+		      loc_t *loc,
+		      int32_t flags, fd_t *fd);
+
+int32_t default_readv (call_frame_t *frame,
+		       xlator_t *this,
+		       fd_t *fd,
+		       size_t size,
+		       off_t offset);
+
+int32_t default_writev (call_frame_t *frame,
+			xlator_t *this,
+			fd_t *fd,
+			struct iovec *vector,
+			int32_t count,
+			off_t offset);
+
+int32_t default_flush (call_frame_t *frame,
+		       xlator_t *this,
+		       fd_t *fd);
+
+int32_t default_fsync (call_frame_t *frame,
+		       xlator_t *this,
+		       fd_t *fd,
+		       int32_t datasync);
+
+int32_t default_opendir (call_frame_t *frame,
+			 xlator_t *this,
+			 loc_t *loc, fd_t *fd);
+
+int32_t default_getdents (call_frame_t *frame,
+			  xlator_t *this,
+			  fd_t *fd,
+			  size_t size,
+			  off_t offset,
+			  int32_t flag);
+
+int32_t default_fsyncdir (call_frame_t *frame,
+			  xlator_t *this,
+			  fd_t *fd,
+			  int32_t datasync);
+
+int32_t default_statfs (call_frame_t *frame,
+			xlator_t *this,
+			loc_t *loc);
+
+int32_t default_setxattr (call_frame_t *frame,
+			  xlator_t *this,
+			  loc_t *loc,
+			  dict_t *dict,
+			  int32_t flags);
+
+int32_t default_getxattr (call_frame_t *frame,
+			  xlator_t *this,
+			  loc_t *loc,
+			  const char *name);
+
+int32_t default_removexattr (call_frame_t *frame,
+			     xlator_t *this,
+			     loc_t *loc,
+			     const char *name);
+
+int32_t default_lk (call_frame_t *frame,
+		    xlator_t *this,
+		    fd_t *fd,
+		    int32_t cmd,
+		    struct flock *flock);
+
+int32_t default_inodelk (call_frame_t *frame, xlator_t *this,
+			 loc_t *loc, int32_t cmd, struct flock *flock);
+
+int32_t default_finodelk (call_frame_t *frame, xlator_t *this,
+			  fd_t *fd, int32_t cmd, struct flock *flock);
+
+int32_t default_entrylk (call_frame_t *frame, xlator_t *this,
+			 loc_t *loc, const char *basename,
+			 entrylk_cmd cmd, entrylk_type type);
+
+int32_t default_fentrylk (call_frame_t *frame, xlator_t *this,
+			  fd_t *fd, const char *basename,
+			  entrylk_cmd cmd, entrylk_type type);
+
+int32_t default_readdir (call_frame_t *frame,
+			  xlator_t *this,
+			  fd_t *fd,
+			  size_t size, off_t off);
+		 
+int32_t default_setdents (call_frame_t *frame,
+			  xlator_t *this,
+			  fd_t *fd,
+			  int32_t flags,
+			  dir_entry_t *entries,
+			  int32_t count);
+
+int32_t default_xattrop (call_frame_t *frame,
+			 xlator_t *this,
+			 loc_t *loc,
+			 gf_xattrop_flags_t flags,
+			 dict_t *dict);
+
+int32_t default_fxattrop (call_frame_t *frame,
+			  xlator_t *this,
+			  fd_t *fd,
+			  gf_xattrop_flags_t flags,
+			  dict_t *dict);
+
+int32_t default_notify (xlator_t *this,
+			int32_t event,
+			void *data,
+			...);
+
+int32_t default_forget (xlator_t *this,
+			inode_t *inode);
+
+int32_t default_release (xlator_t *this,
+			 fd_t *fd);
+
+int32_t default_releasedir (xlator_t *this,
+			    fd_t *fd);
 
 #endif /* _DEFAULTS_H */

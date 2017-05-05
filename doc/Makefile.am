@@ -1,5 +1,11 @@
-EXTRA_DIST = client-volume.spec.sample fstab.sample glusterfsd.conf protocol.txt server-volume.spec.sample
+EXTRA_DIST = glusterfs.vol.sample glusterfsd.vol.sample glusterfs.8 \
+	porting_guide.txt authentication.txt coding-standard.pdf get_put_api_using_xattr.txt \
+	translator-options.txt mac-related-xattrs.txt replicate.pdf
+SUBDIRS = examples hacker-guide user-guide
 
-all:
+voldir = $(sysconfdir)/glusterfs
+vol_DATA = glusterfs.vol.sample glusterfsd.vol.sample
 
-install:
+man8_MANS = glusterfs.8
+
+CLEANFILES = 

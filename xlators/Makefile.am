@@ -1,1 +1,3 @@
-SUBDIRS = transport cluster storage filter optimizer debug dummy
+SUBDIRS = cluster storage protocol performance debug features encryption mount
+
+CLEANFILES = 

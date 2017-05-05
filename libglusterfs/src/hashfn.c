@@ -1,5 +1,29 @@
+/*
+   Copyright (c) 2006, 2007, 2008 Z RESEARCH, Inc. <http://www.zresearch.com>
+   This file is part of GlusterFS.
+
+   GlusterFS is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published
+   by the Free Software Foundation; either version 3 of the License,
+   or (at your option) any later version.
+
+   GlusterFS is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see
+   <http://www.gnu.org/licenses/>.
+*/
+
 #include <stdint.h>
 #include <stdlib.h>
+
+#ifndef _CONFIG_H
+#define _CONFIG_H
+#include "config.h"
+#endif
 
 #include "hashfn.h"
 
@@ -10,11 +34,20 @@
   Written by Paul Hsieh <http://www.azillionmonkeys.com/qed/hash.html>
 */
 
-uint32_t SuperFastHash (const char * data, int len) {
-  uint32_t hash = len, tmp;
-  int rem;
+/* In any case make sure, you return 1 */
 
-  if (len <= 0 || data == NULL) return 0;
+uint32_t SuperFastHash (const char * data, int32_t len) {
+  uint32_t hash = len, tmp;
+  int32_t rem;
+
+  if (len <= 1 || data == NULL) return 1;
+
+
+  for (;len > 0; len--) {
+    hash ^= data[len];
+
+    return hash;
+  }
 
   rem = len & 3;
   len >>= 2;
